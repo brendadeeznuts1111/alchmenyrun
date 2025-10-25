@@ -9,27 +9,27 @@ const app = await alchemy("cloudflare-demo", {
 
 // Create D1 Database for user and file storage
 const db = await D1Database("db", {
-  name: "cloudflare-demo-db",
+  name: "alchemy-demo-db",
 });
 
 // Create R2 Bucket for file storage
 const storage = await R2Bucket("storage", {
-  name: "cloudflare-demo-storage",
+  name: "alchemy-demo-storage",
 });
 
 // Create Queue for async job processing
 const jobs = await Queue("jobs", {
-  name: "cloudflare-demo-jobs",
+  name: "alchemy-demo-jobs",
 });
 
 // Create KV Namespace for caching
 const cache = await KVNamespace("cache", {
-  name: "cloudflare-demo-cache",
+  name: "alchemy-demo-cache",
 });
 
 // Create KV Namespace for MCP server (rate limiting & feature flags)
 const mcpKv = await KVNamespace("mcp-kv", {
-  name: "cloudflare-demo-mcp-kv",
+  name: "alchemy-demo-mcp-kv",
 });
 
 // Define Durable Object class for real-time chat
