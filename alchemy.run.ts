@@ -68,7 +68,7 @@ export const website = await BunSPA("website", {
     JOBS: jobs,
     CACHE: cache,
     CHAT: ChatDurableObject,
-    WORKFLOW: OnboardingWorkflow,
+    // WORKFLOW: OnboardingWorkflow,  // Temporarily disabled
     // Secrets example
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
@@ -130,4 +130,3 @@ Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
 
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();
-
