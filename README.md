@@ -34,24 +34,29 @@ bun i
    ```bash
    bun alchemy configure
    ```
+   
+   This will create a profile configuration in `~/.alchemy/config.json`
 
 2. **Login to Cloudflare**
    ```bash
    bun alchemy login
    ```
+   
+   This will store your Cloudflare credentials securely in `~/.alchemy/credentials/default/cloudflare.json`
 
-3. **Set Environment Variables**
+3. **Set Environment Variables (Optional)**
    
-   Create a `.env` file:
+   Create a `.env` file for local development:
    ```bash
-   # Cloudflare Configuration
-   CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-   CLOUDFLARE_API_TOKEN=your_api_token_here
-   
-   # Alchemy Configuration
+   # Alchemy Configuration (optional - can use profiles)
    ALCHEMY_PASSWORD=your_encryption_password
-   ALCHEMY_STATE_TOKEN=your_state_token
+   
+   # Override profile if needed
+   # ALCHEMY_PROFILE=prod
+   # CLOUDFLARE_PROFILE=prod
    ```
+
+**Note**: Alchemy profiles are the recommended way to manage credentials. They're stored locally in `~/.alchemy/` and behave similarly to AWS profiles. Environment variables are only needed for the encryption password and profile overrides.
 
 ### Development
 
@@ -144,6 +149,7 @@ bun test:watch
 
 - **[Provider Documentation](./docs/cloudflare.md)** - Complete resource reference
 - **[Getting Started Guide](./docs/guides/cloudflare.md)** - Step-by-step tutorial
+- **[Profiles Guide](./docs/profiles.md)** - Managing credentials with Alchemy profiles
 - **[Contributing Guide](./CONTRIBUTING.md)** - Development guidelines
 
 ## 🔄 Development Workflow
@@ -200,10 +206,11 @@ This demo follows Alchemy's architecture principles:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID | Yes |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token | Yes |
-| `ALCHEMY_PASSWORD` | Encryption password | Yes |
-| `ALCHEMY_STATE_TOKEN` | State management token | Yes |
+| `ALCHEMY_PASSWORD` | Encryption password for secrets | Yes |
+| `ALCHEMY_PROFILE` | Override default Alchemy profile | Optional |
+| `CLOUDFLARE_PROFILE` | Override default Cloudflare profile | Optional |
+
+**Note**: Cloudflare credentials are managed through Alchemy profiles using `bun alchemy configure` and `bun alchemy login`. Environment variables are only needed for profile overrides.
 
 ### Alchemy Configuration
 
@@ -213,9 +220,11 @@ The infrastructure is defined in `alchemy.run.ts`:
 import alchemy from "alchemy";
 import { Website } from "alchemy/cloudflare";
 
+// Uses default profile - can be overridden with --profile flag
 const app = await alchemy("cloudflare-demo", {
   password: process.env.ALCHEMY_PASSWORD,
   stateStore: (scope) => new CloudflareStateStore(scope),
+  // profile: "default", // This is implicit, can be set to "prod" etc.
 });
 
 const website = await Website("app", {
@@ -227,9 +236,31 @@ const website = await Website("app", {
   cache: true,
   chat: true,
   workflow: true,
+  // profile: "default", // Individual resource profile override
 });
 
 await app.finalize();
+```
+
+### Profile Usage Examples
+
+```bash
+# Use default profile
+bun run alchemy:dev
+bun run deploy
+
+# Use specific profile
+ALCHEMY_PROFILE=prod bun run deploy
+bun run deploy --profile prod
+
+# Use specific Cloudflare profile
+CLOUDFLARE_PROFILE=prod bun run deploy
+
+# Configure different profiles
+bun alchemy configure --profile dev
+bun alchemy configure --profile prod
+bun alchemy login --profile dev
+bun alchemy login --profile prod
 ```
 
 ## 🚀 Deployment

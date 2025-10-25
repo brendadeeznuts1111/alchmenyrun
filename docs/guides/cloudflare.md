@@ -47,20 +47,52 @@ This guide walks you through setting up and deploying your first Cloudflare appl
    
    Create a `.env` file:
    ```bash
-   # Cloudflare Configuration
-   CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-   CLOUDFLARE_API_TOKEN=your_api_token_here
-   
    # Alchemy Configuration
    ALCHEMY_PASSWORD=your_encryption_password
-   ALCHEMY_STATE_TOKEN=your_state_token
    ```
 
-2. **Generate State Token**
+2. **Configure Alchemy Profile**
    ```bash
-   # This will generate and save a new state token
-   bun run alchemy:dev
+   bun alchemy configure
    ```
+   
+   This will create a profile configuration in `~/.alchemy/config.json` and prompt you for Cloudflare authentication method (OAuth or API Token).
+
+3. **Login to Cloudflare**
+   ```bash
+   bun alchemy login
+   ```
+   
+   This will store your Cloudflare credentials securely in `~/.alchemy/credentials/default/cloudflare.json`.
+
+### Multiple Profiles
+
+For different environments (dev/prod), you can create multiple profiles:
+
+```bash
+# Configure development profile
+bun alchemy configure --profile dev
+bun alchemy login --profile dev
+
+# Configure production profile  
+bun alchemy configure --profile prod
+bun alchemy login --profile prod
+```
+
+### Profile Override
+
+You can override the default profile using environment variables or command-line flags:
+
+```bash
+# Using environment variable
+ALCHEMY_PROFILE=prod bun run deploy
+
+# Using command-line flag
+bun run deploy --profile prod
+
+# Using provider-specific profile
+CLOUDFLARE_PROFILE=prod bun run deploy
+```
 
 ## Your First Application
 

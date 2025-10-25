@@ -14,10 +14,13 @@ import { CloudflareStateStore } from "alchemy/state";
 
 // Initialize the app with Cloudflare state store and encryption password
 // Password is required when using alchemy.secret()
+// Uses default profile - can be overridden with --profile flag or ALCHEMY_PROFILE env var
 const app = await alchemy("cloudflare-demo", {
   password:
     process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
   stateStore: (scope) => new CloudflareStateStore(scope),
+  // Use default profile - can be overridden with --profile flag
+  // profile: "default", // This is implicit, can be set to "prod" etc.
 });
 
 // Create D1 Database for user and file storage
