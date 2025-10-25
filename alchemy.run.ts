@@ -10,6 +10,7 @@ const app = await alchemy("cloudflare-demo", {
 // Create D1 Database for user and file storage
 const db = await D1Database("db", {
   name: "alchemy-demo-db",
+  adopt: true, // Adopt existing database if it exists
 });
 
 // Create R2 Bucket for file storage

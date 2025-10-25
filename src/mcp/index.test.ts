@@ -4,10 +4,30 @@
  * Comprehensive test suite for production MCP server
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import worker from './index';
 import type { Env } from './index';
 import { generateJWT } from './auth';
+import { Miniflare } from 'miniflare';
+
+// Start Miniflare for testing
+let mf: Miniflare;
+
+beforeAll(async () => {
+  mf = new Miniflare({
+    scriptPath: './src/mcp/index.ts',
+    modules: true,
+    bindings: {
+      MCP_SHARED_SECRET: 'test-secret-123',
+      MCP_JWT_SECRET: 'jwt-secret-456',
+      ENVIRONMENT: 'development',
+    },
+  });
+});
+
+afterAll(async () => {
+  await mf?.dispose();
+});
 
 // Mock environment
 const mockEnv: Env = {
