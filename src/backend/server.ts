@@ -21,14 +21,14 @@ export default {
     try {
       // Health check
       if (path === "/api/health") {
-        return json({ status: "ok", timestamp: new Date().toISOString() }, corsHeaders);
+        return json({ status: "ok", timestamp: new Date().toISOString() }, 200, corsHeaders);
       }
 
       // Users endpoints
       if (path === "/api/users" && request.method === "GET") {
         const db = getDb(env.DB);
         const users = await db.select().from(schema.users).limit(100);
-        return json({ users }, corsHeaders);
+        return json({ users }, 200, corsHeaders);
       }
 
       if (path === "/api/users" && request.method === "POST") {
@@ -46,7 +46,7 @@ export default {
         // Trigger queue job for user creation
         await env.JOBS.send({ type: "user_created", userId: newUser.id });
         
-        return json({ user: newUser }, corsHeaders);
+        return json({ user: newUser }, 201, corsHeaders);
       }
 
       // Files endpoints
@@ -98,21 +98,21 @@ export default {
         // Trigger queue job for file processing
         await env.JOBS.send({ type: "file_uploaded", fileId: newFile.id });
 
-        return json({ file: newFile }, corsHeaders);
+        return json({ file: newFile }, 201, corsHeaders);
       }
 
       // Cache endpoints
       if (path.startsWith("/api/cache/") && request.method === "GET") {
         const key = path.split("/")[3];
         const value = await env.CACHE.get(key);
-        return json({ key, value, found: !!value }, corsHeaders);
+        return json({ key, value, found: !!value }, 200, corsHeaders);
       }
 
       if (path.startsWith("/api/cache/") && request.method === "POST") {
         const key = path.split("/")[3];
         const data = await request.json();
         await env.CACHE.put(key, JSON.stringify(data));
-        return json({ key, message: "cached" }, corsHeaders);
+        return json({ key, message: "cached" }, 201, corsHeaders);
       }
 
       // Chat WebSocket endpoint
@@ -129,7 +129,7 @@ export default {
         const workflow = env.WORKFLOW.get(workflowId);
         
         const handle = await workflow.start(data);
-        return json({ workflowId: handle.id }, corsHeaders);
+        return json({ workflowId: handle.id }, 201, corsHeaders);
       }
 
       return json({ error: "Not found" }, 404, corsHeaders);

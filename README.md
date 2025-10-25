@@ -202,6 +202,7 @@ This project showcases:
 ## 📚 Documentation
 
 - [README.md](./README.md) - Main documentation
+- [SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md) - Complete setup verification checklist
 - [QUICKSTART.md](./QUICKSTART.md) - 5-minute setup guide
 - [VERIFICATION_REPORT.md](./VERIFICATION_REPORT.md) - ✅ Official Alchemy pattern compliance verification (100%)
 - [VERIFICATION_SUMMARY.md](./VERIFICATION_SUMMARY.md) - Quick verification overview
@@ -211,6 +212,7 @@ This project showcases:
 - [MCP_DEPLOYMENT_CHECKLIST.md](./MCP_DEPLOYMENT_CHECKLIST.md) - Deployment checklist
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System design and architecture
 - [AUTHENTICATION.md](./AUTHENTICATION.md) - Cloudflare authentication setup
+- [AUTHENTICATION_CHEATSHEET.md](./AUTHENTICATION_CHEATSHEET.md) - Quick auth reference guide
 - [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) - Local dev setup and tips
 - [CI_CD.md](./CI_CD.md) - CI/CD pipeline and deployment guide
 - [MONOREPO.md](./MONOREPO.md) - Scaling to monorepo with Turborepo
