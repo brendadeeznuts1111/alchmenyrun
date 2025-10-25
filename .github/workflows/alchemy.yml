@@ -40,6 +40,7 @@ jobs:
         run: bun ./alchemy.run.ts --stage ${{ steps.stage.outputs.name }} --adopt
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+          ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MCP_SHARED_SECRET: ${{ secrets.MCP_SHARED_SECRET }}
           MCP_JWT_SECRET: ${{ secrets.MCP_JWT_SECRET }}
