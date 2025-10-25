@@ -1,9 +1,11 @@
 import alchemy from "alchemy";
 import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, Worker } from "alchemy/cloudflare";
 
-// Initialize the app with default state store
-// In CI, will use local file storage
-const app = await alchemy("cloudflare-demo");
+// Initialize the app with default state store and encryption password
+// Password is required when using alchemy.secret()
+const app = await alchemy("cloudflare-demo", {
+  password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+});
 
 // Create D1 Database for user and file storage
 const db = await D1Database("db", {
