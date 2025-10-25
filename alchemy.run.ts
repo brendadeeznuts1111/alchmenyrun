@@ -42,13 +42,12 @@ const mcpKv = await KVNamespace("mcp-kv", {
 
 // Define Durable Object class for real-time chat
 // Note: Durable Objects require remote binding in dev (no local emulation)
-// Temporarily disabled for dev mode
 const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
   name: "ChatDO",
   className: "ChatRoom",
   scriptPath: "./src/backend/durable-object.ts",
   dev: {
-    remote: false,  // Disable for now
+    remote: true,  // Enable for production
   },
 });
 
@@ -68,9 +67,8 @@ export const website = await BunSPA("website", {
     STORAGE: storage,
     JOBS: jobs,
     CACHE: cache,
-    // Temporarily disabled for dev
-    // CHAT: ChatDurableObject,
-    // WORKFLOW: OnboardingWorkflow,
+    CHAT: ChatDurableObject,
+    WORKFLOW: OnboardingWorkflow,
     // Secrets example
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
