@@ -1,12 +1,13 @@
 import { getDb } from "../db";
 import { getBackendUrl } from "alchemy/cloudflare/bun-spa";
 import { ChatRoom } from "./durable-object";
+import type { WorkerEnv } from "../env.d.ts";
 
 // Re-export ChatRoom to make it available to the worker
 export { ChatRoom };
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 

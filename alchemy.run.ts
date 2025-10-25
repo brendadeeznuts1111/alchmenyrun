@@ -15,7 +15,9 @@ import { CloudflareStateStore } from "alchemy/state";
 // Initialize the app with Cloudflare state store and encryption password
 // Password is required when using alchemy.secret()
 // Uses default profile - can be overridden with --profile flag or ALCHEMY_PROFILE env var
+// Phase can be set via PHASE environment variable or defaults to "up"
 const app = await alchemy("cloudflare-demo", {
+  phase: process.env.PHASE as "up" | "destroy" | "read" || "up",
   password:
     process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
   stateStore: (scope) => new CloudflareStateStore(scope),
@@ -77,7 +79,7 @@ export const website = await BunSPA("website", {
     JOBS: jobs,
     CACHE: cache,
     CHAT: ChatDurableObject,
-    // WORKFLOW: OnboardingWorkflow,  // Temporarily disabled
+    WORKFLOW: OnboardingWorkflow,  // Enable workflow binding
     // Secrets example
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },

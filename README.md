@@ -149,6 +149,7 @@ bun test:watch
 
 - **[Provider Documentation](./docs/cloudflare.md)** - Complete resource reference
 - **[Getting Started Guide](./docs/guides/cloudflare.md)** - Step-by-step tutorial
+- **[Concepts Guide](./docs/concepts.md)** - Phase, Secret, Bindings, and Resources
 - **[Profiles Guide](./docs/profiles.md)** - Managing credentials with Alchemy profiles
 - **[Contributing Guide](./CONTRIBUTING.md)** - Development guidelines
 
@@ -182,13 +183,31 @@ bun test:watch
 ### Scripts
 
 - `bun run alchemy:dev` – Hot-reload local development
-- `bun run deploy` – Deploy to personal stage
-- `bun run deploy:prod` – Deploy main branch to production
-- `bun run destroy` – Clean up all resources
+- `bun run deploy` – Deploy to personal stage (up phase)
+- `bun run deploy:prod` – Deploy main branch to production (up phase)
+- `bun run deploy:read` – Read infrastructure properties without changes (read phase)
+- `bun run destroy` – Clean up all resources (destroy phase)
+- `bun run destroy:prod` – Clean up production resources (destroy phase)
 - `bun run build` – Build frontend assets
 - `bun run check` – Type-check and lint
 - `bun run format` – Format code with oxfmt
 - `bun test` – Run test suite
+
+### Phase Examples
+
+```bash
+# Normal deployment (up phase)
+bun run deploy
+
+# Read infrastructure without changes (read phase)
+bun run deploy:read
+
+# Destroy all resources (destroy phase)
+bun run destroy
+
+# Use specific stage with phase
+PHASE=destroy bun run deploy --stage prod
+```
 
 ## 🏗️ Architecture
 
