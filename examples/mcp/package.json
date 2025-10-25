@@ -1,0 +1,18 @@
+{
+  "name": "alchemy-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server exposing Alchemy operations as tools",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "bun run server.ts",
+    "start": "bun run server.ts"
+  },
+  "dependencies": {
+    "bun-mcp": "latest"
+  },
+  "peerDependencies": {
+    "alchemy": "^0.76.1"
+  }
+}
+

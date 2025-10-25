@@ -1,0 +1,192 @@
+import { getDb } from "../db";
+import { getBackendUrl } from "alchemy/cloudflare/bun-spa";
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // CORS headers
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    try {
+      // Health check
+      if (path === "/api/health") {
+        return json({ status: "ok", timestamp: new Date().toISOString() }, corsHeaders);
+      }
+
+      // Users endpoints
+      if (path === "/api/users" && request.method === "GET") {
+        const db = getDb(env.DB);
+        const users = await db.select().from(schema.users).limit(100);
+        return json({ users }, corsHeaders);
+      }
+
+      if (path === "/api/users" && request.method === "POST") {
+        const data = await request.json();
+        const db = getDb(env.DB);
+        const newUser = {
+          id: crypto.randomUUID(),
+          email: data.email,
+          name: data.name,
+          avatarUrl: data.avatarUrl,
+          createdAt: new Date(),
+        };
+        await db.insert(schema.users).values(newUser);
+        
+        // Trigger queue job for user creation
+        await env.JOBS.send({ type: "user_created", userId: newUser.id });
+        
+        return json({ user: newUser }, corsHeaders);
+      }
+
+      // Files endpoints
+      if (path.startsWith("/api/files/") && request.method === "GET") {
+        const fileId = path.split("/")[3];
+        const db = getDb(env.DB);
+        const file = await db.select().from(schema.files).where(eq(schema.files.id, fileId)).get();
+        
+        if (!file) {
+          return json({ error: "File not found" }, 404, corsHeaders);
+        }
+
+        const object = await env.STORAGE.get(file.key);
+        if (!object) {
+          return json({ error: "File not found in storage" }, 404, corsHeaders);
+        }
+
+        return new Response(object.body, {
+          headers: {
+            "Content-Type": file.contentType || "application/octet-stream",
+            ...corsHeaders,
+          },
+        });
+      }
+
+      if (path === "/api/upload" && request.method === "POST") {
+        const formData = await request.formData();
+        const file = formData.get("file") as File;
+        const userId = formData.get("userId") as string;
+
+        if (!file) {
+          return json({ error: "No file provided" }, 400, corsHeaders);
+        }
+
+        const key = `uploads/${crypto.randomUUID()}-${file.name}`;
+        await env.STORAGE.put(key, file);
+
+        const db = getDb(env.DB);
+        const newFile = {
+          id: crypto.randomUUID(),
+          userId,
+          key,
+          size: file.size,
+          contentType: file.type,
+          uploadedAt: new Date(),
+        };
+        await db.insert(schema.files).values(newFile);
+
+        // Trigger queue job for file processing
+        await env.JOBS.send({ type: "file_uploaded", fileId: newFile.id });
+
+        return json({ file: newFile }, corsHeaders);
+      }
+
+      // Cache endpoints
+      if (path.startsWith("/api/cache/") && request.method === "GET") {
+        const key = path.split("/")[3];
+        const value = await env.CACHE.get(key);
+        return json({ key, value, found: !!value }, corsHeaders);
+      }
+
+      if (path.startsWith("/api/cache/") && request.method === "POST") {
+        const key = path.split("/")[3];
+        const data = await request.json();
+        await env.CACHE.put(key, JSON.stringify(data));
+        return json({ key, message: "cached" }, corsHeaders);
+      }
+
+      // Chat WebSocket endpoint
+      if (path === "/api/chat" && request.headers.get("Upgrade") === "websocket") {
+        const durableObjectId = env.CHAT.idFromName("main-room");
+        const durableObject = env.CHAT.get(durableObjectId);
+        return durableObject.fetch(request);
+      }
+
+      // Workflow trigger endpoint
+      if (path === "/api/workflow/start" && request.method === "POST") {
+        const data = await request.json();
+        const workflowId = env.WORKFLOW.idFromName(data.userId || "default");
+        const workflow = env.WORKFLOW.get(workflowId);
+        
+        const handle = await workflow.start(data);
+        return json({ workflowId: handle.id }, corsHeaders);
+      }
+
+      return json({ error: "Not found" }, 404, corsHeaders);
+    } catch (error) {
+      console.error("Error:", error);
+      return json({ error: "Internal server error", message: String(error) }, 500, corsHeaders);
+    }
+  },
+};
+
+// Type definitions from alchemy.run.ts
+interface Env {
+  DB: D1Database;
+  STORAGE: R2Bucket;
+  JOBS: Queue<QueueMessage>;
+  CACHE: KVNamespace;
+  CHAT: DurableObjectNamespace<ChatDurableObject>;
+  WORKFLOW: WorkflowNamespace<OnboardingWorkflow>;
+  API_KEY: string;
+}
+
+interface QueueMessage {
+  type: string;
+  userId?: string;
+  fileId?: string;
+}
+
+interface ChatDurableObject {
+  fetch(request: Request): Promise<Response>;
+}
+
+interface OnboardingWorkflow {
+  start(data: any): Promise<WorkflowHandle>;
+}
+
+interface WorkflowHandle {
+  id: string;
+}
+
+interface QueueType extends Queue<QueueMessage> {}
+interface WorkflowNamespaceType extends WorkflowNamespace<OnboardingWorkflow> {}
+interface DurableObjectNamespaceType extends DurableObjectNamespace<ChatDurableObject> {}
+
+type R2Bucket = R2Bucket;
+type Queue<T> = Queue<T>;
+type WorkflowNamespace<T> = WorkflowNamespace<T>;
+type DurableObjectNamespace<T> = DurableObjectNamespace<T>;
+
+// Helper functions
+function json(data: any, status = 200, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", ...headers },
+  });
+}
+
+// Import schema for type inference
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
+

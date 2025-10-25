@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Bun
+.bun/
+bun.lockb
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
