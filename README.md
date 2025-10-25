@@ -17,6 +17,8 @@ This project demonstrates a full-stack Cloudflare application with:
 - **KV Namespace** - Caching layer
 - **Durable Objects** - Real-time WebSocket chat
 - **Workflows** - Multi-step orchestration (Cloudflare's newest feature, Oct 2025)
+- **Preview Deployments** - 🚀 Automatic PR previews with live URLs in comments
+- **GitHub Integration** - Automated repository management and webhooks for CI/CD
 - **TypeScript-native IaC** - No YAML, no HCL, just async functions
 - **MCP Server** - Optional Model Context Protocol integration for AI assistants ([see example](./examples/mcp/))
 
@@ -52,17 +54,39 @@ See [AUTHENTICATION.md](./AUTHENTICATION.md) for complete guide.
 
 3. **Configure environment:**
 
-Update `.env` with a secure password:
+Copy the example environment file and update with your values:
 
 ```bash
-ALCHEMY_PASSWORD=your-secure-password-here
+cp env.example .env
 ```
+
+Update `.env` with your configuration:
+
+```bash
+# Required
+ALCHEMY_PASSWORD=your-secure-password-here
+
+# Optional: GitHub Integration
+GITHUB_TOKEN=your-github-personal-access-token
+GITHUB_WEBHOOK_SECRET=your-webhook-secret
+```
+
+**GitHub Token Setup (Optional):**
+If you want to enable GitHub integration:
+1. Go to [GitHub Settings > Tokens](https://github.com/settings/tokens)
+2. Create a new Personal Access Token (classic)
+3. Select scopes: `repo`, `workflow`, `admin:repo_hook`
+4. Copy the token to your `.env` file
 
 ## 🏃 Running Locally
 
 Start the development server with hot module replacement:
 
 ```bash
+# Direct Alchemy CLI (recommended)
+bun run alchemy:dev
+
+# Or with CSS build
 bun run dev
 ```
 
@@ -74,47 +98,75 @@ This starts:
 - Local KV namespace
 - Local Queue processing
 - Local Workflow execution
+- Auto-reload on file changes
 
 **Note:** Durable Objects require remote binding (see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) for details)
 
 ## 🚢 Deployment
 
-### Production Deployment
+### Quick Deploy
 
-Deploy to Cloudflare:
+Deploy to Cloudflare with automatic stage detection:
 
 ```bash
+# Deploy to personal stage
 bun run deploy
+
+# Deploy to production
+bun run deploy:prod
+
+# Deploy to specific stage with adoption
+bun run deploy -- --stage staging --adopt
 ```
 
 You'll receive the live URLs:
-- Frontend: `https://website-prod.<your-account>.workers.dev`
-- API: `https://website-prod.<your-account>.workers.dev`
+- Frontend: `https://website-{stage}.<your-account>.workers.dev`
+- API: `https://website-{stage}.<your-account>.workers.dev/api`
 
 ### Stage-Based Deployment
 
 Deploy to different stages:
 
 ```bash
-# Production
-bun alchemy deploy --stage prod
+# Personal/development
+bun run deploy -- --stage $USER
 
 # Staging
-bun alchemy deploy --stage staging
+bun run deploy -- --stage staging
 
-# Preview (PR-based)
-bun alchemy deploy --stage pr-123
+# Production
+bun run deploy:prod
+
+# PR preview
+bun run deploy -- --stage pr-123
 ```
 
 ### CI/CD with GitHub Actions
 
-This project includes automatic deployments via GitHub Actions:
+This project includes **automatic preview deployments**:
 
-- **Push to main** → Deploys to production (`prod` stage)
-- **Open/update PR** → Deploys to preview environment (`pr-{number}` stage)
-- **Close PR** → Automatically destroys preview environment
+- **Push to main** → Deploys to `prod` stage
+- **Open PR** → Deploys to `pr-{number}` stage + posts preview URL
+- **Update PR** → Redeploys and updates comment
+- **Close PR** → Automatic cleanup
 
-See [CI_CD.md](./CI_CD.md) for complete setup instructions.
+Every PR gets a live preview URL posted automatically! 🎉
+
+**Example PR Comment:**
+```markdown
+## 🚀 Preview Deployed
+**🌐 Website:** https://website-pr-42.your-account.workers.dev
+**📡 API:** https://website-pr-42.your-account.workers.dev/api
+Built from commit `abc123d`
+```
+
+**Required GitHub Secrets:**
+- `ALCHEMY_PASSWORD` - Encryption password (`openssl rand -base64 32`)
+- `ALCHEMY_STATE_TOKEN` - Cloudflare API token with D1 permissions
+- `CLOUDFLARE_API_TOKEN` - Main Cloudflare API token
+- `CLOUDFLARE_EMAIL` - Your Cloudflare account email
+
+See [PREVIEW_DEPLOYMENTS.md](./PREVIEW_DEPLOYMENTS.md) and [SECRETS_SETUP.md](./SECRETS_SETUP.md) for complete setup.
 
 ## 🧪 Testing
 
@@ -126,10 +178,17 @@ bun run test
 
 ## 🧹 Cleanup
 
-Destroy all Cloudflare resources:
+Destroy Cloudflare resources:
 
 ```bash
+# Destroy current stage
 bun run destroy
+
+# Destroy specific stage
+bun run destroy -- --stage pr-123
+
+# Destroy personal stage
+bun run destroy -- --stage $USER
 ```
 
 ## 📁 Project Structure
@@ -190,6 +249,42 @@ const workflow = await Workflow("OnboardingWorkflow", {
 });
 ```
 
+### GitHub Integration
+
+Manage GitHub repositories and webhooks directly from your infrastructure code:
+
+```typescript
+// Create a GitHub repository
+const repo = await GitHub("demo-repo", {
+  name: "alchemy-cloudflare-demo",
+  description: "Demo repository managed by Alchemy",
+  private: false,
+  token: alchemy.secret(process.env.GITHUB_TOKEN),
+});
+
+// Register a webhook to receive GitHub events
+const webhook = await RepositoryWebhook("deploy-webhook", {
+  repository: repo.fullName,
+  events: ["push", "pull_request"],
+  url: `${website.apiUrl}/api/github/webhook`,
+  contentType: "json",
+  secret: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
+  token: alchemy.secret(process.env.GITHUB_TOKEN),
+});
+```
+
+**Use Cases:**
+- **Automated Deployments**: Trigger Cloudflare Worker deployments on push to main
+- **Preview Environments**: Create preview deployments for pull requests
+- **CI/CD Integration**: Connect GitHub Actions with Cloudflare Workers
+- **Repository Management**: Create, configure, and manage repositories as code
+
+The webhook endpoint (`/api/github/webhook`) in your Worker receives GitHub events and can:
+- Trigger Cloudflare Workflows for deployment pipelines
+- Process push events to deploy to production
+- Handle pull request events to create preview environments
+- Log and track repository activity
+
 ## 🌟 Recent Cloudflare Features (2025)
 
 This project showcases:
@@ -202,8 +297,14 @@ This project showcases:
 ## 📚 Documentation
 
 - [README.md](./README.md) - Main documentation
+- [PREVIEW_DEPLOYMENTS.md](./PREVIEW_DEPLOYMENTS.md) - 🚀 Automatic PR preview deployments guide
+- [SECRETS_SETUP.md](./SECRETS_SETUP.md) - Complete GitHub secrets setup walkthrough
+- [CLI_CI_SETUP.md](./CLI_CI_SETUP.md) - CLI + CI workflow setup and usage guide
 - [SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md) - Complete setup verification checklist
 - [QUICKSTART.md](./QUICKSTART.md) - 5-minute setup guide
+- [GITHUB_INTEGRATION.md](./GITHUB_INTEGRATION.md) - GitHub integration setup and CI/CD guide (🚧 scaffold ready)
+- [GITHUB_INTEGRATION_SUMMARY.md](./GITHUB_INTEGRATION_SUMMARY.md) - Implementation summary and status
+- [TESTING_GUIDE.md](./TESTING_GUIDE.md) - Complete testing guide for GitHub integration
 - [VERIFICATION_REPORT.md](./VERIFICATION_REPORT.md) - ✅ Official Alchemy pattern compliance verification (100%)
 - [VERIFICATION_SUMMARY.md](./VERIFICATION_SUMMARY.md) - Quick verification overview
 - [OFFICIAL_PATTERN_COMPARISON.md](./OFFICIAL_PATTERN_COMPARISON.md) - Side-by-side pattern comparison

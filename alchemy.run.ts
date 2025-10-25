@@ -1,10 +1,13 @@
 import alchemy from "alchemy";
 import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, Worker } from "alchemy/cloudflare";
+import { GitHubComment } from "alchemy/github";
+import { CloudflareStateStore } from "alchemy/state";
 
-// Initialize the app with default state store and encryption password
+// Initialize the app with Cloudflare state store and encryption password
 // Password is required when using alchemy.secret()
 const app = await alchemy("cloudflare-demo", {
   password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+  stateStore: (scope) => new CloudflareStateStore(scope),
 });
 
 // Create D1 Database for user and file storage
@@ -104,6 +107,28 @@ console.log({
   apiUrl: website.apiUrl,
   // mcpUrl: mcpWorker.url,
 });
+
+// -------------  PREVIEW COMMENT  -------------
+// Automatically post preview URLs to PR comments
+if (process.env.PULL_REQUEST) {
+  await GitHubComment("preview-comment", {
+    owner: "brendadeeznuts1111",          // Your GitHub username
+    repository: "alchmenyrun",            // Your repo name
+    issueNumber: Number(process.env.PULL_REQUEST),
+    body: `
+## 🚀 Preview Deployed
+
+Your changes have been deployed to a preview environment:
+
+**🌐 Website:** ${website.url}  
+**📡 API:** ${website.apiUrl}
+
+Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
+
+---
+<sub>🤖 This comment updates automatically with each push.</sub>`,
+  });
+}
 
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();
