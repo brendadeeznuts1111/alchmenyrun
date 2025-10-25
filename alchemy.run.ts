@@ -41,16 +41,11 @@ const mcpKv = await KVNamespace("mcp-kv", {
 });
 
 // Define Durable Object class for real-time chat
-// TEMPORARILY DISABLED: Investigating export requirements
-// Note: Durable Objects may require a separate Worker script
-// const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
-//   name: "ChatDO",
-//   className: "ChatRoom",
-//   scriptPath: "./src/backend/durable-object.ts",
-//   dev: {
-//     remote: true,  // Enable for production
-//   },
-// });
+const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
+  name: "ChatDO",
+  className: "ChatRoom",
+  scriptPath: "./src/backend/durable-object.ts",
+});
 
 // Define Workflow for multi-step orchestration
 const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
@@ -68,7 +63,7 @@ export const website = await BunSPA("website", {
     STORAGE: storage,
     JOBS: jobs,
     CACHE: cache,
-    // CHAT: ChatDurableObject,  // Temporarily disabled
+    CHAT: ChatDurableObject,
     // WORKFLOW: OnboardingWorkflow,  // Temporarily disabled
     // Secrets example
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
