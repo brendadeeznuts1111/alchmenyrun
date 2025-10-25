@@ -1,0 +1,139 @@
+# Documentation Rules
+
+## 🚫 RULE: No Summary Documents Allowed
+
+**Effective**: October 25, 2025  
+**Status**: ENFORCED
+
+### Rule Statement
+- **DO NOT** create summary documents (e.g., `*_SUMMARY.md`, `*_COMPLETE.md`, `*_OVERVIEW.md`)
+- **USE** changelogs instead for tracking progress and completion status
+- **CONSOLIDATE** information into primary documents rather than creating summaries
+
+### Rationale
+- Summary documents create redundancy and maintenance overhead
+- Information becomes fragmented across multiple files
+- Users don't know which document is the "source of truth"
+- Changelogs provide better tracking of changes over time
+
+### Alternatives to Summary Documents
+
+#### 1. Use Changelogs
+Instead of `FEATURE_SUMMARY.md`, create:
+- `CHANGELOG.md` (project-level)
+- Add entries to existing changelogs
+- Use semantic versioning for releases
+
+#### 2. Enhance Primary Documents
+Instead of creating summaries:
+- Add executive summary sections to main docs
+- Include status indicators in primary documents
+- Use tables of contents for long documents
+
+#### 3. Use Document Metadata
+Add status sections to primary documents:
+```markdown
+## Document Status
+- **Last Updated**: October 25, 2025
+- **Version**: 1.2.0
+- **Status**: Complete / In Progress / Deprecated
+- **Related**: [LINK_TO_RELATED_DOC.md]
+```
+
+### Enforcement
+
+#### For New Documentation
+1. **Check if document is a summary** - If yes, don't create it
+2. **Find the primary document** - Enhance it instead
+3. **Create changelog entry** - Track the change properly
+
+#### For Existing Summary Documents
+1. **Identify redundant summaries** - Mark for consolidation
+2. **Move unique content** - Merge into primary documents
+3. **Delete summary files** - Remove after consolidation
+4. **Update references** - Fix all links to point to primary docs
+
+### Examples
+
+#### ❌ BAD (Summary Documents)
+- `GITHUB_INTEGRATION_SUMMARY.md`
+- `MCP_INTEGRATION_SUMMARY.md` 
+- `VERIFICATION_SUMMARY.md`
+- `IMPLEMENTATION_REPORT.md` (if it's just a summary)
+
+#### ✅ GOOD (Primary Documents + Changelogs)
+- `GITHUB_INTEGRATION.md` (enhanced with summary section)
+- `MCP_INTEGRATION.md` (enhanced with summary section)
+- `CHANGELOG.md` (with entries for each feature)
+- Document status sections in primary docs
+
+### Migration Strategy
+
+#### Phase 1: Audit
+- List all summary documents
+- Identify unique content vs redundant information
+- Plan consolidation approach
+
+#### Phase 2: Consolidate
+- Merge unique content into primary documents
+- Add status sections to primary docs
+- Create/update changelog entries
+
+#### Phase 3: Cleanup
+- Delete redundant summary documents
+- Update all internal links
+- Update documentation index
+
+### Changelog Template
+
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New feature description
+
+### Changed
+- Modified existing feature
+
+### Deprecated
+- Feature that will be removed in future
+
+### Removed
+- Feature that was removed
+
+### Fixed
+- Bug fix
+
+### Security
+- Security improvement
+
+## [1.0.0] - 2025-10-25
+
+### Added
+- Initial project structure
+- Core Cloudflare integration
+- Documentation organization
+```
+
+### Compliance Checklist
+
+When creating or modifying documentation:
+
+- [ ] **Is this a summary document?** → If yes, STOP and use changelog instead
+- [ ] **Does this duplicate existing content?** → If yes, enhance existing doc instead
+- [ ] **Is there a primary document for this topic?** → If yes, enhance it instead
+- [ ] **Have I added a changelog entry?** → Required for all significant changes
+- [ ] **Have I included document status?** → Add status section to primary doc
+
+---
+
+**Rule Owner**: Documentation Maintainer  
+**Review Date**: Quarterly  
+**Exceptions**: Requires explicit approval with justification

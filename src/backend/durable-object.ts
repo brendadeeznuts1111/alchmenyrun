@@ -2,7 +2,7 @@
  * Durable Object for real-time chat
  * Handles WebSocket connections and shared state
  */
-export default class ChatRoom extends DurableObject {
+export class ChatRoom extends DurableObject {
   private sessions: Map<WebSocket, Session>;
 
   constructor(ctx: DurableObjectState, env: Env) {
