@@ -2,7 +2,7 @@
  * Cloudflare Workflow for multi-step orchestration
  * Demonstrates durable workflows for complex business logic
  */
-export class OnboardingWorkflow {
+export default class OnboardingWorkflow {
   private state: WorkflowExecution<any>;
 
   constructor(state: WorkflowExecution<any>) {
