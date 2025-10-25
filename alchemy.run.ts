@@ -1,5 +1,5 @@
 import alchemy from "alchemy";
-import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObject, Workflow, Worker } from "alchemy/cloudflare";
+import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, Worker } from "alchemy/cloudflare";
 
 // Initialize the app with default state
 const app = await alchemy("cloudflare-demo");
@@ -31,7 +31,7 @@ const mcpKv = await KVNamespace("mcp-kv", {
 
 // Define Durable Object class for real-time chat
 // Note: Durable Objects require remote binding in dev (no local emulation)
-const ChatDurableObject = await DurableObject("ChatDO", {
+const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
   name: "ChatDO",
   className: "ChatRoom",
   scriptPath: "./src/backend/durable-object.ts",
