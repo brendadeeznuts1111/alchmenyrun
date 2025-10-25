@@ -297,6 +297,17 @@ bun run test
 bun vitest ./src/tests/... -t "..."
 ```
 
+### Pre-commit Helper Script
+
+For convenience, you can use the pre-commit helper script:
+
+```sh
+# Run all pre-commit checks automatically
+./scripts/pre-commit.sh
+```
+
+This script runs the exact commands specified above and ensures you're following Alchemy's contributing standards.
+
 ## Deployment
 
 ### Preview Deployments
