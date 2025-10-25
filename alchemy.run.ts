@@ -1,8 +1,13 @@
 import alchemy from "alchemy";
-import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, Worker } from "alchemy/cloudflare";
+import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, Worker, CloudflareStateStore } from "alchemy/cloudflare";
 
-// Initialize the app with default state
-const app = await alchemy("cloudflare-demo");
+// Initialize the app with Cloudflare state store for CI/CD
+const app = await alchemy("cloudflare-demo", {
+  stateStore: new CloudflareStateStore({
+    accountId: process.env.CLOUDFLARE_ACCOUNT_ID || "",
+    namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || "",
+  }),
+});
 
 // Create D1 Database for user and file storage
 const db = await D1Database("db", {
