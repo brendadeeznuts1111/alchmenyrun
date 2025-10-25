@@ -4,12 +4,15 @@
   "description": "Modern Cloudflare Infrastructure with Alchemy",
   "type": "module",
   "scripts": {
-    "dev": "bun run build:css && alchemy dev",
-    "deploy": "bun run build:css && alchemy deploy",
+    "alchemy:dev": "bun --watch ./alchemy.run.ts --dev",
+    "dev": "bun run build:css && bun run alchemy:dev",
+    "deploy": "bun run build:css && bun ./alchemy.run.ts",
+    "deploy:prod": "bun run build:css && bun ./alchemy.run.ts --stage prod",
+    "destroy": "bun ./alchemy.run.ts --destroy",
     "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
-    "destroy": "alchemy destroy",
     "test": "vitest",
     "test:integration": "vitest run --config vitest.config.ts",
+    "test:webhook": "./scripts/test-github-webhook.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },

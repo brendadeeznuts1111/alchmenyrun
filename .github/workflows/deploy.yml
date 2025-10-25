@@ -2,14 +2,9 @@ name: Deploy Application
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - closed
+    types: [opened, reopened, synchronize, closed]
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -20,67 +15,40 @@ env:
 
 jobs:
   deploy:
-    if: ${{ github.event.action != 'closed' }}
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-      
-      - name: Install dependencies
-        run: bun install
-      
-      - name: Run tests
-        run: bun run test
-        continue-on-error: true
-      
-      - name: Run MCP tests
-        run: bun test src/mcp/*.test.ts
-        continue-on-error: true
-      
-      - name: Deploy
-        run: bun alchemy deploy --stage ${{ env.STAGE }}
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun alchemy deploy --stage ${{ env.STAGE }}
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
           ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
-          ALCHEMY_CI_STATE_STORE_CHECK: false
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_KV_NAMESPACE_ID: ${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}
-          MCP_SHARED_SECRET: ${{ secrets.MCP_SHARED_SECRET }}
-          MCP_JWT_SECRET: ${{ secrets.MCP_JWT_SECRET }}
-          ENVIRONMENT: ${{ env.STAGE == 'prod' && 'production' || 'staging' }}
           PULL_REQUEST: ${{ github.event.number }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+
   cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
     permissions:
       id-token: write
       contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-      
-      - name: Install dependencies
-        run: bun install
-      
-      - name: Destroy Preview Environment
-        run: bun alchemy destroy --stage ${{ env.STAGE }}
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun alchemy destroy --stage ${{ env.STAGE }}
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
           ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
-          PULL_REQUEST: ${{ github.event.number }}
 

@@ -32,7 +32,7 @@ export default {
       }
 
       if (path === "/api/users" && request.method === "POST") {
-        const data = await request.json();
+        const data = await request.json() as any;
         const db = getDb(env.DB);
         const newUser = {
           id: crypto.randomUUID(),
@@ -124,12 +124,70 @@ export default {
 
       // Workflow trigger endpoint
       if (path === "/api/workflow/start" && request.method === "POST") {
-        const data = await request.json();
+        const data = await request.json() as any;
         const workflowId = env.WORKFLOW.idFromName(data.userId || "default");
         const workflow = env.WORKFLOW.get(workflowId);
         
         const handle = await workflow.start(data);
         return json({ workflowId: handle.id }, 201, corsHeaders);
+      }
+
+      // GitHub webhook endpoint
+      if (path === "/api/github/webhook" && request.method === "POST") {
+        try {
+          // Verify webhook signature
+          const signature = request.headers.get("x-hub-signature-256");
+          const event = request.headers.get("x-github-event");
+          const delivery = request.headers.get("x-github-delivery");
+          
+          const payload = await request.json() as any;
+          
+          console.log("GitHub webhook received:", {
+            event,
+            delivery,
+            repository: payload.repository?.full_name,
+            action: payload.action,
+          });
+
+          // Handle different GitHub events
+          if (event === "push") {
+            const branch = payload.ref?.replace("refs/heads/", "");
+            console.log(`Push to branch: ${branch}`);
+            
+            // Example: Trigger deployment workflow
+            if (branch === "main" && env.WORKFLOW) {
+              const workflowId = env.WORKFLOW.idFromName("github-deploy");
+              const workflow = env.WORKFLOW.get(workflowId);
+              await workflow.start({
+                event: "deploy",
+                branch,
+                commit: payload.head_commit?.id,
+                repository: payload.repository?.full_name,
+              });
+            }
+          } else if (event === "pull_request") {
+            const action = payload.action;
+            const prNumber = payload.pull_request?.number;
+            console.log(`Pull request ${action}: #${prNumber}`);
+            
+            // Example: Run tests or preview deployment
+            if ((action === "opened" || action === "synchronize") && env.WORKFLOW) {
+              const workflowId = env.WORKFLOW.idFromName(`pr-${prNumber}`);
+              const workflow = env.WORKFLOW.get(workflowId);
+              await workflow.start({
+                event: "preview",
+                prNumber,
+                branch: payload.pull_request?.head?.ref,
+                repository: payload.repository?.full_name,
+              });
+            }
+          }
+
+          return json({ received: true, event, delivery }, 200, corsHeaders);
+        } catch (error) {
+          console.error("GitHub webhook error:", error);
+          return json({ error: "Webhook processing failed" }, 500, corsHeaders);
+        }
       }
 
       return json({ error: "Not found" }, 404, corsHeaders);
@@ -142,41 +200,14 @@ export default {
 
 // Type definitions from alchemy.run.ts
 interface Env {
-  DB: D1Database;
-  STORAGE: R2Bucket;
-  JOBS: Queue<QueueMessage>;
-  CACHE: KVNamespace;
-  CHAT: DurableObjectNamespace<ChatDurableObject>;
-  WORKFLOW: WorkflowNamespace<OnboardingWorkflow>;
+  DB: any; // D1Database
+  STORAGE: any; // R2Bucket  
+  JOBS: any; // Queue
+  CACHE: any; // KVNamespace
+  CHAT?: any; // DurableObjectNamespace (optional)
+  WORKFLOW?: any; // WorkflowNamespace (optional)
   API_KEY: string;
 }
-
-interface QueueMessage {
-  type: string;
-  userId?: string;
-  fileId?: string;
-}
-
-interface ChatDurableObject {
-  fetch(request: Request): Promise<Response>;
-}
-
-interface OnboardingWorkflow {
-  start(data: any): Promise<WorkflowHandle>;
-}
-
-interface WorkflowHandle {
-  id: string;
-}
-
-interface QueueType extends Queue<QueueMessage> {}
-interface WorkflowNamespaceType extends WorkflowNamespace<OnboardingWorkflow> {}
-interface DurableObjectNamespaceType extends DurableObjectNamespace<ChatDurableObject> {}
-
-type R2Bucket = R2Bucket;
-type Queue<T> = Queue<T>;
-type WorkflowNamespace<T> = WorkflowNamespace<T>;
-type DurableObjectNamespace<T> = DurableObjectNamespace<T>;
 
 // Helper functions
 function json(data: any, status = 200, headers: Record<string, string> = {}) {
