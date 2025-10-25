@@ -16,21 +16,25 @@ const db = await D1Database("db", {
 // Create R2 Bucket for file storage
 const storage = await R2Bucket("storage", {
   name: "alchemy-demo-storage",
+  adopt: true,
 });
 
 // Create Queue for async job processing
 const jobs = await Queue("jobs", {
   name: "alchemy-demo-jobs",
+  adopt: true,
 });
 
 // Create KV Namespace for caching
 const cache = await KVNamespace("cache", {
   name: "alchemy-demo-cache",
+  adopt: true,
 });
 
 // Create KV Namespace for MCP server (rate limiting & feature flags)
 const mcpKv = await KVNamespace("mcp-kv", {
   name: "alchemy-demo-mcp-kv",
+  adopt: true,
 });
 
 // Define Durable Object class for real-time chat
