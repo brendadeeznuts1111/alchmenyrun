@@ -52,9 +52,9 @@ const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
 });
 
 // Define Workflow for multi-step orchestration
-// Temporarily disabled for dev mode
 const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
   name: "OnboardingWorkflow",
+  className: "OnboardingWorkflow",
   scriptPath: "./src/backend/workflow.ts",
 });
 
