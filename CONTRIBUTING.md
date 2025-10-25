@@ -4,11 +4,12 @@ Contributions are welcome! This guide will help you get set up to contribute to 
 
 ## Pre-requisites
 1. [Bun](https://bun.sh)
-2. [Cloudflare Account](https://cloudflare.com) with API access
 
 ```sh
 curl -fsSL https://bun.sh/install | bash
 ```
+
+2. [Cloudflare Account](https://cloudflare.com) with API access
 
 ## Install
 We use bun workspaces, so a simple `bun i` installs all the dependencies:
@@ -21,7 +22,6 @@ bun i
 To compile all typescript and build the frontend:
 
 ```sh
-bun run build:css
 bun run build
 ```
 
@@ -41,6 +41,8 @@ Configure the following environment variables for testing:
 ```bash
 # Required for Cloudflare tests
 CLOUDFLARE_ACCOUNT_ID=your_account_id
+CLOUDFLARE_API_TOKEN=your_api_token
+# OR
 CLOUDFLARE_API_KEY=your_api_key
 CLOUDFLARE_EMAIL=your_email
 
@@ -48,6 +50,9 @@ CLOUDFLARE_EMAIL=your_email
 ALCHEMY_PASSWORD=your_encryption_password
 ALCHEMY_STATE_TOKEN=your_state_token
 ```
+
+> [!CAUTION]
+> Each provider requires its own credentials. For this Cloudflare demo, you need to configure the Cloudflare credentials above.
 
 ### Running Tests
 

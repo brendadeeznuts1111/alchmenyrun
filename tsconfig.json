@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "types": ["@cloudflare/workers-types", "bun-types", "vitest/globals"],
+    "types": ["@cloudflare/workers-types", "vitest/globals"],
     "paths": {
       "~/*": ["./src/*"]
     }
