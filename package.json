@@ -10,11 +10,15 @@
     "deploy:prod": "bun run build:css && bun ./alchemy.run.ts --stage prod",
     "destroy": "bun ./alchemy.run.ts --destroy",
     "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
-    "test": "vitest",
-    "test:integration": "vitest run --config vitest.config.ts",
+    "test": "vitest run",
+    "test:integration": "vitest run ./src/tests/integration.test.ts",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "test:webhook": "./scripts/test-github-webhook.sh",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "check": "bun run test && tsc --noEmit",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "alchemy": "^0.76.1",
