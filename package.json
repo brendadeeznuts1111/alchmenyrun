@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run build:css && alchemy dev",
     "deploy": "bun run build:css && alchemy deploy",
-    "build:css": "node_modules/.bin/tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
+    "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
     "destroy": "alchemy destroy",
     "test": "vitest",
     "test:integration": "vitest run --config vitest.config.ts",
@@ -27,7 +27,7 @@
     "autoprefixer": "10.4.21",
     "drizzle-kit": "^0.20.0",
     "postcss": "8.5.6",
-    "tailwindcss": "4.1.16",
+    "tailwindcss": "3",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   }
