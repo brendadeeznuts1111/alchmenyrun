@@ -68,8 +68,8 @@ export const website = await BunSPA("website", {
     STORAGE: storage,
     JOBS: jobs,
     CACHE: cache,
-    CHAT: ChatDurableObject,
-    WORKFLOW: OnboardingWorkflow,
+    // CHAT: ChatDurableObject,  // Temporarily disabled
+    // WORKFLOW: OnboardingWorkflow,  // Temporarily disabled
     // Secrets example
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
