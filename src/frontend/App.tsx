@@ -58,8 +58,20 @@ function App() {
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          Built with <a href="https://alchemy.run" className="text-blue-600 hover:underline">Alchemy</a> and{" "}
-          <a href="https://cloudflare.com" className="text-blue-600 hover:underline">Cloudflare</a>
+          Built with{" "}
+          <a
+            href="https://alchemy.run"
+            className="text-blue-600 hover:underline"
+          >
+            Alchemy
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://cloudflare.com"
+            className="text-blue-600 hover:underline"
+          >
+            Cloudflare
+          </a>
         </div>
       </footer>
     </div>
@@ -67,4 +79,3 @@ function App() {
 }
 
 export default App;
-

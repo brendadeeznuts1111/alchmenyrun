@@ -78,4 +78,3 @@ interface WorkflowStep {
   do(name: string, fn: () => Promise<any>): Promise<any>;
   complete(reason: string, output: any): Promise<void>;
 }
-

@@ -1,5 +1,9 @@
 import { getDb } from "../db";
 import { getBackendUrl } from "alchemy/cloudflare/bun-spa";
+import { ChatRoom } from "./durable-object";
+
+// Re-export ChatRoom to make it available to the worker
+export { ChatRoom };
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -21,7 +25,11 @@ export default {
     try {
       // Health check
       if (path === "/api/health") {
-        return json({ status: "ok", timestamp: new Date().toISOString() }, 200, corsHeaders);
+        return json(
+          { status: "ok", timestamp: new Date().toISOString() },
+          200,
+          corsHeaders,
+        );
       }
 
       // Users endpoints
@@ -32,7 +40,7 @@ export default {
       }
 
       if (path === "/api/users" && request.method === "POST") {
-        const data = await request.json() as any;
+        const data = (await request.json()) as any;
         const db = getDb(env.DB);
         const newUser = {
           id: crypto.randomUUID(),
@@ -42,10 +50,10 @@ export default {
           createdAt: new Date(),
         };
         await db.insert(schema.users).values(newUser);
-        
+
         // Trigger queue job for user creation
         await env.JOBS.send({ type: "user_created", userId: newUser.id });
-        
+
         return json({ user: newUser }, 201, corsHeaders);
       }
 
@@ -53,8 +61,12 @@ export default {
       if (path.startsWith("/api/files/") && request.method === "GET") {
         const fileId = path.split("/")[3];
         const db = getDb(env.DB);
-        const file = await db.select().from(schema.files).where(eq(schema.files.id, fileId)).get();
-        
+        const file = await db
+          .select()
+          .from(schema.files)
+          .where(eq(schema.files.id, fileId))
+          .get();
+
         if (!file) {
           return json({ error: "File not found" }, 404, corsHeaders);
         }
@@ -116,7 +128,10 @@ export default {
       }
 
       // Chat WebSocket endpoint
-      if (path === "/api/chat" && request.headers.get("Upgrade") === "websocket") {
+      if (
+        path === "/api/chat" &&
+        request.headers.get("Upgrade") === "websocket"
+      ) {
         const durableObjectId = env.CHAT.idFromName("main-room");
         const durableObject = env.CHAT.get(durableObjectId);
         return durableObject.fetch(request);
@@ -124,10 +139,10 @@ export default {
 
       // Workflow trigger endpoint
       if (path === "/api/workflow/start" && request.method === "POST") {
-        const data = await request.json() as any;
+        const data = (await request.json()) as any;
         const workflowId = env.WORKFLOW.idFromName(data.userId || "default");
         const workflow = env.WORKFLOW.get(workflowId);
-        
+
         const handle = await workflow.start(data);
         return json({ workflowId: handle.id }, 201, corsHeaders);
       }
@@ -139,9 +154,9 @@ export default {
           const signature = request.headers.get("x-hub-signature-256");
           const event = request.headers.get("x-github-event");
           const delivery = request.headers.get("x-github-delivery");
-          
-          const payload = await request.json() as any;
-          
+
+          const payload = (await request.json()) as any;
+
           console.log("GitHub webhook received:", {
             event,
             delivery,
@@ -153,7 +168,7 @@ export default {
           if (event === "push") {
             const branch = payload.ref?.replace("refs/heads/", "");
             console.log(`Push to branch: ${branch}`);
-            
+
             // Example: Trigger deployment workflow
             if (branch === "main" && env.WORKFLOW) {
               const workflowId = env.WORKFLOW.idFromName("github-deploy");
@@ -169,9 +184,12 @@ export default {
             const action = payload.action;
             const prNumber = payload.pull_request?.number;
             console.log(`Pull request ${action}: #${prNumber}`);
-            
+
             // Example: Run tests or preview deployment
-            if ((action === "opened" || action === "synchronize") && env.WORKFLOW) {
+            if (
+              (action === "opened" || action === "synchronize") &&
+              env.WORKFLOW
+            ) {
               const workflowId = env.WORKFLOW.idFromName(`pr-${prNumber}`);
               const workflow = env.WORKFLOW.get(workflowId);
               await workflow.start({
@@ -193,7 +211,11 @@ export default {
       return json({ error: "Not found" }, 404, corsHeaders);
     } catch (error) {
       console.error("Error:", error);
-      return json({ error: "Internal server error", message: String(error) }, 500, corsHeaders);
+      return json(
+        { error: "Internal server error", message: String(error) },
+        500,
+        corsHeaders,
+      );
     }
   },
 };
@@ -201,7 +223,7 @@ export default {
 // Type definitions from alchemy.run.ts
 interface Env {
   DB: any; // D1Database
-  STORAGE: any; // R2Bucket  
+  STORAGE: any; // R2Bucket
   JOBS: any; // Queue
   CACHE: any; // KVNamespace
   CHAT?: any; // DurableObjectNamespace (optional)
@@ -220,4 +242,3 @@ function json(data: any, status = 200, headers: Record<string, string> = {}) {
 // Import schema for type inference
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-

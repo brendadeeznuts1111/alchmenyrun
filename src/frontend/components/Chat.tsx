@@ -24,7 +24,8 @@ export default function Chat() {
   }, []);
 
   const connect = () => {
-    const wsUrl = apiUrl.replace("http://", "ws://").replace("https://", "wss://");
+    const url = String(apiUrl);
+    const wsUrl = url.replace("http://", "ws://").replace("https://", "wss://");
     const ws = new WebSocket(`${wsUrl}/api/chat`);
 
     ws.onopen = () => {
@@ -60,7 +61,9 @@ export default function Chat() {
   return (
     <div className="bg-white rounded-lg shadow p-6 h-[600px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Real-time Chat (Durable Object)</h2>
+        <h2 className="text-xl font-semibold">
+          Real-time Chat (Durable Object)
+        </h2>
         <div className="flex items-center space-x-2">
           <div
             className={`w-3 h-3 rounded-full ${
@@ -116,4 +119,3 @@ export default function Chat() {
     </div>
   );
 }
-

@@ -2,6 +2,8 @@
  * Durable Object for real-time chat
  * Handles WebSocket connections and shared state
  */
+import { DurableObject } from "cloudflare:workers";
+
 export class ChatRoom extends DurableObject {
   private sessions: Map<WebSocket, Session>;
 
@@ -27,12 +29,15 @@ export class ChatRoom extends DurableObject {
     }
 
     // Handle HTTP request
-    return new Response(JSON.stringify({ 
-      connected: this.sessions.size,
-      room: "main-room"
-    }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        connected: this.sessions.size,
+        room: "main-room",
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   private handleSession(websocket: WebSocket) {
@@ -43,7 +48,7 @@ export class ChatRoom extends DurableObject {
     websocket.addEventListener("message", async (event) => {
       try {
         const data = JSON.parse(event.data as string);
-        
+
         switch (data.type) {
           case "join":
             session.userId = data.userId;
@@ -105,4 +110,3 @@ interface Env {
   JOBS: Queue;
   CACHE: KVNamespace;
 }
-

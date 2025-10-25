@@ -26,11 +26,13 @@ bun run build
 ```
 
 ## Check
-Type-check and lint:
+Type-check and lint (with oxfmt):
 
 ```sh
 bun check
 ```
+
+This will run TypeScript compilation (`bun tsc -b`) and check formatting with oxfmt. If there are TypeScript errors, the check will fail, but the formatting will still be validated.
 
 ## Test
 All tests are in `./src/tests/*` and we use Vitest as our test runner.

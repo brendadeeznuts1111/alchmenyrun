@@ -64,7 +64,9 @@ export default function Users() {
             <input
               type="email"
               value={newUser.email}
-              onChange={(e) => setNewUserExperience({ ...newUser, email: e.target.value })}
+              onChange={(e) =>
+                setNewUserExperience({ ...newUser, email: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               required
             />
@@ -76,7 +78,9 @@ export default function Users() {
             <input
               type="text"
               value={newUser.name}
-              onChange={(e) => setNewUserExperience({ ...newUser, name: e.target.value })}
+              onChange={(e) =>
+                setNewUserExperience({ ...newUser, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               required
             />
@@ -115,4 +119,3 @@ export default function Users() {
     </div>
   );
 }
-

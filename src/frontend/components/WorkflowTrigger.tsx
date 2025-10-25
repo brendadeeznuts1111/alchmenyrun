@@ -36,7 +36,8 @@ export default function WorkflowTrigger() {
           Trigger Cloudflare Workflow
         </h2>
         <p className="text-gray-600 mb-4">
-          Start a multi-step user onboarding workflow that demonstrates Cloudflare Workflows (Oct 2025 feature).
+          Start a multi-step user onboarding workflow that demonstrates
+          Cloudflare Workflows (Oct 2025 feature).
         </p>
         <form onSubmit={triggerWorkflow} className="space-y-4">
           <div>
@@ -46,7 +47,9 @@ export default function WorkflowTrigger() {
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               required
             />
@@ -58,7 +61,9 @@ export default function WorkflowTrigger() {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               required
             />
@@ -95,4 +100,3 @@ export default function WorkflowTrigger() {
     </div>
   );
 }
-

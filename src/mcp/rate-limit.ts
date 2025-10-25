@@ -1,10 +1,10 @@
 /**
  * Rate Limiting Module
- * 
+ *
  * KV-based rate limiting with sliding window algorithm
  */
 
-import type { Env } from './index';
+import type { Env } from "./index";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -25,16 +25,16 @@ interface RateLimitConfig {
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
   production: {
     maxRequests: 100,
-    windowSeconds: 60 // 100 requests per minute
+    windowSeconds: 60, // 100 requests per minute
   },
   staging: {
     maxRequests: 500,
-    windowSeconds: 60 // More lenient for testing
+    windowSeconds: 60, // More lenient for testing
   },
   development: {
     maxRequests: 1000,
-    windowSeconds: 60 // Very lenient for development
-  }
+    windowSeconds: 60, // Very lenient for development
+  },
 };
 
 /**
@@ -43,10 +43,10 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 export async function checkRateLimit(
   request: Request,
   env: Env,
-  clientId?: string
+  clientId?: string,
 ): Promise<RateLimitResult> {
   // Determine rate limit config
-  const environment = env.ENVIRONMENT || 'production';
+  const environment = env.ENVIRONMENT || "production";
   const config = RATE_LIMITS[environment] || RATE_LIMITS.production;
 
   // Generate rate limit key
@@ -72,7 +72,7 @@ export async function checkRateLimit(
         limit: config.maxRequests,
         remaining: 0,
         resetAt,
-        retryAfter: Math.max(1, retryAfter)
+        retryAfter: Math.max(1, retryAfter),
       };
     }
 
@@ -85,17 +85,17 @@ export async function checkRateLimit(
       allowed: true,
       limit: config.maxRequests,
       remaining,
-      resetAt
+      resetAt,
     };
   } catch (error) {
-    console.error('Rate limit check error:', error);
-    
+    console.error("Rate limit check error:", error);
+
     // Fail open - allow request if rate limiting fails
     return {
       allowed: true,
       limit: config.maxRequests,
       remaining: config.maxRequests,
-      resetAt: Math.floor(now / 1000) + config.windowSeconds
+      resetAt: Math.floor(now / 1000) + config.windowSeconds,
     };
   }
 }
@@ -105,31 +105,34 @@ export async function checkRateLimit(
  */
 function getClientIdentifier(request: Request): string {
   // Try to get client IP
-  const cfConnectingIp = request.headers.get('CF-Connecting-IP');
+  const cfConnectingIp = request.headers.get("CF-Connecting-IP");
   if (cfConnectingIp) {
     return `ip:${cfConnectingIp}`;
   }
 
   // Fallback to other headers
-  const xForwardedFor = request.headers.get('X-Forwarded-For');
+  const xForwardedFor = request.headers.get("X-Forwarded-For");
   if (xForwardedFor) {
-    const ips = xForwardedFor.split(',');
+    const ips = xForwardedFor.split(",");
     return `ip:${ips[0].trim()}`;
   }
 
   // Last resort - use a generic identifier
-  return 'anonymous';
+  return "anonymous";
 }
 
 /**
  * Reset rate limit for a client (admin function)
  */
-export async function resetRateLimit(env: Env, clientId: string): Promise<void> {
-  const config = RATE_LIMITS[env.ENVIRONMENT || 'production'] || RATE_LIMITS.production;
+export async function resetRateLimit(
+  env: Env,
+  clientId: string,
+): Promise<void> {
+  const config =
+    RATE_LIMITS[env.ENVIRONMENT || "production"] || RATE_LIMITS.production;
   const now = Date.now();
   const windowStart = Math.floor(now / 1000 / config.windowSeconds);
   const key = `ratelimit:${clientId}:${windowStart}`;
-  
+
   await env.MCP_KV?.delete(key);
 }
-

@@ -4,7 +4,7 @@ import { BRANCH_PREFIX, generateTestId } from "./util";
 
 // Initialize test scope with isolated infrastructure
 const test = alchemy.test(import.meta, {
-  prefix: BRANCH_PREFIX
+  prefix: BRANCH_PREFIX,
 });
 
 describe("API Integration Tests", () => {
@@ -16,7 +16,7 @@ describe("API Integration Tests", () => {
     const response = await fetch(`${website.url}/api/health`);
     expect(response.status).toBe(200);
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     expect(data.status).toBe("ok");
     expect(data.timestamp).toBeDefined();
   });
@@ -26,12 +26,14 @@ describe("API Integration Tests", () => {
 
     // Test CORS preflight
     const response = await fetch(`${website.url}/api/health`, {
-      method: "OPTIONS"
+      method: "OPTIONS",
     });
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
-    expect(response.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+    expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+      "GET",
+    );
   });
 });
 
@@ -46,12 +48,12 @@ describe("Database Operations", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: testEmail,
-        name: "Test User"
-      })
+        name: "Test User",
+      }),
     });
 
     expect(createResponse.status).toBe(201);
-    const createdUser = await createResponse.json() as any;
+    const createdUser = (await createResponse.json()) as any;
 
     expect(createdUser.user).toBeDefined();
     expect(createdUser.user.email).toBe(testEmail);
@@ -61,12 +63,14 @@ describe("Database Operations", () => {
     const getResponse = await fetch(`${website.url}/api/users`);
     expect(getResponse.status).toBe(200);
 
-    const data = await getResponse.json() as any;
+    const data = (await getResponse.json()) as any;
     expect(Array.isArray(data.users)).toBe(true);
     expect(data.users.length).toBeGreaterThan(0);
-    
+
     // Verify our test user is in the list
-    const testUserInList = data.users.find((user: any) => user.email === testEmail);
+    const testUserInList = data.users.find(
+      (user: any) => user.email === testEmail,
+    );
     expect(testUserInList).toBeDefined();
   });
 
@@ -79,8 +83,8 @@ describe("Database Operations", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: "invalid-email",
-        name: "Test User"
-      })
+        name: "Test User",
+      }),
     });
 
     // Should return 400 for validation error
@@ -100,17 +104,19 @@ describe("File Operations", () => {
 
     const uploadResponse = await fetch(`${website.url}/api/upload`, {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
     if (uploadResponse.status === 201) {
-      const uploadedFile = await uploadResponse.json() as any;
+      const uploadedFile = (await uploadResponse.json()) as any;
       expect(uploadedFile.file).toBeDefined();
       expect(uploadedFile.file.id).toBeDefined();
       expect(uploadedFile.file.size).toBeGreaterThan(0);
 
       // Test file retrieval
-      const retrieveResponse = await fetch(`${website.url}/api/files/${uploadedFile.file.id}`);
+      const retrieveResponse = await fetch(
+        `${website.url}/api/files/${uploadedFile.file.id}`,
+      );
       if (retrieveResponse.status === 200) {
         const retrievedContent = await retrieveResponse.text();
         expect(retrievedContent).toBe(testContent);
@@ -126,22 +132,22 @@ describe("Cache Operations", () => {
   test("should set and get KV cache values", async (scope: any) => {
     const { website } = await scope.deploy();
 
-    const testKey = generateTestId('cache');
+    const testKey = generateTestId("cache");
     const testValue = { data: "test-value", timestamp: Date.now() };
 
     // Test KV cache set operation
     const setResponse = await fetch(`${website.url}/api/cache/${testKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(testValue)
+      body: JSON.stringify(testValue),
     });
 
     if (setResponse.status === 201) {
       // Test KV cache get operation
       const getResponse = await fetch(`${website.url}/api/cache/${testKey}`);
       expect(getResponse.status).toBe(200);
-      
-      const data = await getResponse.json() as any;
+
+      const data = (await getResponse.json()) as any;
       expect(data.key).toBe(testKey);
       expect(data.found).toBe(true);
       expect(JSON.parse(data.value)).toMatchObject(testValue);
@@ -158,10 +164,10 @@ describe("Durable Object (Chat)", () => {
 
     // Test WebSocket upgrade request
     const response = await fetch(`${website.url}/api/chat`, {
-      headers: { 
-        "Upgrade": "websocket",
-        "Connection": "Upgrade"
-      }
+      headers: {
+        Upgrade: "websocket",
+        Connection: "Upgrade",
+      },
     });
 
     // When Chat is properly configured, should return 101 (Switching Protocols)
@@ -175,24 +181,24 @@ describe("Workflow Operations", () => {
     const { website } = await scope.deploy();
 
     const workflowData = {
-      userId: generateTestId('workflow'),
+      userId: generateTestId("workflow"),
       email: "test@example.com",
-      name: "Test User"
+      name: "Test User",
     };
 
     // Test workflow trigger
     const response = await fetch(`${website.url}/api/workflow/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(workflowData)
+      body: JSON.stringify(workflowData),
     });
 
     // When Workflow is enabled, should return 201 with workflowId
     // When disabled, returns 404
     expect([404, 201]).toContain(response.status);
-    
+
     if (response.status === 201) {
-      const data = await response.json() as any;
+      const data = (await response.json()) as any;
       expect(data.workflowId).toBeDefined();
     }
   });
@@ -204,8 +210,8 @@ describe("Error Handling", () => {
 
     const response = await fetch(`${website.url}/api/unknown-endpoint`);
     expect(response.status).toBe(404);
-    
-    const data = await response.json() as any;
+
+    const data = (await response.json()) as any;
     expect(data.error).toBe("Not found");
   });
 
@@ -215,7 +221,7 @@ describe("Error Handling", () => {
     const response = await fetch(`${website.url}/api/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: "invalid-json{"
+      body: "invalid-json{",
     });
 
     expect([400, 422]).toContain(response.status);

@@ -1,12 +1,12 @@
 /**
  * Alchemy MCP Server
- * 
+ *
  * Exposes Alchemy infrastructure operations as Model Context Protocol tools.
  * Can be consumed by Claude, Cursor, or any MCP-compatible client.
- * 
+ *
  * Usage:
  *   bun run server.ts
- * 
+ *
  * Then configure your MCP client to point at:
  *   http://localhost:3000/mcp (for HTTP)
  *   http://localhost:3000/sse (for SSE)
@@ -57,4 +57,3 @@ Example Claude Desktop config (~/.config/claude/config.json):
   }
 }
 `);
-

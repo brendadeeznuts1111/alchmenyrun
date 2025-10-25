@@ -1,10 +1,10 @@
 /**
  * Authentication Module
- * 
+ *
  * Supports both JWT tokens and shared secrets for MCP authentication
  */
 
-import type { Env } from './index';
+import type { Env } from "./index";
 
 export interface AuthResult {
   success: boolean;
@@ -16,9 +16,12 @@ export interface AuthResult {
 /**
  * Authenticate an incoming request using JWT or shared secret
  */
-export async function authenticateRequest(request: Request, env: Env): Promise<AuthResult> {
-  const authHeader = request.headers.get('Authorization');
-  const secretHeader = request.headers.get('X-MCP-Secret');
+export async function authenticateRequest(
+  request: Request,
+  env: Env,
+): Promise<AuthResult> {
+  const authHeader = request.headers.get("Authorization");
+  const secretHeader = request.headers.get("X-MCP-Secret");
 
   // Try shared secret first (simpler auth for development)
   if (secretHeader) {
@@ -26,14 +29,14 @@ export async function authenticateRequest(request: Request, env: Env): Promise<A
   }
 
   // Try JWT bearer token
-  if (authHeader?.startsWith('Bearer ')) {
+  if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     return await authenticateWithJWT(token, env);
   }
 
   return {
     success: false,
-    error: 'No authentication credentials provided'
+    error: "No authentication credentials provided",
   };
 }
 
@@ -44,83 +47,88 @@ function authenticateWithSharedSecret(secret: string, env: Env): AuthResult {
   if (!env.MCP_SHARED_SECRET) {
     return {
       success: false,
-      error: 'Shared secret authentication not configured'
+      error: "Shared secret authentication not configured",
     };
   }
 
   if (secret !== env.MCP_SHARED_SECRET) {
     return {
       success: false,
-      error: 'Invalid shared secret'
+      error: "Invalid shared secret",
     };
   }
 
   return {
     success: true,
-    clientId: 'shared-secret-client',
+    clientId: "shared-secret-client",
     metadata: {
-      authMethod: 'shared-secret'
-    }
+      authMethod: "shared-secret",
+    },
   };
 }
 
 /**
  * Authenticate using JWT token
  */
-async function authenticateWithJWT(token: string, env: Env): Promise<AuthResult> {
+async function authenticateWithJWT(
+  token: string,
+  env: Env,
+): Promise<AuthResult> {
   if (!env.MCP_JWT_SECRET) {
     return {
       success: false,
-      error: 'JWT authentication not configured'
+      error: "JWT authentication not configured",
     };
   }
 
   try {
     // Parse JWT (basic implementation - in production use a proper JWT library)
-    const parts = token.split('.');
+    const parts = token.split(".");
     if (parts.length !== 3) {
       return {
         success: false,
-        error: 'Invalid JWT format'
+        error: "Invalid JWT format",
       };
     }
 
     const [headerB64, payloadB64, signatureB64] = parts;
-    
+
     // Verify signature
     const dataToVerify = `${headerB64}.${payloadB64}`;
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       encoder.encode(env.MCP_JWT_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
+      { name: "HMAC", hash: "SHA-256" },
       false,
-      ['verify']
+      ["verify"],
     );
 
     const signature = base64UrlDecode(signatureB64);
     const isValid = await crypto.subtle.verify(
-      'HMAC',
+      "HMAC",
       key,
       signature,
-      encoder.encode(dataToVerify)
+      encoder.encode(dataToVerify),
     );
 
     if (!isValid) {
       return {
         success: false,
-        error: 'Invalid JWT signature'
+        error: "Invalid JWT signature",
       };
     }
 
     // Decode payload
-    const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+    const payload = JSON.parse(
+      atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
+    );
 
     // Check expiration
     if (payload.exp && payload.exp < Date.now() / 1000) {
       return {
         success: false,
-        error: 'JWT token expired'
+        error: "JWT token expired",
       };
     }
 
@@ -128,22 +136,24 @@ async function authenticateWithJWT(token: string, env: Env): Promise<AuthResult>
     if (payload.nbf && payload.nbf > Date.now() / 1000) {
       return {
         success: false,
-        error: 'JWT token not yet valid'
+        error: "JWT token not yet valid",
       };
     }
 
     return {
       success: true,
-      clientId: payload.sub || payload.client_id || 'jwt-client',
+      clientId: payload.sub || payload.client_id || "jwt-client",
       metadata: {
-        authMethod: 'jwt',
-        claims: payload
-      }
+        authMethod: "jwt",
+        claims: payload,
+      },
     };
   } catch (error) {
     return {
       success: false,
-      error: `JWT authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `JWT authentication failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     };
   }
 }
@@ -152,8 +162,8 @@ async function authenticateWithJWT(token: string, env: Env): Promise<AuthResult>
  * Decode base64url string
  */
 function base64UrlDecode(str: string): Uint8Array {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const binary = atob(base64 + padding);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -165,17 +175,21 @@ function base64UrlDecode(str: string): Uint8Array {
 /**
  * Generate a JWT token (for testing/development)
  */
-export async function generateJWT(payload: Record<string, unknown>, secret: string, expiresIn: number = 3600): Promise<string> {
+export async function generateJWT(
+  payload: Record<string, unknown>,
+  secret: string,
+  expiresIn: number = 3600,
+): Promise<string> {
   const header = {
-    alg: 'HS256',
-    typ: 'JWT'
+    alg: "HS256",
+    typ: "JWT",
   };
 
   const now = Math.floor(Date.now() / 1000);
   const claims = {
     ...payload,
     iat: now,
-    exp: now + expiresIn
+    exp: now + expiresIn,
   };
 
   const headerB64 = base64UrlEncode(JSON.stringify(header));
@@ -184,17 +198,17 @@ export async function generateJWT(payload: Record<string, unknown>, secret: stri
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign']
+    ["sign"],
   );
 
   const signature = await crypto.subtle.sign(
-    'HMAC',
+    "HMAC",
     key,
-    encoder.encode(dataToSign)
+    encoder.encode(dataToSign),
   );
 
   const signatureB64 = base64UrlEncode(signature);
@@ -205,18 +219,15 @@ export async function generateJWT(payload: Record<string, unknown>, secret: stri
  * Encode to base64url
  */
 function base64UrlEncode(data: string | ArrayBuffer): string {
-  const bytes = typeof data === 'string' 
-    ? new TextEncoder().encode(data)
-    : new Uint8Array(data);
-  
-  let binary = '';
+  const bytes =
+    typeof data === "string"
+      ? new TextEncoder().encode(data)
+      : new Uint8Array(data);
+
+  let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-}
 
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}

@@ -72,7 +72,9 @@ export default function FileUpload() {
 
       {uploadedFile && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="font-semibold text-green-800 mb-2">Upload Successful!</h3>
+          <h3 className="font-semibold text-green-800 mb-2">
+            Upload Successful!
+          </h3>
           <div className="text-sm text-green-700 space-y-1">
             <div>File ID: {uploadedFile.id}</div>
             <div>Key: {uploadedFile.key}</div>
@@ -93,4 +95,3 @@ export default function FileUpload() {
     </div>
   );
 }
-

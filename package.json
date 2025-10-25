@@ -11,15 +11,16 @@
     "destroy": "bun ./alchemy.run.ts --destroy",
     "build": "bun run build:css",
     "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
-    "check": "tsc --noEmit && bun test",
+    "check": "bun tsc -b && bun run format:check",
+    "format": "oxfmt '.' '!./node_modules/' '!./dist/'",
+    "format:check": "bun run format -- --check",
     "test": "vitest run",
     "test:integration": "vitest run ./src/tests/integration.test.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:webhook": "./scripts/test-github-webhook.sh",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "format": "prettier --write ."
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "alchemy": "^0.76.1",
@@ -35,6 +36,7 @@
     "autoprefixer": "10.4.21",
     "drizzle-kit": "^0.20.0",
     "miniflare": "4.20251011.1",
+    "oxfmt": "^0.5.0",
     "postcss": "8.5.6",
     "tailwindcss": "3",
     "typescript": "^5.3.0",
