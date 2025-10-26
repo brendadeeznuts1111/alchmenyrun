@@ -96,6 +96,7 @@ await alchemy.run("compute", async () => {
   
   // Define Workflow for user onboarding
   const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
+    className: "OnboardingWorkflow",
     scriptName: "website",
   });
   
