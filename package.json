@@ -6,6 +6,7 @@
   "scripts": {
     "alchemy:dev": "bun --watch ./alchemy.run.ts --dev",
     "dev": "bun run build:css && bun run alchemy:dev",
+    "dev:clean": "pkill -f workerd || true && bun run dev",
     "deploy": "bun run build:css && bun ./alchemy.run.ts",
     "deploy:prod": "bun run build:css && bun ./alchemy.run.ts --stage prod",
     "deploy:read": "PHASE=read bun ./alchemy.run.ts",
