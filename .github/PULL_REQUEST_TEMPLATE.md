@@ -3,110 +3,89 @@
 
 ---
 
-## 🏷️ Classification
+## 🏷️ Classification & Labels
 
-### **Type of Change**
-- [ ] 🐛 **Bug fix** - Resolves an issue
-- [ ] ✨ **New feature** - Adds functionality
-- [ ] 📚 **Documentation** - Improves documentation
-- [ ] 🔧 **Infrastructure/tooling** - CI/CD, build, deployment
-- [ ] ♻️ **Refactor** - Code improvement without functional changes
-- [ ] 🚀 **Performance** - Improves performance
-- [ ] 🔒 **Security** - Security improvements
+### Department Classification
+- [ ] `dept/leadership` 👔 - Leadership team decisions (Brenda's involvement)
+- [ ] `dept/infrastructure` 🏗️ - Infrastructure and deployment (Infrastructure Team ownership)
+- [ ] `dept/providers` 🔌 - Resource provider implementations (Resource Provider Team ownership)
+- [ ] `dept/quality` 🧪 - Testing and quality assurance (Quality & Testing Team ownership)
+- [ ] `dept/documentation` 📚 - Documentation and guides (Documentation Team ownership)
+- [ ] `dept/cross-functional` 🤝 - Initiatives requiring multiple teams
 
-### **Department Assignment**
-- [ ] 🏗️ **Infrastructure** - CI/CD, deployment, core framework
-- [ ] 🔌 **Providers** - Resource provider implementations
-- [ ] 🧪 **Quality** - Testing, validation, quality assurance
-- [ ] 📚 **Documentation** - Guides, examples, API docs
-- [ ] 👔 **Leadership** - Architecture, strategic decisions
+### Change Level (Impact Assessment)
+- [ ] `level/strategic` 🎯 - Strategic decisions (Requires Brenda's final-approver review)
+  - *Architecture decisions, major breaking changes, new core frameworks*
+- [ ] `level/tactical` ⚡ - Tactical implementations (Department Lead/Reviewer approval)
+  - *New resource implementations, significant infrastructure improvements, major refactors*
+- [ ] `level/operational` 🔨 - Operational tasks (Team member/Reviewer approval)
+  - *Bug fixes, documentation updates, test improvements, minor enhancements*
 
-### **Priority & Impact**
-- **Priority**: [ ] High [ ] Medium [ ] Low
-- **Impact**: [ ] Breaking [ ] Feature [ ] Enhancement [ ] Fix
-- **Risk Level**: [ ] High [ ] Medium [ ] Low
-- **Estimated Review Time**: [ ] < 1hr [ ] 1-2hrs [ ] 2-4hrs [ ] > 4hrs
+### Change Type
+- [ ] `type/bug` 🐞 - Report a defect or issue
+- [ ] `type/feature` ✨ - Implement a new capability
+- [ ] `type/enhancement` 🚀 - Improve existing functionality
+- [ ] `type/chore` 🧹 - Routine maintenance, build updates, etc.
+- [ ] `type/refactor` ♻️ - Code restructuring without changing behavior
+- [ ] `type/docs` 📖 - Documentation additions or changes
+- [ ] `type/test` ✅ - Adding or updating tests
+- [ ] `type/security` 🔒 - Security vulnerability or improvement
 
----
+### Special Labels
+- [ ] `role/mentoring` 🌱 - Indicates this PR is for mentee growth/learning
+- [ ] `status/blocked` 🛑 - Cannot proceed due to external dependency
 
-## 📋 Implementation Details
+## 📋 Review Requirements
 
-### **Components Affected**
-<!-- List specific components, packages, or areas -->
-- 
+### Required Approvers (based on classification)
+- **Strategic Changes**: 1 `dept/X` `role/reviewer` + `dept/X` `role/lead` + `role/final-approver` (@brendadeeznuts1111)
+- **Tactical Changes**: 1 `dept/X` `role/reviewer` + `dept/X` `role/lead` (No Brenda review required)
+- **Operational Changes**: At least 1 `dept/X` `role/reviewer` approval
+- **Cross-functional**: At least one `role/reviewer` from each relevant department
 
-### **Changes Made**
-<!-- Detailed list of changes -->
-- 
-- 
-- 
+### Review Workflow
+1. **Submission**: PR created with appropriate labels above
+2. **Initial Review**: Automated CODEOWNERS assignment requests reviews
+3. **Department Review**: Relevant team members review and approve
+4. **Lead Review**: Department lead reviews tactical/strategic changes
+5. **Final Approval**: Brenda reviews strategic changes only
+6. **Merge**: PR merged after all required approvals
 
-### **Technical Approach**
-<!-- How the changes were implemented -->
-<!-- 
-Example:
-- Used Resource pattern for type safety
-- Added exponential backoff for resilience
-- Implemented conditional deletion for data resources
--->
+## 📝 Description
 
----
+### What does this PR do?
+<!-- Provide a clear and concise description of the changes -->
 
-## 🧪 Testing & Validation
+### Why is this change needed?
+<!-- Explain the problem this change solves or the benefit it provides -->
 
-### **Test Coverage**
+### How does this change work?
+<!-- Brief technical explanation of the implementation -->
+
+### Which teams are affected?
+<!-- List all departments that need to be aware of this change -->
+
+## 🧪 Testing
+
+### Test Strategy
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
-- [ ] End-to-end tests performed
+- [ ] End-to-end tests added/updated
 - [ ] Manual testing completed
+- [ ] Performance testing completed (if applicable)
 
-### **Test Results**
-<!-- Describe how this was tested -->
-<!-- 
-Example:
-- Ran `bun test packages/@alch/queue/src` - ✅ 18 tests passing
-- Tested resource creation/destruction cycle
-- Verified type guard functionality
-- Validated CI/CD pipeline in preview environment
--->
+### Test Results
+<!-- Describe test results and any known issues -->
 
-### **Performance Impact**
-- [ ] No performance impact
-- [ ] Performance improved
-- [ ] Performance degraded (explain)
-
----
-
-## ✅ Quality Checklist
-
-### **Code Quality**
+### Definition of Done Checklist
 - [ ] Code follows project style guidelines
-- [ ] TypeScript types are properly defined
-- [ ] Error handling is comprehensive
-- [ ] Code is self-documenting
-- [ ] No console.log statements left in production code
-
-### **Documentation**
-- [ ] API documentation updated
-- [ ] Examples provided if applicable
-- [ ] README files updated
-- [ ] Comments added for complex logic
-
-### **Security & Best Practices**
-- [ ] No hardcoded secrets or credentials
-- [ ] Dependencies are secure and up-to-date
-- [ ] Input validation implemented
-- [ ] Proper error handling without exposing sensitive info
-
-### **CI/CD & Deployment**
-- [ ] CI pipeline passes
-- [ ] Build process successful
-- [ ] Deployment tested in staging
-- [ ] Rollback plan documented (if applicable)
-
----
-
-## 👥 Review Process
+- [ ] Self-review completed
+- [ ] Documentation updated (if applicable)
+- [ ] Tests written and passing
+- [ ] CI/CD pipeline passing
+- [ ] Security considerations addressed
+- [ ] Performance impact assessed
+- [ ] Breaking changes documented (if any)
 
 ### **Required Reviewers**
 <!-- Based on department assignment -->

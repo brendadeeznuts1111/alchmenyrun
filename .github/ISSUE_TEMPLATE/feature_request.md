@@ -38,224 +38,201 @@ Create a comprehensive set of advanced patterns that all resource providers shou
 <!-- Who will benefit from this feature? -->
 - [ ] 🔌 **Provider Developers** - People implementing new cloud providers
 - [ ] 👥 **End Users** - People using Alchemy for infrastructure
-- [ ] 🧪 **Contributors** - Community members contributing to the project
-- [ ] 👔 **Team Members** - Internal development team
-
-### **User Stories**
-<!-- As a [user type], I want [feature] so that [benefit] -->
-- As a **provider developer**, I want **consistent patterns** so that **I can implement providers quickly and correctly**
-- As an **end user**, I want **predictable behavior** so that **I can rely on consistent resource management**
-- As a **contributor**, I want **clear guidelines** so that **I can contribute effectively**
-
----
-
-## 📋 Requirements & Specifications
 
 ### **Functional Requirements**
-<!-- What the feature must do -->
-- [ ] 
-- [ ] 
-- [ ] 
+- [ ] Requirement 1: [Description]
+- [ ] Requirement 2: [Description]
+- [ ] Requirement 3: [Description]
 
-### **Technical Requirements**
-<!-- Technical specifications and constraints -->
-- [ ] 
-- [ ] 
-- [ ] 
-
-### **Performance Requirements**
-<!-- Performance expectations -->
-- [ ] No performance degradation
-- [ ] Improved performance in specific scenarios
-- [ ] Memory usage constraints
-- [ ] Latency requirements
-
-### **Compatibility Requirements**
-<!-- Backward compatibility considerations -->
-- [ ] Must maintain backward compatibility
-- [ ] Breaking changes acceptable with migration path
-- [ ] New feature only (no compatibility impact)
+### **Non-Functional Requirements**
+- [ ] Performance: [Performance requirements]
+- [ ] Security: [Security requirements]
+- [ ] Scalability: [Scalability requirements]
+- [ ] Usability: [Usability requirements]
 
 ---
 
 ## 🎨 Design Considerations
 
-### **Proposed API/Interface**
-<!-- How would users interact with this feature? -->
-<!-- 
-Example:
-```typescript
-// New resource provider pattern
-export const MyResource = Resource(
-  'provider::my-resource',
-  async function (this: Context<MyResource>, id: string, props: MyResourceProps): Promise<MyResource> {
-    // Implementation following advanced patterns
-  }
-);
+### **Proposed Solution**
+<!-- Describe your proposed solution and how it would work -->
 
-// Required type guard
-export function isMyResource(resource: any): resource is MyResource {
-  return resource?.type === 'my-resource';
-}
-```
--->
+### **Alternative Solutions**
+<!-- Describe any alternative solutions you considered -->
 
-### **Configuration Options**
-<!-- What configuration would be needed? -->
-- 
-- 
-- 
+### **Technical Approach**
+<!-- Explain the technical implementation approach -->
 
-### **Error Handling**
-<!-- How should errors be handled? -->
-- 
-- 
-- 
+### **API Design (if applicable)**
+<!-- Describe the API interface, method signatures, etc. -->
+
+### **User Interface (if applicable)**
+<!-- Describe the user interface changes -->
 
 ---
 
-## 🏗️ Implementation Plan
+## 🔧 Implementation Plan
 
-### **Proposed Implementation Approach**
-<!-- High-level implementation strategy -->
-1. 
-2. 
-3. 
-4. 
+### **Development Phases**
+- [ ] **Phase 1**: [Description of first phase]
+- [ ] **Phase 2**: [Description of second phase]
+- [ ] **Phase 3**: [Description of third phase]
 
-### **Components to Modify/Create**
-<!-- List of files, packages, or components -->
-- [ ] **New Files**: 
-- [ ] **Modified Files**: 
-- [ ] **New Packages**: 
-- [ ] **Updated Documentation**: 
+### **Technical Dependencies**
+<!-- List any technical dependencies or prerequisites -->
 
-### **Dependencies**
-<!-- Any new dependencies or requirements -->
-- 
-- 
-- 
+### **Components to be Modified**
+- [ ] Core framework
+- [ ] CLI tools
+- [ ] Resource providers
+- [ ] Documentation
+- [ ] Examples
+- [ ] CI/CD pipeline
+- [ ] Testing framework
+
+### **Estimated Effort**
+- [ ] Small (1-3 days)
+- [ ] Medium (1-2 weeks)
+- [ ] Large (2-4 weeks)
+- [ ] X-Large (1+ months)
 
 ---
 
 ## 🧪 Testing Strategy
 
-### **Test Coverage Required**
-- [ ] Unit tests for core functionality
-- [ ] Integration tests with other components
-- [ ] End-to-end tests for complete workflows
-- [ ] Performance tests if applicable
-- [ ] Security tests if handling sensitive data
+### **Test Requirements**
+- [ ] Unit tests for new functionality
+- [ ] Integration tests for component interactions
+- [ ] End-to-end tests for user workflows
+- [ ] Performance tests for critical paths
+- [ ] Security tests for sensitive operations
 
 ### **Test Scenarios**
-<!-- Specific test cases to consider -->
-1. 
-2. 
-3. 
-4. 
+<!-- Describe key test scenarios that need to be covered -->
+
+### **Acceptance Criteria**
+- [ ] All functional requirements implemented
+- [ ] All non-functional requirements met
+- [ ] Comprehensive test coverage
+- [ ] Documentation updated
+- [ ] Examples provided
+- [ ] Performance benchmarks met
 
 ---
 
 ## 📊 Impact Assessment
 
 ### **Benefits**
-<!-- What benefits will this feature provide? -->
-- ✅ 
-- ✅ 
-- ✅ 
+- **User Experience**: [How does this improve user experience?]
+- **Developer Experience**: [How does this improve developer experience?]
+- **Performance**: [How does this improve performance?]
+- **Maintainability**: [How does this improve maintainability?]
 
-### **Risks & Mitigations**
-<!-- Potential risks and how to address them -->
-- ⚠️ **Risk**: 
-  - **Mitigation**: 
-- ⚠️ **Risk**: 
-  - **Mitigation**: 
+### **Risks & Mitigation**
+- **Risk 1**: [Description] - **Mitigation**: [How to address]
+- **Risk 2**: [Description] - **Mitigation**: [How to address]
+- **Risk 3**: [Description] - **Mitigation**: [How to address]
 
-### **Effort Estimation**
-- **Design**: [ ] < 1 day [ ] 1-2 days [ ] 3-5 days [ ] > 1 week
-- **Implementation**: [ ] < 1 week [ ] 1-2 weeks [ ] 2-4 weeks [ ] > 1 month
-- **Testing**: [ ] < 1 day [ ] 1-2 days [ ] 3-5 days [ ] > 1 week
-- **Documentation**: [ ] < 1 day [ ] 1-2 days [ ] 3-5 days [ ] > 1 week
+### **Breaking Changes**
+- [ ] No breaking changes
+- [ ] Minor breaking changes (backward compatible)
+- [ ] Major breaking changes (requires migration)
 
 ---
 
 ## 🔗 Related Context
 
-### **Related Issues/PRs**
-<!-- Link to related work -->
-- 
-- 
+### **Related Issues**
+<!-- Link to any related issues using #number format -->
+- Related to #
+- Depends on #
+- Blocks #
 
-### **Alternatives Considered**
-<!-- Other approaches that were considered -->
-- 
-- 
+### **Existing Documentation**
+<!-- Link to relevant documentation sections -->
 
-### **Prior Art**
-<!-- Examples from other projects or similar implementations -->
-- 
-- 
+### **Similar Features**
+<!-- Reference similar features in other projects or tools -->
 
----
-
-## 👥 Assignment & Planning
-
-### **Suggested Assignee**
-<!-- Based on expertise and availability -->
-- [ ] @brendadeeznuts1111 (Infrastructure/Architecture)
-- [ ] Department lead for relevant component
-- [ ] Team member with relevant expertise
-
-### **Priority Recommendation**
-- [ ] 🔴 **High** - Critical for project success
-- [ ] 🟡 **Medium** - Important improvement
-- [ ] 🟢 **Low** - Nice to have
-
-### **Target Release**
-<!-- When should this be implemented? -->
-- [ ] Current release cycle
-- [ ] Next release cycle
-- [ ] Future roadmap item
-- [ ] TBD based on prioritization
+### **Research & References**
+<!-- Link to any research, articles, or references -->
 
 ---
 
-## ✅ Acceptance Criteria
+## 👥 Assignment & Collaboration
 
-### **Definition of Done**
-- [ ] All requirements implemented
-- [ ] Comprehensive test coverage
-- [ ] Documentation complete and updated
-- [ ] Code review approved
-- [ ] CI/CD pipeline passing
-- [ ] Performance benchmarks met
-- [ ] Security review completed (if applicable)
+### **Suggested Team Assignment**
+<!-- Based on the department classification above -->
+- [ ] Infrastructure Team (@alice.smith)
+- [ ] Resource Provider Team (@charlie.brown)
+- [ ] Quality & Testing Team (@diana.prince)
+- [ ] Documentation Team (@frank.taylor)
+- [ ] Leadership (@brendadeeznuts1111)
 
-### **Success Metrics**
-<!-- How will we measure success? -->
-- [ ] Adoption rate among providers
-- [ ] Reduction in implementation time
-- [ ] User satisfaction scores
-- [ ] Bug reduction in related areas
-- [ ] Performance improvements
+### **Cross-functional Collaboration**
+<!-- List teams that need to collaborate on this feature -->
+
+### **Subject Matter Experts**
+<!-- @mention any subject matter experts who should be consulted -->
 
 ---
 
-## 💬 Additional Notes
+## 📚 Success Metrics
 
-<!-- Any additional context, questions, or concerns -->
-<!-- 
-Example:
-- This feature would establish patterns for all future providers
-- Consider creating a generator tool for new providers
-- May require updates to contributor guidelines
-- Should include comprehensive examples and tutorials
--->
+### **Key Performance Indicators**
+- [ ] Adoption rate: [Target metric]
+- [ ] User satisfaction: [Target metric]
+- [ ] Performance improvement: [Target metric]
+- [ ] Bug reduction: [Target metric]
+
+### **Measurement Plan**
+<!-- How will you measure the success of this feature? -->
+
+### **Success Criteria**
+- [ ] Feature is implemented and tested
+- [ ] Documentation is complete and accurate
+- [ ] Examples are provided and working
+- [ ] User feedback is positive
+- [ ] Performance targets are met
+- [ ] Adoption goals are achieved
 
 ---
 
-**🏷️ Labels**: enhancement,feature-request,department-infrastructure  
-**👥 Assignees**: @brendadeeznuts1111  
-**📊 Size**: [ ] XS [ ] S [ ] M [ ] L [ ] XL  
-**🎯 Priority**: Medium/High  
-**📅 Target**: Next Release Cycle
+## 🚀 Deployment & Release
+
+### **Release Strategy**
+- [ ] Feature flag for gradual rollout
+- [ ] Beta release for early feedback
+- [ ] Standard release process
+- [ ] Phased release across environments
+
+### **Post-Launch Monitoring**
+<!-- What metrics will be monitored after release? -->
+
+### **User Communication**
+<!-- How will users be informed about this feature? -->
+
+---
+
+## 💬 Additional Information
+
+### **Open Questions**
+<!-- List any open questions or concerns -->
+
+### **Mentorship Opportunity**
+<!-- Is this a good learning opportunity for mentees? -->
+
+### **Community Impact**
+<!-- How will this feature impact the Alchemist community? -->
+
+---
+
+**Thank you for contributing to Project Alchemist's evolution! 🚀**
+
+### Next Steps
+1. **Triage**: Feature request will be reviewed and classified
+2. **Assessment**: Impact and feasibility will be evaluated
+3. **Planning**: Feature will be prioritized and planned
+4. **Design**: Technical design will be created and reviewed
+5. **Implementation**: Feature will be developed and tested
+6. **Release**: Feature will be deployed and communicated to users
