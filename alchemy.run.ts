@@ -152,13 +152,15 @@ export const website = await Worker("website", {
   // domains: [
   //   process.env.CUSTOM_DOMAIN || "your-app.com"
   // ],
-  // Routes for production deployment
-  routes: [
-    // API routes
-    { pattern: "/api/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
-    // Catch-all for SPA routing
-    { pattern: "/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
-  ],
+  // Routes for production deployment (only when zone ID is configured)
+  ...(process.env.CLOUDFLARE_ZONE_ID ? {
+    routes: [
+      // API routes
+      { pattern: "/api/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+      // Catch-all for SPA routing
+      { pattern: "/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+    ],
+  } : {}),
 });
 
 // ========================================
