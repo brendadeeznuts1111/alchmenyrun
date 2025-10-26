@@ -160,9 +160,10 @@ echo "💬 Creating Telegram forum topic with emoji naming..."
 EMOJI=$(tgk stream emoji "$TYPE" 2>/dev/null || echo "🏷️")
 SHORT=$(tgk stream short "$TYPE" 2>/dev/null || echo "misc")
 
-# Create emoji-based topic name
+# Create Telegram best-practice topic name (no slashes, kebab-case, owner at end)
 OWNER_CLEAN="${OWNER#@}"  # Remove @ if present
-TOPIC_NAME="$EMOJI $SHORT /$STREAM – $OWNER_CLEAN"
+STREAM_KEBAB=$(echo "$STREAM" | tr ' ' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]')
+TOPIC_NAME="$EMOJI $SHORT-$STREAM_KEBAB–$OWNER_CLEAN"
 
 echo "   📝 Topic name: $TOPIC_NAME"
 

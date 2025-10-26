@@ -1230,42 +1230,45 @@ and watch the entire RFC factory appear inside 90 seconds.
 ### 19.3 Micro-RFC: Emoji Stream Topic Naming 🎨
 1. **New Convention** (auto-applied by `tgk stream create`)
    ```
-   <emoji> <type-short> /<stream-name>  –  <owner-handle>
+   <emoji> <type-short>-<stream-name-kebab>–<owner-handle>
    ```
    - Emoji chosen once per type (never changes).
    - type-short = 3-4 lower-case letters.
-   - stream-name = kebab-case, ≤ 20 chars.
+   - stream-name-kebab = kebab-case, ≤ 15 chars (total ≤ 24 chars visible).
    - owner-handle = without `@`, for quick mention.
+   - No slashes, brackets, or spaces (search-friendly).
 
 2. **Mapping Table** (hard-coded in `tgk`, PR to change)
    | Type | Emoji | short | Example Topic Name |
    |---|---|---|---|
-   | security | 🛡️ | sec | 🛡️ sec / mfa-rollout – alice |
-   | sre | ⚙️ | sre | ⚙️ sre / canary-fast – bob |
-   | data | 📊 | data | 📊 data / user-dim-v2 – charlie |
-   | product | ✨ | prod | ✨ prod / dark-mode – diana |
-   | perf | 🚀 | perf | 🚀 perf / cache-shard – evan |
-   | compliance | 📜 | comp | 📜 comp / gdpr-delete – frank |
+   | security | 🛡️ | sec | 🛡️ sec-mfa-rollout–alice |
+   | sre | ⚙️ | sre | ⚙️ sre-canary-fast–bob |
+   | data | 📊 | data | 📊 data-user-dim-v2–charlie |
+   | product | ✨ | prod | ✨ prod-dark-mode–diana |
+   | perf | 🚀 | perf | 🚀 perf-cache-shard–evan |
+   | compliance | 📜 | comp | 📜 comp-gdpr-delete–frank |
 
-3. **Implementation** (one-liner)
+3. **Implementation** (refined for Telegram best practices)
    ```bash
-   # inside bootstrap-stream.sh
-   EMOJI=$(tgk stream emoji --type $TYPE)   # returns 🛡️ etc.
-   SHORT=$(tgk stream short  --type $TYPE)  # returns sec etc.
-   TOPIC_TEXT="$EMOJI $SHORT / $STREAM – ${OWNER#@}"
+   # inside bootstrap-stream.sh (Telegram best practices)
+   EMOJI=$(tgk stream emoji "$TYPE")   # returns 🛡️ etc.
+   SHORT=$(tgk stream short "$TYPE")   # returns sec etc.
+   STREAM_KEBAB=$(echo "$STREAM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
+   TOPIC_NAME="$EMOJI $SHORT-$STREAM_KEBAB–${OWNER#@}"
    ```
 
 4. **Migration** (idempotent)
    - Existing topics keep old name; rename optional via `/stream rename`.
-   - New topics always use convention.
+   - New topics always use best-practice convention.
    - No breaking change to topic-id or CI.
 
 5. **Done Criteria**
-   - [ ] `tgk stream create` uses emoji convention ≤ 30 s.
+   - [ ] `tgk stream create` uses best-practice convention ≤ 24 chars.
    - [ ] Forum list visually grouped by emoji.
    - [ ] Owner handle clickable in Telegram.
-   - [ ] Golden template repo updated with naming snippet.
+   - [ ] Topics searchable by emoji (⌘-F/Ctrl-F).
+   - [ ] No slashes/brackets in topic names.
 
 6. **Roll-Forward / Roll-Back**
-   - Forward: merge `tgk@v4.1` (emoji naming).
-   - Backward: `pipx install tgk@v4.0` (no emoji) ≤ 5 min.
+   - Forward: merge `tgk@v4.1` (best-practice naming).
+   - Backward: `pipx install tgk@v4.0` (previous emoji naming) ≤ 5 min.
