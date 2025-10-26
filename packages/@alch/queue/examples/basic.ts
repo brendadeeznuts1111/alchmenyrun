@@ -1,11 +1,12 @@
 import { JobQueue } from '../src/index';
 
 // One line → queue + processor + DLQ + REST producer deployed
-export const emailQueue = JobQueue({
+export const emailQueue = JobQueue('emails', {
   name: 'emails',
   batchSize: 20,
   maxRetries: 5,
   deadLetterQueue: true,
+  delete: true, // optional, default
 });
 
 // Usage from anywhere (CLI, Worker, frontend):
