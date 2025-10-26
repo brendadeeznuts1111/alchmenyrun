@@ -328,4 +328,96 @@ Pick one, paste the ID in the checklist, and the RFC automation will target the 
 
 ---
 
+## 🤖 **Telegram Bot Setup for RFC Automation**  
+### *(ALC-RFC-2025-10-ZERO-FRICTION)*
+
+### 📝 **Bot Created**: `@alchemist_rfc_bot` (t.me/alchemist_rfc_bot)
+### 🔑 **API Token**: `8333499645:AAEsGOqYc_3oVQoSpQESjcpDrQ0xj_PYpeE` *(Store securely in CI secrets)*
+
+--------------------------------------------------------
+### 🤖 1. WHAT YOU CREATE (once per org)
+--------------------------------------------------------
+| Thing | Telegram UI path | Purpose | BotFather keywords |
+|---|---|---|---|
+| **A. Bot** | BotFather → `/newbot` → `@alchemist_rfc_bot` | Send messages & pins | `/setjoingroup`, `/setcommands` |
+| **B. Super-Group** | New Group → "Alchemists Council" → convert to super-group | Approvals & pinned phone-card | `/setadmin` to bot |
+| **C. Channel** | New Channel → `@alchemist_releases` | Broadcast-only changelog | Add bot as **admin** w/ "Post Messages" |
+| **D. Group** | New Group → `@infra_team` | Ops noise (logs, alerts) | Add bot as admin |
+| **E. Bot-Only Channel** | New Channel → `@ci_status` → set "Only Admins can post" | CI pass/fail spam | Add only the bot |
+
+--------------------------------------------------------
+### 🔑 2. TOKENS & RIGHTS YOU NEED
+--------------------------------------------------------
+1. **HTTP-API token** (from BotFather) – store in env `TELEGRAM_BOT_TOKEN`
+2. **Chat-ID list** – run once:
+   ```bash
+   curl https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates
+   ```
+   → grab `message.chat.id` for each entity (channels look like `-100xxxxxxxxxx`)
+3. **Pin permission** – in **each** super-group, give bot "Pin Messages" right
+4. **Command scope** – optional but nice:
+   ```
+   /setcommands @alchemist_rfc_bot
+   revert - revert last deploy
+   lgtm - council approval
+   ```
+
+--------------------------------------------------------
+### 🧩 3. MINIMAL CI/CD INTEGRATION
+--------------------------------------------------------
+Add a **single reusable bash function** (or GitHub Action / GitLab job) that every repo calls:
+
+```bash
+#!/usr/bin/env bash
+# notify-telegram.sh
+set -eu
+PHASE=$1        # day1 / day2 / retired
+STATUS=$2       # start / success / failure
+MSG=$3
+TOKEN=${TELEGRAM_BOT_TOKEN}
+CHAT=${TELEGRAM_CHAT_ID}   # passed from caller
+
+curl -X POST \
+  https://api.telegram.org/bot${TOKEN}/sendMessage \
+  -d chat_id="${CHAT}" \
+  -d text="${MSG}" \
+  -d parse_mode=Markdown \
+  -d disable_web_page_preview=true
+```
+
+**Call sites (example)**
+```yaml
+# GitHub Actions
+- name: notify staging canary
+  if: always()
+  run: |
+    ./notify-telegram.sh day2 ${{ job.status }} \
+      "🟡 Canary 10 % → ${{ job.status }}
+      Dashboard: https://alchemy.run/metrics/rfc-2025-10"
+  env:
+    TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+    TELEGRAM_CHAT_ID: ${{ vars.TG_STAGING_CANARY }}   # -100xxxx
+```
+
+--------------------------------------------------------
+### 📌 4. OPTIONAL BUT NICE
+--------------------------------------------------------
+* **Pin message** – add `&message_id=xxx` + call `/pinChatMessage`
+* **Threaded replies** – use `reply_to_message_id` for long logs
+* **Silence users** – set group to "Only Admins" if noise grows
+* **Topic groups** – use "Forum" so each RFC gets its own topic
+
+--------------------------------------------------------
+### ✅ 5. DONE CRITERIA
+--------------------------------------------------------
+- [ ] Bot created, token stored in CI secret vault
+- [ ] Chat-IDs exported as CI variables (`TG_COUNCIL`, `TG_RELEASES`, …)
+- [ ] Bot is admin in every target entity with **Post + Pin** rights
+- [ ] `notify-telegram.sh` committed to `alchemist/actions` repo
+- [ ] One successful dry-run (post + pin) from CI to each room
+
+**Once the checklist is green, the RFC automation can post, pin, and retire without human intervention—true zero-friction.**
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀

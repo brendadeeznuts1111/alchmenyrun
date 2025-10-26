@@ -37,7 +37,8 @@
     "app:new": "./scripts/create-app.sh",
     "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom",
     "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts",
-    "monitor:collisions": "./scripts/monitor-collisions.sh"
+    "monitor:collisions": "./scripts/monitor-collisions.sh",
+    "notify:telegram": "./scripts/notify-telegram.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
