@@ -9,6 +9,9 @@ import type {
   Queue as QueueType,
 } from "alchemy";
 
+// Re-export Database with automatic stage suffixing
+export { Database } from "./database";
+
 /**
  * Create a WebSocket chat room with Durable Object
  *

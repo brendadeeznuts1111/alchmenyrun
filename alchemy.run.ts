@@ -12,6 +12,7 @@ import {
 } from "alchemy/cloudflare";
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
+import { Database } from "./packages/@alch/blocks/src/database";
 
 // API token for Cloudflare resources (bypasses profile OAuth)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -44,8 +45,7 @@ const resources = {} as any;
 // Database scope - Organizes all data storage resources
 await alchemy.run("database", async () => {
   // D1 Database for user and file storage
-  const db = await D1Database("db", {
-    name: `alchemy-demo-db-${app.stage}`, // Stage-specific database name
+  const db = await Database("alchemy-demo-db", {
     adopt: true, // Adopt existing database if it exists
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
