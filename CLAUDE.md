@@ -99,11 +99,11 @@ Example:
 
 | Metric | Target | Current | CI Gate |
 |--------|--------|---------|---------|
-| **Lead Time** (merge → deploy) | ≤ 15 min | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Flead-time )](https://alchemy.run ) | ✅ |
-| **Change Failure Rate** | ≤ 2 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Ffailure-rate )](https://alchemy.run ) | ✅ |
-| **PR Review Time** (open → first approval) | ≤ 24 h | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Freview-time )](https://alchemy.run ) | ✅ |
-| **Doc Coverage** (ADR / major change) | 100 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Fdoc-coverage )](https://alchemy.run ) | ✅ |
-| **Mentoring Ratio** (PRs with `role/mentoring`) | ≥ 10 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Fmentoring-ratio )](https://alchemy.run ) | 🟡 |
+| **Lead Time** (merge → deploy) | ≤ 15 min | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Falchemy.run%2Fmetrics%2Flead-time)](https://alchemy.run) | ✅ |
+| **Change Failure Rate** | ≤ 2 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Falchemy.run%2Fmetrics%2Ffailure-rate)](https://alchemy.run) | ✅ |
+| **PR Review Time** (open → first approval) | ≤ 24 h | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Falchemy.run%2Fmetrics%2Freview-time)](https://alchemy.run) | ✅ |
+| **Doc Coverage** (ADR / major change) | 100 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Falchemy.run%2Fmetrics%2Fdoc-coverage)](https://alchemy.run) | ✅ |
+| **Mentoring Ratio** (PRs with `role/mentoring`) | ≥ 10 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Falchemy.run%2Fmetrics%2Fmentoring-ratio)](https://alchemy.run) | 🟡 |
 
 > **Legend**: ✅ = gate passed, 🟡 = warning, 🔴 = gate failed  
 > **Source**: live data from `alchemy.run/metrics` (public endpoint)  
