@@ -283,4 +283,29 @@ This document defines the Definition of Done (DoD) for each team in Project Alch
 
 ---
 
+## ALC-RFC-2025-10-ZERO-FRICTION  
+### Day-2 → Retirement Checklist (Telegram Edition)
+
+Same order of operations as the Slack version—just swap comms to Telegram channels/bots.
+
+| Step | Task | Owner | Telegram Chat / Bot | Done? |
+|---|---|---|---|---|
+| 1 | Merge approved PR to `main` (flag = off) | `@alice.smith` | `@infra_team` | ☐ |
+| 2 | Tag canary `v1.47.0-rc1` | `ReleaseBot` | `@releases` | ☐ |
+| 3 | Deploy 10 % canary (staging) | SRE | `@staging_canary` | ☐ |
+| 4 | Watch canary metrics 24 h | `MetricsBot` | `@sre_alerts` | ☐ |
+| 5 | Flip flag → 100 % prod | `@alice.smith` | `@release_command` | ☐ |
+| 6 | Verify 14-day error-free window | `MetricsBot` | `@sre_alerts` | ☐ |
+| 7 | Adoption ≥ 60 % (API calls) | `AnalyticsBot` | `@product_metrics` | ☐ |
+| 8 | Publish external changelog | `@franktaylor` | `@alchemist_users` | ☐ |
+| 9 | Schedule retro (2025-12-11) | `@diana.prince` | `@quality_gate` | ☐ |
+| 10 | Run retro & file actions | facilitator | `@retro_notes` | ☐ |
+| 11 | Add `console.warn` deprecation | `@alice.smith` | `@dev_warnings` | ☐ |
+| 12 | Council `/lgtm retired` | `@brendadeeznuts1111` | `@AlchemistsCouncil` | ☐ |
+| 13 | Bot tags `rfc-complete`, archives repo, closes epic | `RFC_Bot` | `@release_command` | ☐ |
+
+**Pin the final "✅ retired" message in `@AlchemistsCouncil`—done!**
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
