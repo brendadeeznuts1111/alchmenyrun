@@ -38,7 +38,10 @@
     "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom",
     "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts",
     "monitor:collisions": "./scripts/monitor-collisions.sh",
-    "notify:telegram": "./scripts/notify-telegram.sh"
+    "notify:telegram": "./scripts/notify-telegram.sh",
+    "telegram:rollback": "./scripts/telegram-rollback.sh",
+    "telegram:replace-card": "./scripts/replace-card.sh",
+    "telegram:unpin": "./scripts/unpin.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

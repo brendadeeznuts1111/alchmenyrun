@@ -515,7 +515,80 @@ if (msg.text === '/lgtm' && chatId === COUNCIL_ID) {
 - **Roll-Forward**: merge the action, tag `v3`, update call-sites
 - **Roll-Back**: revert to `alchemist/telegram-notifier@v2` (bash curl) in ≤ 5 min
 
-**Once §18.6 is merged, the RFC phone-card becomes interactive, council approvals happen in-chat, and every metric snapshot lands threaded under the same pinned message—zero friction achieved.**
+---
+
+## 🚨 **Telegram Rollback & Panic-Button Kit**
+### *(Emergency Controls for Enterprise Automation)*
+
+### 📝 **Scripts Available**: `scripts/telegram-rollback.sh`, `scripts/replace-card.sh`, `scripts/unpin.sh`
+
+--------------------------------------------------------
+### 🚨 1. ONE-LINE ROLL-BACK (CLI)
+--------------------------------------------------------
+```bash
+# rollback-telegram.sh <chat_id> <last_message_id>
+curl -sX POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/deleteMessage \
+  -d chat_id="$1" \
+  -d message_id="$2"
+```
+Save the **last broadcast message_id** in CI (`echo $msg_id >> $GITHUB_OUTPUT`) and you can delete it instantly:
+```bash
+rollback-telegram.sh $TG_RELEASES_CHANNEL_ID $LAST_MSG_ID
+```
+
+--------------------------------------------------------
+### 🔄 2. FULL RFC CARD REPLACEMENT (CLI)
+--------------------------------------------------------
+```bash
+# replace-card.sh <chat_id> <old_msg_id> "New Title" "New Body"
+new_id=$(curl -sX POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/editMessageText \
+  -d chat_id="$1" \
+  -d message_id="$2" \
+  -d parse_mode=MarkdownV2 \
+  -d text="$3\n\n$4" | jq -r .result.message_id)
+echo "Updated card → $new_id"
+```
+Use this to **downgrade** the pinned card from "✅ Approved" to "⏸️ On Hold" without un-pinning.
+
+--------------------------------------------------------
+### 📌 3. UN-PIN + RE-PIN (CLI)
+--------------------------------------------------------
+```bash
+# unpin.sh <chat_id>
+curl -sX POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/unpinAllChatMessages \
+  -d chat_id="$1"
+```
+Follow with a normal `sendMessage` + `pinChatMessage` to put the **old** bash-curl card back.
+
+--------------------------------------------------------
+### 🧯 4. COMPLETE "NUKE & REVERT" CI JOB
+--------------------------------------------------------
+```yaml
+- name: Telegram Emergency Rollback
+  if: ${{ failure() && inputs.rollback-telegram == 'true' }}
+  run: |
+    # 1. Delete last rich card
+    rollback-telegram.sh ${{ vars.TG_COUNCIL_CHAT_ID }} ${{ needs.notify.outputs.card_id }}
+    # 2. Post plain-text fallback
+    curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+      -d chat_id=${{ vars.TG_COUNCIL_CHAT_ID }} \
+      -d text="🚑 Roll-back complete. Using legacy bash notifier." \
+      -d disable_notification=true
+    # 3. Re-pin the fallback
+    curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/pinChatMessage \
+      -d chat_id=${{ vars.TG_COUNCIL_CHAT_ID }} \
+      -d message_id=$(cat fallback_msg_id.txt)
+```
+
+--------------------------------------------------------
+### ⏱️ 5. SPEED CHECK
+--------------------------------------------------------
+- `deleteMessage` ≈ 200 ms
+- `editMessageText` ≈ 250 ms
+- `unpinAllChatMessages` ≈ 300 ms
+All calls are **idempotent**; running twice is safe.
+
+**Save the scripts in `/usr/local/bin/`, add to `$PATH`, and your on-call team can rollback Telegram state faster than you can revert the deployment PR.**
 
 ---
 
