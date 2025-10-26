@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import Users from "./components/Users";
 import FileUpload from "./components/FileUpload";
-import Chat from "./components/Chat";
+// import Chat from "./components/Chat"; // Temporarily disabled
 import WorkflowTrigger from "./components/WorkflowTrigger";
 import CacheDemo from "./components/CacheDemo";
 function App() {
@@ -36,7 +36,7 @@ function App() {
             children: [
               { id: "users", label: "👥 Users" },
               { id: "files", label: "📁 Files" },
-              { id: "chat", label: "💬 Chat" },
+              // { id: "chat", label: "💬 Chat" }, // Temporarily disabled
               { id: "workflow", label: "⚙️ Workflow" },
               { id: "cache", label: "💾 Cache" },
             ].map((tab) =>
@@ -62,7 +62,7 @@ function App() {
         children: [
           activeTab === "users" && _jsx(Users, {}),
           activeTab === "files" && _jsx(FileUpload, {}),
-          activeTab === "chat" && _jsx(Chat, {}),
+          " ",
           activeTab === "workflow" && _jsx(WorkflowTrigger, {}),
           activeTab === "cache" && _jsx(CacheDemo, {}),
         ],

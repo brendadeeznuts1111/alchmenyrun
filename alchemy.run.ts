@@ -19,8 +19,9 @@ import { CloudflareStateStore } from "alchemy/state";
 // Root scope: cloudflare-demo
 // State directory: .alchemy/cloudflare-demo/
 const app = await alchemy("cloudflare-demo", {
-  phase: process.env.PHASE as "up" | "destroy" | "read" || "up",
-  password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+  phase: (process.env.PHASE as "up" | "destroy" | "read") || "up",
+  password:
+    process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
   stateStore: (scope) => new CloudflareStateStore(scope),
   // Profile selection (default, prod, staging, ci)
   // - Local dev: uses "default" profile (OAuth)
@@ -48,7 +49,7 @@ await alchemy.run("database", async () => {
   const db = await D1Database("db", {
     name: "alchemy-demo-db",
   });
-  
+
   // Share with other scopes
   resources.db = db;
 });
@@ -60,17 +61,17 @@ await alchemy.run("file-storage", async () => {
     name: "alchemy-demo-storage",
     adopt: true,
   });
-  
+
   // KV Namespace for caching
   const cache = await KVNamespace("cache", {
     adopt: true,
   });
-  
+
   // KV Namespace for MCP server (rate limiting & feature flags)
   const mcpKv = await KVNamespace("mcp-kv", {
     adopt: true,
   });
-  
+
   // Share with other scopes
   resources.storage = storage;
   resources.cache = cache;
@@ -84,14 +85,14 @@ await alchemy.run("compute", async () => {
     name: "alchemy-demo-jobs",
     adopt: true,
   });
-  
+
   // Define Durable Object class for real-time chat
   // Temporarily disabled for dev mode
   // const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
   //   className: "ChatRoom",
   //   scriptName: "website", // Use the bound worker script
   // });
-  
+
   // Share with other scopes
   resources.jobs = jobs;
   // resources.ChatDurableObject = ChatDurableObject;
@@ -109,16 +110,16 @@ export const website = await BunSPA("website", {
   bindings: {
     // Database bindings
     DB: resources.db,
-    
+
     // Storage bindings
     STORAGE: resources.storage,
     CACHE: resources.cache,
-    
+
     // Compute bindings
     JOBS: resources.jobs,
     // CHAT: resources.ChatDurableObject,
     // WORKFLOW: resources.OnboardingWorkflow,
-    
+
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },

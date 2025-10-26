@@ -109,15 +109,25 @@ export default {
         path === "/api/chat" &&
         request.headers.get("Upgrade") === "websocket"
       ) {
-        const durableObjectId = env.CHAT.idFromName("main-room");
-        const durableObject = env.CHAT.get(durableObjectId);
+        const chatEnv = env;
+        if (!chatEnv.CHAT) {
+          return json({ error: "Chat not available" }, 503, corsHeaders);
+        }
+        const durableObjectId = chatEnv.CHAT.idFromName("main-room");
+        const durableObject = chatEnv.CHAT.get(durableObjectId);
         return durableObject.fetch(request);
       }
       // Workflow trigger endpoint
       if (path === "/api/workflow/start" && request.method === "POST") {
+        const workflowEnv = env;
+        if (!workflowEnv.WORKFLOW) {
+          return json({ error: "Workflow not available" }, 503, corsHeaders);
+        }
         const data = await request.json();
-        const workflowId = env.WORKFLOW.idFromName(data.userId || "default");
-        const workflow = env.WORKFLOW.get(workflowId);
+        const workflowId = workflowEnv.WORKFLOW.idFromName(
+          data.userId || "default",
+        );
+        const workflow = workflowEnv.WORKFLOW.get(workflowId);
         const handle = await workflow.start(data);
         return json({ workflowId: handle.id }, 201, corsHeaders);
       }
@@ -140,9 +150,11 @@ export default {
             const branch = payload.ref?.replace("refs/heads/", "");
             console.log(`Push to branch: ${branch}`);
             // Example: Trigger deployment workflow
-            if (branch === "main" && env.WORKFLOW) {
-              const workflowId = env.WORKFLOW.idFromName("github-deploy");
-              const workflow = env.WORKFLOW.get(workflowId);
+            const workflowEnv = env;
+            if (branch === "main" && workflowEnv.WORKFLOW) {
+              const workflowId =
+                workflowEnv.WORKFLOW.idFromName("github-deploy");
+              const workflow = workflowEnv.WORKFLOW.get(workflowId);
               await workflow.start({
                 event: "deploy",
                 branch,
@@ -155,12 +167,15 @@ export default {
             const prNumber = payload.pull_request?.number;
             console.log(`Pull request ${action}: #${prNumber}`);
             // Example: Run tests or preview deployment
+            const workflowEnv = env;
             if (
               (action === "opened" || action === "synchronize") &&
-              env.WORKFLOW
+              workflowEnv.WORKFLOW
             ) {
-              const workflowId = env.WORKFLOW.idFromName(`pr-${prNumber}`);
-              const workflow = env.WORKFLOW.get(workflowId);
+              const workflowId = workflowEnv.WORKFLOW.idFromName(
+                `pr-${prNumber}`,
+              );
+              const workflow = workflowEnv.WORKFLOW.get(workflowId);
               await workflow.start({
                 event: "preview",
                 prNumber,
