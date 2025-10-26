@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  ALCHEMY_PROFILE: default        # or prod, ci, etc.
+  ALCHEMY_PROFILE: ci        # Use ci profile as documented - implements alchemy.run/guides/ci patterns
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
