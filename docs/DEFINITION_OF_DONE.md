@@ -1087,3 +1087,140 @@ Zero-friction enterprise operations are now *boring*.**
 ---
 
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
+
+---
+
+### 19.1 RFC Templates & Stream Scaffolding (tgk Phase-4)
+
+#### 1. Goal
+- One Telegram message spins up an **entire RFC stream** (forum topic + GitHub repo + branch protection + OPA pack + Grafana folder).
+- `/rfc new --template security` serves a **smart wizard** that spits out a policy-governed RFC in 30 s.
+- Any council message can be promoted to a **golden template** with `/lgtm template`.
+
+#### 2. One-Line Install (extends §18.13)
+```bash
+curl -Ls https://alch.run/tgk4 | bash
+# or
+pipx install --upgrade git+https://github.com/alchemist/tgk@v4.0.0
+tgk --version   # 4.0.0+
+```
+
+#### 3. New Command Tree
+```
+tgk template                # golden templates
+  ├─ list
+  ├─ show   <name>
+  ├─ use    <name> --title "..."  → opens PR + topic msg
+  └─ publish <msg-id>      # promote msg → template
+
+tgk stream                  # stream lifecycle
+  ├─ create <name> --type {sec|sre|data|product} --owner @handle
+  ├─ archive <name> --reason
+  └─ metrics <name>        # Grafana link
+
+tgk rfc                     # enhanced RFC ops
+  ├─ new --template <name> --title "..."
+  ├─ submit --id <number>
+  ├─ withdraw --id <number>
+  └─ diff --id <number>
+```
+
+#### 4. Minimal Stream-Bootstrap Script
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# CI triggered by  tgk stream create ...
+
+STREAM=$1                 # e.g. "api-v2"
+TYPE=$2                   # e.g. "product"
+OWNER=$3                  # Telegram user id (no @)
+
+# 1. GitHub repo from template
+gh repo create alchemist/rfc-$STREAM \
+   --template alchemist/rfc-template-$TYPE \
+   --private --confirm
+
+# 2. CODEOWNERS + branch protection
+echo "$OWNER @alchemist/$TYPE-leads" > CODEOWNERS
+gh api repos/alchemist/rfc-$STREAM/contents/CODEOWNERS \
+   --input - <<< '{"message":"bootstrap","content":"'"$(base64 -w0 CODEOWNERS)"'"}'
+gh api -X PUT repos/alchemist/rfc-$STREAM/branches/main/protection \
+   --input protection.json
+
+# 3. OPA policy pack
+tgk policy upload policies/$TYPE/*.rego --repo alchemist/rfc-$STREAM
+
+# 4. Grafana folder
+curl -s -H "X-API-Key: $GRAFANA_KEY" \
+     -d '{"uid":"rfc-'$STREAM'","title":"RFC '$STREAM'"}' \
+     https://grafana.alch.run/api/folders
+
+# 5. Telegram forum topic
+TOPIC=$(tgk topic create -c $COUNCIL_ID -t "RFC Stream: $STREAM" -o json)
+TOPIC_ID=$(echo "$TOPIC" | jq -r .message_thread_id)
+tgk pin add -c $COUNCIL_ID -m $(echo "$TOPIC" | jq -r .message_id)
+
+echo "STREAM=$STREAM TOPIC_ID=$TOPIC_ID" >> $GITHUB_OUTPUT
+```
+Saved as `infra/telegram/bootstrap-stream.sh` — idempotent, ≤ 90 s.
+
+#### 5. Security & Compliance
+- OPA rule: only stream **owner** or **council** can `/rfc submit` inside that topic.
+- Template promotion requires **2× /lgtm template** from council members.
+- All rendered variables → Loki (PII redacted).
+- Stream archives are **read-only** (policy denies new RFCs).
+
+#### 6. Observability & AI
+New Prometheus metrics (pushed automatically):
+```
+tgk_template_reuse_total{template}
+tgk_stream_open_rfc_gauge{stream}
+tgk_rfc_review_duration_seconds{stream,template}
+```
+
+AI suggestions:
+- `tgk ai suggest template` → picks template from changed files in PR.
+- `tgk ai suggest reviewers` → suggests owners based on last 90 days of `/lgtm`.
+
+#### 7. CI Template (GitHub Actions)
+```yaml
+name: RFC Template CI
+on:
+  pull_request:
+    paths: 'rfc/**.md'
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render template + policy check
+        run: |
+          tgk template use --source rfc/${{ github.event.number }}.md \
+                            --output rendered.md
+          tgk policy check --file rendered.md \
+                           --policy-pack $(yq .policy_pack rendered.md)
+      - uses: alchemist/telegram-notifier@v4
+        with:
+          action: card_post
+          chat_id: ${{ vars.TG_STREAM_TOPIC_ID }}
+          template_vars: |
+            rfc_num: ${{ github.event.number }}
+            render_url: ${{ steps.render.outputs.artifact_url }}
+```
+
+#### 8. Enhanced Done Criteria
+- [ ] `tgk@v4` installed on prod runners & laptops
+- [ ] `/stream create` boots repo + topic + dashboards ≤ 90 s (idempotent)
+- [ ] `/rfc new --template` wizard works for **sec, sre, data, product**
+- [ ] Template reuse ≥ 3 squads in 14 days (Prometheus proves it)
+- [ ] OPA gates per stream (owner + required_approvers)
+- [ ] Grafana folder + default dashboard live
+- [ ] AI suggestion accuracy ≥ 80 % (human spot-check)
+
+#### 9. Roll-Forward / Roll-Back
+- Forward: merge `tgk@v4`, set `TGK_TEMPLATE_ENABLE=1` per stream.
+- Backward: `pipx install tgk@v3` (removes template engine) ≤ 5 min.
+
+Once §19.1 is merged, **any** council member can type:
+`/stream create mobile-dark --type product --owner @pm-alex`
+and watch the entire RFC factory appear inside 90 seconds.
