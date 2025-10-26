@@ -1,0 +1,25 @@
+{
+  "alchemist_core_bot": {
+    "permissions": {
+      "can_post_messages": true,
+      "can_pin_messages": true,
+      "can_manage_topics": true,
+      "can_invite_users": true,
+      "can_delete_messages": false,
+      "can_restrict_members": false
+    },
+    "scope": "global"
+  },
+  "alchemist_council_admins": {
+    "users": ["@brendadeeznuts1111", "@alice.smith"],
+    "permissions": {
+      "can_post_messages": true,
+      "can_pin_messages": true,
+      "can_manage_topics": true,
+      "can_invite_users": true,
+      "can_delete_messages": true,
+      "can_restrict_members": true
+    },
+    "scope": "alchemist_council"
+  }
+}

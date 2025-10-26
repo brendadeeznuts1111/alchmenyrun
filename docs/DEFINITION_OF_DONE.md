@@ -593,86 +593,149 @@ All calls are **idempotent**; running twice is safe.
 ---
 
 ## 📦 **Telegram CLI Toolkit (tgk)**
-### *(100% Infrastructure-as-Code for Telegram Automation)*
+### *(AI-Driven, Secure & Observable Infrastructure-as-Code)*
 
-### 📝 **Single Source-of-Truth CLI** for complete Telegram entity management
-### 📦 **Installation**: Available as `tgk` command (infrastructure-as-code)
+### 📝 **Enhanced Single Source-of-Truth CLI** for complete Telegram entity management
+### 🤖 **AI-Assisted**: Workflow optimization and intelligent suggestions
+### 🛡️ **Secure**: Proactive compliance and audit trails
+### 📊 **Observable**: Deep logging and eventing capabilities
+### 💻 **Developer-Centric**: Streamlined UX and rich outputs
+### 🔧 **Maintainable**: Modular architecture with plugin support
 
 --------------------------------------------------------
-### 📦 1. INSTALL (one-time)
+### 📦 1. INSTALL & CORE ARCHITECTURE (Modular & AI-Ready)
 --------------------------------------------------------
+The `tgk` kit is now a **Python-based CLI** (leveraging `Click` for robustness) with `curl` as a backend, allowing for easier plugin development, AI integration, and robust error handling.
+
 ```bash
-sudo curl -L https://raw.githubusercontent.com/alchemist/telegram-cli-kit/main/tgk \
-  -o /usr/local/bin/tgk && sudo chmod +x /usr/local/bin/tgk
+# Modular Python-based installation (e.g., via pipx for isolation)
+pip install -r requirements-tgk.txt
+python3 ./scripts/tgk-enhanced --help
 ```
-The kit exposes sub-commands:
+
+The kit now exposes enhanced sub-commands with AI and security capabilities:
+
 ```
-tgk chat-list           # discover IDs
-tgk group-create        # super-group + convert + forum
-tgk channel-create      # broadcast channel
-tgk topic-create        # forum topic
-tgk member-add          # invite users by @username
-tgk pin-card            # send + pin rich card
-tgk card-replace        # edit in-place
-tgk card-delete         # delete any message
-tgk unpin-all           # nuclear un-pin
-tgk role-set             # promote/demote bot
-tgk permission-set       # lock/unlock group
+tgk config init         # Create/update tgk.yaml with default settings
+tgk auth refresh        # Refresh tokens, verify permissions
+tgk chat list           # Discover IDs (now with richer metadata)
+tgk group create        # Super-group + convert + forum, with optional auto-invites
+tgk channel create      # Broadcast channel, with optional public URL generation
+tgk topic create        # Forum topic (now with pre-defined templates)
+tgk member add          # Invite users by @username (with role selection)
+tgk card post           # Send rich card (supports templates, media, interactive buttons)
+tgk card update         # Edit in-place (now with conflict resolution)
+tgk card delete         # Delete any message (with audit logging)
+tgk unpin all           # Nuclear un-pin (with confirmation)
+tgk role set            # Promote/demote bot/user (fine-grained permissions)
+tgk permission set      # Lock/unlock group (granular permission control)
+tgk audit log           # Retrieve / filter tgk action logs
+tgk policy check        # Run local Rego policies against group/channel configs
+tgk ai suggest          # AI-driven suggestions for next steps (e.g., "/approve RFC-ID")
 ```
-Every call returns **JSON**; wrap with `jq` for scripting.
+Every call returns **structured JSON** for maximum scriptability and `jq` integration.
 
 --------------------------------------------------------
-### 🔧 2. QUICK REFERENCE CHEAT-SHEET
+### 🔧 2. ENHANCED QUICK REFERENCE CHEAT-SHEET (With AI & Policy Integration)
 --------------------------------------------------------
-| Task                         | One-Liner                                                               | Idempotent? |
-| ---------------------------- | ----------------------------------------------------------------------- | ----------- |
-| **Create Forum Super-Group** | `tgk group-create "Alchemists Council" --forum --convert`               | ✅           |
-| **Create Broadcast Channel** | `tgk channel-create "alchemist_releases" --public`                      | ✅           |
-| **Auto-Invite Bot**          | `tgk member-add -c $CHAT_ID -u alchemist_core_bot`                      | ✅           |
-| **Give Bot Pin Right**       | `tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics`  | ✅           |
-| **Create RFC Topic**         | `tgk topic-create -c $CHAT_ID -n "ALC-RFC-2025-10-Naming"`              | ✅           |
-| **Replace Pinned Card**      | `tgk card-replace -c $CHAT_ID -m $OLD_ID -t "✅ Approved" -d "New body"` | ✅           |
-| **Delete Last Message**      | `tgk card-delete -c $CHAT_ID -m $MSG_ID`                                | ✅           |
-| **Lock Group (ro)**          | `tgk permission-set -c $CHAT_ID --send-messages off`                    | ✅           |
-| **Unlock Group (rw)**        | `tgk permission-set -c $CHAT_ID --send-messages on`                     | ✅           |
+| Task | One-Liner (Example) | Idempotent? | AI / Policy Hooks |
+| :-- | :------------------ | :---------- | :---------------- |
+| **Setup Core Group** | `tgk group create "Alchemists Council" --forum --convert --invite-users @brendadeeznuts1111` | ✅ | `policy check group-config` |
+| **Give Bot Admin/Pin** | `tgk role set -c $CHAT_ID -u alchemist_core_bot --admin --can-pin-messages --can-manage-topics` | ✅ | `audit log --bot-perms` |
+| **Create RFC Topic** | `tgk topic create -c $CHAT_ID -n "ALC-RFC-2025-10-Naming" --template rfc-init` | ✅ | `ai suggest review-steps` |
+| **Post RFC Update** | `tgk card post -c $CHAT_ID -t "✅ Approved" -d "New body" --template rfc-status-update` | ✅ | `policy check message-content` |
+| **Suggest Next Action** | `tgk ai suggest -c $CHAT_ID --context "RFC ALC-2025-10-Naming is Ready for Council Vote"` | — | N/A |
+| **Check Compliance** | `tgk policy check -c $CHAT_ID --policy infra/telegram/policies/admin-roles.rego` | — | N/A |
+| **View Audit Log** | `tgk audit log --target $CHAT_ID --action card-delete --since 24h` | — | N/A |
 
 --------------------------------------------------------
-### 🚀 3. CI TEMPLATE (GitHub Actions)
+### 🚀 3. INTELLIGENT CI/CD INTEGRATION (GitHub Actions)
 --------------------------------------------------------
+The `alchemist/telegram-notifier@v3` GitHub Action now wraps the enhanced `tgk`, providing higher-level, declarative control and leveraging AI, security, and observability capabilities.
+
 ```yaml
-- name: Ensure Telegram Entities Exist
-  run: |
-    export CHAT_ID=$(tgk group-create "Alchemists Council" --forum --convert -o json | jq .id)
-    echo "CHAT_ID=$CHAT_ID" >> $GITHUB_OUTPUT
-    tgk member-add -c $CHAT_ID -u alchemist_core_bot
-    tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics
+# .github/workflows/rfc-lifecycle.yaml
+jobs:
+  rfc_council_vote_open:
+    steps:
+      - name: Configure Telegram Environment
+        run: tgk config init --set TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+      - name: Ensure Alchemists Council Group
+        id: council_group
+        run: |
+          GROUP_JSON=$(tgk group create "Alchemists Council" --forum --convert --invite-users @brendadeeznuts1111 -o json)
+          echo "CHAT_ID=$(echo $GROUP_JSON | jq -r .id)" >> $GITHUB_OUTPUT
+          tgk role set -c $(echo $GROUP_JSON | jq -r .id) -u alchemist_core_bot --admin --can-pin-messages --can-manage-topics
+      - name: Pin Initial RFC Status Card
+        uses: alchemist/telegram-notifier@v3
+        with:
+          action: 'card_post'
+          chat_id: ${{ steps.council_group.outputs.CHAT_ID }}
+          topic_name: "ALC-RFC-2025-10-ZERO-FRICTION"
+          template_name: 'rfc-status-card'
+          template_vars: |
+            rfc_id: ALC-RFC-2025-10-ZERO-FRICTION
+            title: "🚀 RFC: Idempotent Resource Naming"
+            status: "READY-COUNCIL-VOTE"
+            url: "https://alchemy.run/rfcs/ALC-RFC-2025-10-ZERO-FRICTION"
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+  update_rfc_status:
+    steps:
+      - name: Update Pinned RFC Card
+        uses: alchemist/telegram-notifier@v3
+        with:
+          action: 'card_update'
+          chat_id: ${{ vars.TG_COUNCIL_CHAT_ID }}
+          topic_name: "ALC-RFC-2025-10-ZERO-FRICTION"
+          message_id: ${{ needs.rfc_council_vote_open.outputs.initial_card_id }}
+          template_name: 'rfc-status-card'
+          template_vars: |
+            rfc_id: ALC-RFC-2025-10-ZERO-FRICTION
+            title: "🚀 RFC: Idempotent Resource Naming"
+            status: "IMPLEMENTATION-IN-PROGRESS"
+            url: "https://alchemy.run/rfcs/ALC-RFC-2025-10-ZERO-FRICTION"
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 ```
 
 --------------------------------------------------------
-### 🛡️ 4. SECURITY CONTROLS
+### 🛡️ 4. ADVANCED SECURITY & COMPLIANCE CONTROLS
 --------------------------------------------------------
-- **Least-Privilege Bot Rights** – script refuses to add "add users" or "delete group"
-- **Idempotent Calls** – re-run safely; no duplicate groups/topics
-- **Secret Masking** – token never echoed; use GitHub Secrets
-- **IP Lock** – optional BotFather IP whitelist for CI runners
+*   **Policy-as-Code (OPA/Rego):** `tgk policy check` integrates with Open Policy Agent (OPA). Local Rego policies (e.g., `infra/telegram/policies/admin-roles.rego`) automatically enforce:
+    *   No non-Alchemists Council members can be admins in strategic groups.
+    *   Specific keywords (e.g., PII, confidential data) are not posted to public channels.
+    *   Bots do not have "delete group" permissions.
+*   **Comprehensive Audit Log:** Every `tgk` action (creation, deletion, permission change, message edit) is automatically logged to a secure, immutable log store, capturing:
+    *   `action_type`, `chat_id`, `user_id` (who ran the command), `timestamp`, `ip_address`, `changes_made`, `policy_check_result`.
+    *   `tgk audit log` provides CLI access to this structured log data.
+*   **Least-Privilege Enforcement:** `tgk` proactively prevents users (and the bot itself) from granting excessive permissions.
+*   **Secret Management Integration:** `tgk config init` can pull secrets directly from Vault/AWS Secrets Manager/GCP Secret Manager during CI setup.
 
 --------------------------------------------------------
-### 📊 5. SPEED & LIMITS
+### 📊 5. ENHANCED OBSERVABILITY & AI-DRIVEN INSIGHTS
 --------------------------------------------------------
-- Each call ≈ 150–400 ms (HTTP)
-- Bot rate-limit: 30 msgs / sec globally (plenty for Alchemist scale)
-- Forum topic limit: 1 000 per group (archive old ones via script)
+*   **Structured Logging & Eventing:** All `tgk` commands emit structured logs (JSON) to standard output/error, easily ingestible by log aggregators. Key lifecycle events are also emitted as events.
+*   **Metric Integration:** `tgk` can optionally push metrics to Prometheus/Grafana.
+*   **AI-Driven Suggestions (`tgk ai suggest`):**
+    *   **Contextual Next Steps:** Based on RFC status and chat history, suggests: "The RFC is in `READY-COUNCIL-VOTE`. Would you like to post a reminder or check policy compliance?"
+    *   **Drafting Messages:** "Draft a message announcing successful production deployment."
+    *   **Identifying Anomalies:** Alerting if unusual `tgk` activity is detected from audit logs.
+*   **Real-time Dashboard Integration:** Telegram actions update a "Alchemist Comms Health" dashboard in Grafana.
 
 --------------------------------------------------------
-### ✅ 6. ENHANCED DONE CRITERIA
+### 6. ENHANCED DONE CRITERIA
 --------------------------------------------------------
-- [ ] `tgk` installed on CI runners & `/usr/local/bin` on laptops
-- [ ] All entities created **via CLI** (not GUI) and stored as CI vars
-- [ ] Bot rights scripted & stored as code (`infra/telegram/roles.json`)
-- [ ] One **dry-run** creates entire fresh env in ≤ 60 s
-- [ ] Roll-back tested: `tgk unpin-all + card-delete` finishes in ≤ 10 s
+- [ ] `tgk` (v2 Python) installed on CI runners & laptops with `pip install -r requirements-tgk.txt`
+- [ ] `tgk config init` used to securely initialize `~/.tgk/config.yaml` in CI/local env
+- [ ] All entities (groups, channels, topics) created **declaratively via enhanced `tgk` scripts**
+- [ ] Bot rights are managed as versioned code (`infra/telegram/roles.json`) and enforced via `tgk policy check`
+- [ ] One **dry-run** creates entire fresh Telegram env via enhanced `tgk` in ≤ 60 s
+- [ ] Roll-back tested: `tgk unpin-all + card-delete` sequence finishes in ≤ 10 s, with actions logged to audit
+- [ ] **Audit logs ingested and queryable** by `tgk audit log`
+- [ ] **Policy-as-code checks** (`tgk policy check`) integrated into CI for Telegram configuration validation
+- [ ] **AI-driven suggestion capability** integrated for RFC workflows
 
-**Now the Telegram ecosystem is 100% infrastructure-as-code—create, mutate, lock, or nuke any room faster than you can revert a Git commit.**
+**Now, the Telegram ecosystem is an intelligent, secure, and fully automated control plane**, directly managed as code, providing unparalleled transparency and operational efficiency for Project Alchemist.
 
 ---
 

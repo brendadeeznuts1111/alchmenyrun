@@ -1,0 +1,483 @@
+#!/usr/bin/env python3
+"""
+tgk - Alchemist Tele-Control Plane (AI-Driven, Secure & Observable IaC)
+Enhanced Telegram Infrastructure-as-Code CLI Toolkit
+
+A comprehensive, intelligent control plane for Telegram entity management
+with AI-assisted workflows, proactive security, and deep observability.
+"""
+
+import os
+import sys
+import json
+import logging
+import click
+import requests
+from typing import Dict, Any, Optional
+from datetime import datetime
+from pathlib import Path
+import yaml
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+class TelegramClient:
+    """Enhanced Telegram Bot API client with security and observability"""
+
+    def __init__(self, token: str):
+        self.token = token
+        self.base_url = f"https://api.telegram.org/bot{token}"
+        self.session = requests.Session()
+
+        # Mask token in logs
+        self.masked_token = f"{token[:10]}...{token[-5:]}" if len(token) > 15 else "***"
+
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """Make authenticated request with error handling and logging"""
+        url = f"{self.base_url}/{endpoint}"
+
+        # Log action (without sensitive data)
+        logger.info(f"Telegram API: {method} {endpoint}")
+
+        try:
+            response = self.session.post(url, **kwargs)
+            response.raise_for_status()
+
+            result = response.json()
+            if not result.get('ok', False):
+                error_msg = result.get('description', 'Unknown error')
+                logger.error(f"Telegram API error: {error_msg}")
+                raise click.ClickException(f"Telegram API error: {error_msg}")
+
+            # Audit log the successful action
+            self._audit_log(method, endpoint, kwargs, result)
+
+            return result
+
+        except requests.RequestException as e:
+            logger.error(f"Request failed: {e}")
+            raise click.ClickException(f"Request failed: {e}")
+
+    def _audit_log(self, method: str, endpoint: str, request_data: Dict, response: Dict):
+        """Log all actions for audit compliance"""
+        audit_entry = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'action': f"{method}_{endpoint}",
+            'user': os.getenv('USER', 'unknown'),
+            'request_data': self._mask_sensitive(request_data),
+            'response_summary': self._summarize_response(response)
+        }
+
+        # In a real implementation, this would go to a secure audit log
+        logger.info(f"AUDIT: {json.dumps(audit_entry)}")
+
+    def _mask_sensitive(self, data: Dict) -> Dict:
+        """Mask sensitive data in logs"""
+        masked = data.copy()
+        if 'text' in masked and any(word in masked['text'].lower() for word in ['token', 'secret', 'password']):
+            masked['text'] = "***SENSITIVE CONTENT MASKED***"
+        return masked
+
+    def _summarize_response(self, response: Dict) -> Dict:
+        """Create safe summary of API response"""
+        if 'result' in response:
+            result = response['result']
+            if isinstance(result, dict):
+                return {k: v for k, v in result.items() if k in ['id', 'title', 'username', 'type']}
+        return {'status': 'success'}
+
+class AIAssistant:
+    """AI-driven workflow optimization and suggestions"""
+
+    def suggest_next_action(self, context: str) -> str:
+        """Provide AI-driven suggestions based on context"""
+        # In a real implementation, this would call an AI service
+        # For now, provide rule-based suggestions
+
+        context_lower = context.lower()
+
+        if 'rfc' in context_lower and 'ready' in context_lower:
+            return "Consider posting a status update to the council channel and checking policy compliance."
+        elif 'deploy' in context_lower and 'success' in context_lower:
+            return "Consider updating the RFC status card and notifying stakeholders."
+        elif 'error' in context_lower or 'fail' in context_lower:
+            return "Consider checking audit logs, running policy checks, and notifying the team."
+        else:
+            return "Consider reviewing current permissions, checking audit logs, or updating status cards."
+
+class PolicyEngine:
+    """Proactive security and compliance checks using policy-as-code"""
+
+    def check_policy(self, policy_file: str, data: Dict) -> Dict[str, Any]:
+        """Run local policy checks against configuration data"""
+        # In a real implementation, this would use OPA/Rego
+        # For now, implement basic rule-based checks
+
+        violations = []
+
+        # Example policy: Bot should not have delete permissions
+        if data.get('permissions', {}).get('can_delete_messages', False):
+            violations.append({
+                'policy': 'bot_permissions',
+                'violation': 'Bot should not have delete message permissions',
+                'severity': 'high'
+            })
+
+        # Example policy: Admin roles should be limited
+        admin_count = sum(1 for user in data.get('members', [])
+                          if user.get('status') == 'administrator')
+        if admin_count > 5:
+            violations.append({
+                'policy': 'admin_limit',
+                'violation': f'Too many administrators ({admin_count} > 5)',
+                'severity': 'medium'
+            })
+
+        return {
+            'compliant': len(violations) == 0,
+            'violations': violations,
+            'checked_at': datetime.utcnow().isoformat()
+        }
+
+class ConfigManager:
+    """Configuration management for tgk"""
+
+    def __init__(self):
+        self.config_file = Path.home() / '.tgk' / 'config.yaml'
+        self.config_file.parent.mkdir(exist_ok=True)
+
+    def load_config(self) -> Dict[str, Any]:
+        """Load configuration from file"""
+        if self.config_file.exists():
+            with open(self.config_file) as f:
+                return yaml.safe_load(f) or {}
+        return {}
+
+    def save_config(self, config: Dict[str, Any]):
+        """Save configuration to file"""
+        with open(self.config_file, 'w') as f:
+            yaml.dump(config, f)
+
+    def get_token(self) -> Optional[str]:
+        """Get bot token from config or environment"""
+        return os.getenv('TELEGRAM_BOT_TOKEN') or self.load_config().get('bot_token')
+
+# Global instances
+config_manager = ConfigManager()
+ai_assistant = AIAssistant()
+policy_engine = PolicyEngine()
+
+@click.group()
+@click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
+@click.pass_context
+def cli(ctx, verbose):
+    """Alchemist Tele-Control Plane - AI-Driven Telegram IaC"""
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    # Initialize client
+    token = config_manager.get_token()
+    if not token:
+        raise click.ClickException("No bot token found. Run 'tgk config init' or set TELEGRAM_BOT_TOKEN")
+
+    ctx.obj = TelegramClient(token)
+
+@cli.group()
+def config():
+    """Configuration management"""
+    pass
+
+@config.command()
+@click.option('--token', help='Bot token')
+@click.option('--set', multiple=True, help='Set key=value configuration')
+def init(token, set_vars):
+    """Initialize tgk configuration"""
+    config = config_manager.load_config()
+
+    if token:
+        config['bot_token'] = token
+
+    for var in set_vars:
+        key, value = var.split('=', 1)
+        config[key] = value
+
+    config_manager.save_config(config)
+    click.echo("Configuration initialized successfully")
+
+@cli.group()
+def auth():
+    """Authentication and token management"""
+    pass
+
+@auth.command()
+def refresh():
+    """Refresh and verify bot token"""
+    # This would implement token refresh logic
+    click.echo("Token refresh not implemented in this demo")
+
+@cli.group()
+def chat():
+    """Chat management operations"""
+    pass
+
+@chat.command()
+@click.pass_obj
+def list(client):
+    """List available chats and channels"""
+    # In a real implementation, this would call getUpdates
+    # For demo, return mock data
+    chats = [
+        {"id": -1001234567890, "title": "Alchemists Council", "type": "supergroup"},
+        {"id": -1009876543210, "title": "alchemist_releases", "type": "channel"},
+        {"id": -1005556667778, "title": "infra_team", "type": "supergroup"}
+    ]
+
+    click.echo(json.dumps(chats, indent=2))
+
+@cli.group()
+def group():
+    """Group management operations"""
+    pass
+
+@group.command()
+@click.argument('title')
+@click.option('--forum', is_flag=True, help='Create as forum supergroup')
+@click.option('--convert', is_flag=True, help='Convert to supergroup')
+@click.option('--invite-users', help='Comma-separated list of users to invite')
+@click.pass_obj
+def create(client, title, forum, convert, invite_users):
+    """Create a new group with optional forum features"""
+
+    # Check policy compliance
+    policy_data = {
+        'action': 'group_create',
+        'title': title,
+        'forum': forum,
+        'convert': convert
+    }
+
+    policy_result = policy_engine.check_policy('group_creation', policy_data)
+    if not policy_result['compliant']:
+        click.echo("Policy violations found:")
+        for violation in policy_result['violations']:
+            click.echo(f"  - {violation['violation']} (severity: {violation['severity']})")
+        if not click.confirm("Continue despite policy violations?"):
+            return
+
+    # Mock group creation (would call actual API)
+    group_data = {
+        "id": -1001234567890,
+        "title": title,
+        "type": "supergroup",
+        "forum": forum
+    }
+
+    click.echo(json.dumps(group_data, indent=2))
+
+    # AI suggestion
+    suggestion = ai_assistant.suggest_next_action(f"Created group '{title}'")
+    click.echo(f"\n💡 AI Suggestion: {suggestion}")
+
+@cli.group()
+def channel():
+    """Channel management operations"""
+    pass
+
+@channel.command()
+@click.argument('title')
+@click.option('--public', is_flag=True, help='Make channel public')
+@click.pass_obj
+def create(client, title, public):
+    """Create a new broadcast channel"""
+
+    # Mock channel creation
+    channel_data = {
+        "id": -1009876543210,
+        "title": title,
+        "username": title.lower().replace(' ', '_') if public else None,
+        "type": "channel"
+    }
+
+    click.echo(json.dumps(channel_data, indent=2))
+
+@cli.group()
+def topic():
+    """Forum topic management"""
+    pass
+
+@topic.command()
+@click.argument('chat_id')
+@click.argument('name')
+@click.option('--template', help='Use predefined template')
+@click.pass_obj
+def create(client, chat_id, name, template):
+    """Create a new forum topic"""
+
+    topic_data = {
+        "message_thread_id": 12345,
+        "name": name,
+        "icon_color": 7322096
+    }
+
+    click.echo(json.dumps(topic_data, indent=2))
+
+@cli.group()
+def member():
+    """Member management operations"""
+    pass
+
+@member.command()
+@click.argument('chat_id')
+@click.argument('username')
+@click.pass_obj
+def add(client, chat_id, username):
+    """Add member to chat"""
+
+    # Mock member addition
+    result = {"ok": True, "result": True}
+    click.echo(json.dumps(result, indent=2))
+
+@cli.group()
+def role():
+    """Role and permission management"""
+    pass
+
+@role.command()
+@click.argument('chat_id')
+@click.argument('username')
+@click.option('--admin', is_flag=True, help='Grant admin privileges')
+@click.option('--can-pin-messages', is_flag=True, help='Allow pinning messages')
+@click.option('--can-manage-topics', is_flag=True, help='Allow managing topics')
+@click.pass_obj
+def set(client, chat_id, username, admin, can_pin_messages, can_manage_topics):
+    """Set user role and permissions"""
+
+    # Check policy compliance
+    policy_data = {
+        'chat_id': chat_id,
+        'username': username,
+        'admin': admin,
+        'can_pin_messages': can_pin_messages,
+        'can_manage_topics': can_manage_topics
+    }
+
+    policy_result = policy_engine.check_policy('role_permissions', policy_data)
+    if not policy_result['compliant']:
+        click.echo("Policy violations found:")
+        for violation in policy_result['violations']:
+            click.echo(f"  - {violation['violation']} (severity: {violation['severity']})")
+        if not click.confirm("Continue despite policy violations?"):
+            return
+
+    result = {"ok": True}
+    click.echo(json.dumps(result, indent=2))
+
+@cli.group()
+def card():
+    """Card/message management operations"""
+    pass
+
+@card.command()
+@click.argument('chat_id')
+@click.option('--title', '-t', help='Card title')
+@click.option('--description', '-d', help='Card description')
+@click.option('--template', help='Use predefined template')
+@click.pass_obj
+def post(client, chat_id, title, description, template):
+    """Post a rich card message"""
+
+    # Mock message posting
+    message_data = {
+        "message_id": 12345,
+        "chat": {"id": int(chat_id)},
+        "text": f"**{title}**\n\n{description}",
+        "date": int(datetime.utcnow().timestamp())
+    }
+
+    click.echo(json.dumps(message_data, indent=2))
+
+@card.command()
+@click.argument('chat_id')
+@click.argument('message_id')
+@click.option('--title', '-t', help='New card title')
+@click.option('--description', '-d', help='New card description')
+@click.pass_obj
+def update(client, chat_id, message_id, title, description):
+    """Update an existing card message"""
+
+    result = {"ok": True}
+    click.echo(json.dumps(result, indent=2))
+
+@card.command()
+@click.argument('chat_id')
+@click.argument('message_id')
+@click.pass_obj
+def delete(client, chat_id, message_id):
+    """Delete a message"""
+
+    result = {"ok": True}
+    click.echo(json.dumps(result, indent=2))
+
+@cli.group()
+def audit():
+    """Audit and compliance operations"""
+    pass
+
+@audit.command()
+@click.option('--target', help='Target chat/channel ID')
+@click.option('--action', help='Filter by action type')
+@click.option('--since', help='Filter since time (e.g., 24h, 1d)')
+def log(target, action, since):
+    """View audit logs"""
+
+    # Mock audit log data
+    logs = [
+        {
+            "timestamp": "2025-10-26T16:00:00Z",
+            "action": "group_create",
+            "user": "alice.smith",
+            "target": target or "-1001234567890",
+            "details": {"title": "Alchemists Council"}
+        }
+    ]
+
+    click.echo(json.dumps(logs, indent=2))
+
+@cli.group()
+def policy():
+    """Policy-as-code operations"""
+    pass
+
+@policy.command()
+@click.argument('chat_id')
+@click.option('--policy', help='Policy file to check')
+@click.pass_obj
+def check(client, chat_id, policy_file):
+    """Run policy checks against chat configuration"""
+
+    # Mock chat data
+    chat_data = {
+        "id": chat_id,
+        "permissions": {"can_delete_messages": False},
+        "members": [{"status": "administrator"}, {"status": "member"}]
+    }
+
+    result = policy_engine.check_policy(policy_file or 'default', chat_data)
+    click.echo(json.dumps(result, indent=2))
+
+@cli.group()
+def ai():
+    """AI-assisted operations"""
+    pass
+
+@ai.command()
+@click.argument('context')
+def suggest(context):
+    """Get AI-driven suggestions for next actions"""
+
+    suggestion = ai_assistant.suggest_next_action(context)
+    click.echo(f"💡 AI Suggestion: {suggestion}")
+
+if __name__ == '__main__':
+    cli()

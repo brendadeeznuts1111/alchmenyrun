@@ -42,7 +42,8 @@
     "telegram:rollback": "./scripts/telegram-rollback.sh",
     "telegram:replace-card": "./scripts/replace-card.sh",
     "telegram:unpin": "./scripts/unpin.sh",
-    "telegram:cli": "./scripts/tgk"
+    "telegram:cli": "./scripts/tgk",
+    "telegram:enhanced": "python3 ./scripts/tgk-enhanced"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
