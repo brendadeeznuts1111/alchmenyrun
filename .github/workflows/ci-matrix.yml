@@ -1,0 +1,14 @@
+name: CI Matrix
+'on': [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        folder: [bun-runtime, mcp-server, blocks, cli]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun test packages/@alch/${{ matrix.folder }}
+      - run: bun run kit:build

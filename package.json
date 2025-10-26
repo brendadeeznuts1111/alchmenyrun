@@ -27,7 +27,12 @@
     "watch:alchemy": "npm view alchemy version --json | bun -e 'const v = await Bun.stdin.text(); const ver = JSON.parse(v); console.log(ver >= \"0.77.0\" ? \"🚀 0.77.0 is LIVE!\" : `Current: ${ver}`)'",
     "mcp:claude": "bun run packages/@alch/mcp-server/cli.ts",
     "kit:test": "bun test packages/@alch/*/src",
-    "kit:build": "bun build packages/@alch/bun-runtime/src/index.ts --outdir dist/bun-runtime --target bun && bun build packages/@alch/mcp-server/src/index.ts --outdir dist/mcp-server --target bun"
+    "kit:build": "bun build packages/@alch/bun-runtime/src/index.ts --outdir dist/bun-runtime --target bun && bun build packages/@alch/mcp-server/src/index.ts --outdir dist/mcp-server --target bun",
+    "kit:dev": "bun run mcp:claude & alchemy dev",
+    "kit:new": "bun run packages/@alch/cli/bin/alchemy-kit.js generate",
+    "kit:release": "npm version prerelease && git push --tags",
+    "app:new": "./scripts/create-app.sh",
+    "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
