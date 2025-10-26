@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        folder: [bun-runtime, mcp-server, blocks, cli]
+        folder: [bun-runtime, mcp-server, blocks, cli, queue]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
