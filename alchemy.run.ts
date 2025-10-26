@@ -90,16 +90,16 @@ await alchemy.run("compute", async () => {
   
   // Create Durable Object namespace for WebSocket chat
   // The ChatRoom class will be exported from the website worker
+  // Note: scriptName will default to the worker it's bound to
   const chatNamespace = await DurableObjectNamespace("chat", {
     className: "ChatRoom",
-    scriptName: "website", // Must match the worker name below
   });
   
   // Create Workflow namespace for user onboarding
   // The OnboardingWorkflow class will be exported from the website worker
+  // Note: scriptName will default to the worker it's bound to
   const workflowNamespace = await Workflow("onboarding", {
     className: "OnboardingWorkflow",
-    scriptName: "website", // Must match the worker name below
   });
   
   // Share with other scopes
