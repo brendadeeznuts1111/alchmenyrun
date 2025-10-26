@@ -4,10 +4,33 @@
 **Branch**: `upgrade/alchemy-077`  
 **Expected Time**: 2 minutes
 
+## 🚀 ONE-LINER (Copy-Paste When 0.77.0 Drops)
+
+```bash
+git checkout -b upgrade/alchemy-077 && \
+bun add alchemy@^0.77.0 && \
+bun alchemy deploy --profile prod && \
+git commit -am "chore: Upgrade to Alchemy 0.77.0
+
+Closes #12" && \
+git push origin upgrade/alchemy-077 && \
+gh pr create --title "chore: Upgrade Alchemy to 0.77.0" --body "Final piece for v1.0!
+
+Closes #12" --label "dependencies" --milestone "v1.0 - Core Infrastructure" && \
+gh pr merge --squash --delete-branch && \
+git checkout main && git pull && \
+git tag v1.0.0 && git push origin v1.0.0 && \
+gh release create v1.0.0 --title "v1.0.0 - Core Infrastructure" --notes-file .github/RELEASE_NOTES_v1.0.0.md
+```
+
+**Result:** v1.0.0 tagged and released! 🎉
+
+---
+
 ## Pre-Upgrade
 
 - [ ] Verify 0.77.0 is published: `npm view alchemy version`
-- [ ] Create branch: `git checkout -b upgrade/alchemy-077`
+- [ ] Ensure you're on main: `git checkout main && git pull`
 
 ## Upgrade Steps
 
