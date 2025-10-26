@@ -88,8 +88,24 @@ await alchemy.run("compute", async () => {
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
+  // Durable Object namespace for WebSocket chat
+  // References the ChatRoom class exported from the website worker
+  const chatNamespace = await DurableObjectNamespace("chat", {
+    className: "ChatRoom",
+    scriptName: "website",
+  });
+  
+  // Workflow namespace for user onboarding
+  // References the OnboardingWorkflow class exported from the website worker
+  const workflowNamespace = await Workflow("onboarding", {
+    className: "OnboardingWorkflow",
+    scriptName: "website",
+  });
+  
   // Share with other scopes
   resources.jobs = jobs;
+  resources.chatNamespace = chatNamespace;
+  resources.workflowNamespace = workflowNamespace;
 });
 
 // ========================================
@@ -112,6 +128,8 @@ export const website = await BunSPA("website", {
     
     // Compute bindings
     JOBS: resources.jobs,
+    CHAT: resources.chatNamespace,
+    WORKFLOW: resources.workflowNamespace,
     
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
