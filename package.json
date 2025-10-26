@@ -23,7 +23,8 @@
     "test:ui": "vitest --ui",
     "test:webhook": "./scripts/test-github-webhook.sh",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "watch:alchemy": "npm view alchemy version --json | bun -e 'const v = await Bun.stdin.text(); const ver = JSON.parse(v); console.log(ver >= \"0.77.0\" ? \"🚀 0.77.0 is LIVE!\" : `Current: ${ver}`)'"
   },
   "dependencies": {
     "alchemy": "^0.76.1",
