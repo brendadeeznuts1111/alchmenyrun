@@ -15,7 +15,11 @@ Alchemist thrives on a culture of distributed ownership, transparency, and conti
 - **Role**: Principal Engineer & Project Lead (Strategic Vision & Final Architectural Approver)
 - **Responsibilities**:
   - Defines and stewards the overarching technical vision and strategic direction
-  - Provides final architectural approval for `level/strategic` changes, ensuring alignment with project goals
+  - Provides final architectural approval for `level/strategic` changes, ensuring alignment with project goals and long-term maintainability
+  - Owns the **Alchemist Profile** for strategic decisions—mirroring how
+    [alchemy.run/concepts/profiles](https://alchemy.run/concepts/profiles) scopes
+    resource access, Brenda's **People Profile** scopes long-term vision and
+    cross-department resource allocation
   - Mentors Department Leads, fostering their growth and leadership
   - Manages high-level project roadmap and inter-departmental dependencies
   - Represents Project Alchemist in critical external engagements and community leadership
@@ -30,7 +34,10 @@ Alchemist thrives on a culture of distributed ownership, transparency, and conti
 - **Lead**: @alice.smith (Alice Smith)
 - **Email**: alice.smith@alchemists.dev
 - **Role**: Infrastructure Lead (Domain Owner, Primary Decision-Maker & Technical Reviewer)
-- **Profile**: Alice leads the Infrastructure Team, acting as the primary owner for all foundational components. She champions best practices for CI/CD, deployment, and core framework stability, making tactical decisions and guiding her team's technical direction. She fosters a culture of reliability and automation.
+- **Profile**: Alice leads the Infrastructure Team, acting as the primary owner for all foundational components. She champions the robust CI/CD practices defined in our [Alchemist CI Guide](https://alchemy.run/guides/ci/), driving efficiency through GitOps principles and immutable infrastructure. She's the primary decision-maker for tactical infrastructure changes and reviews all core infrastructure PRs, fostering a culture of reliability and automation.
+  - **CI/CD Implementation**: Alice ensures every pipeline follows the **immutable artefact** pattern described in the guide—what passes in `preview` is **byte-for-byte** what runs in `prod`.
+  - **GitOps Guardrails**: All environment changes flow through Git; no manual clicks, no snowflakes.
+  - **Zero-Downtime Deployments**: Blue-green and rolling updates are enforced via the **stage promotion** workflow.
 - **Members**:
   - @infra_dev1 (Bob Johnson)
     - **Email**: bob.johnson@alchemists.dev
@@ -83,8 +90,9 @@ Alchemist thrives on a culture of distributed ownership, transparency, and conti
 - **Domain Ownership**:
   - Definition and enforcement of project-wide quality standards and testing methodologies
   - Development and maintenance of test frameworks (unit, integration, E2E, performance)
-  - Management of CI validation pipelines and release gating criteria
+  - Management of CI validation pipelines and release gating criteria, *directly supporting the integrity of our [CI processes](https://alchemy.run/guides/ci/).*
   - Regression prevention strategies and bug triaging processes
+  - Ensuring adherence to defined quality gates within the CI pipeline (test coverage ≥ 80%, lint clean, type clean)
   - Educating teams on effective testing practices
 - **Focus**: Test frameworks, CI validation, quality assurance
 - **Components**: Test suites, automation, validation pipelines
@@ -254,6 +262,12 @@ Engineering Leadership (@brendadeeznuts1111 - Alchemists Council)
 - ✅ Mentors Department Leads and fosters leadership growth
 - ✅ Manages external partnerships and community relations
 
+**Cross-Functional Alignment Mechanisms (borrowing from CI guide's "promotion" concept):**
+- **Weekly Leads Sync**: A human "promotion gate"—every Thursday we run the equivalent of `alchemy deploy --stage leads-sync` to surface cross-team dependencies before they hit main.
+- **Shared Roadmap Visibility**: Central board acts like a **global state file**; any dependency change triggers a "plan" review.
+- **Joint Design Sessions**: For complex features we create an **RFC PR** first (lightweight blueprint), exactly like a **preview stage** before the real PR.
+- **RFC (Request for Comments) Process**: Lightweight blueprint → feedback → merge; mirrors the **artefact-lock** principle in the CI guide.
+
 #### **Infrastructure Team (@alice.smith Lead - Alchemist Core Infra)**
 - ✅ **Full ownership of CI/CD, deployment, core framework, and operational stability**
 - ✅ **Primary review and merge authority for all `dept/infrastructure` `level/tactical` and `level/operational` changes**
@@ -304,9 +318,11 @@ Implement a formal mentorship aspect where Leads/Senior members actively guide j
 
 #### **Definition of Done (DoD)**
 Each team should have a clear DoD checklist for PRs (e.g., "Tests written," "Documentation updated," "Code reviewed by X," "Passing CI").
+  - **Expanded DoD Examples (lifted verbatim from CI guide):** *Code is reviewed and approved by all required parties. All automated tests (unit, integration, E2E) pass. Relevant documentation (API, User Guides) is updated. New functionality includes clear examples. Performance impacts are considered. Security implications are reviewed and addressed.*
 
 #### **Code of Conduct**
 Explicitly link to a project Code of Conduct for all contributors, emphasizing respectful collaboration, aligning with Alchemist's core principles.
+  - **Post-Mortem / Retrospective Culture**: Blame-free environment; every incident ends with an ADR-like **lessons-learned** file, exactly like a **failed deployment artifact**.
 
 ## Branching Strategy & CI/CD
 
