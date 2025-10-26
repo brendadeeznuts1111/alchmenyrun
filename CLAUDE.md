@@ -2,355 +2,95 @@
 
 This document contains configuration and context for Claude AI assistants working with this Alchemy project.
 
-## Project Alchemist - Enhanced Team & Governance Hierarchy
+# Alchemist Org Structure & Workflow  
+> Same concepts, two planes: **resources** (`alchemy.run`) and **people** (this doc).
 
-### 👥 Team Hierarchy and Core Principles
+## 1. Team Topology (Resource-Analogue)
+| Alchemist Concept | Human Equivalent | Purpose |
+|-------------------|------------------|---------|
+| **Profile** | Role + Scope | Limits blast radius |
+| **Stage** | Dept / Project | Isolated environment |
+| **Promotion** | Lead Sync → Main | Immutable artefact flow |
+| **Artefact** | Deliverable / Decision | Byte-for-byte reproducible |
 
-Alchemist thrives on a culture of distributed ownership, transparency, and continuous improvement. Our structure ensures clarity on decision-making while empowering every team to drive their domain.
+---
 
-#### **Leadership Team**
-- **Team Name**: The Alchemists Council
-- **Team Lead**: @brendadeeznuts1111 (Brenda Deeznuts)
-- **Email**: brenda.deeznuts@alchemists.dev
-- **Role**: Principal Engineer & Project Lead (Strategic Vision & Final Architectural Approver)
-- **Responsibilities**:
-  - Defines and stewards the overarching technical vision and strategic direction
-  - Provides final architectural approval for `level/strategic` changes, ensuring alignment with project goals and long-term maintainability
-  - Owns the **Alchemist Profile** for strategic decisions—mirroring how
-    [alchemy.run/concepts/profiles](https://alchemy.run/concepts/profiles) scopes
-    resource access, Brenda's **People Profile** scopes long-term vision and
-    cross-department resource allocation
-  - Mentors Department Leads, fostering their growth and leadership
-  - Manages high-level project roadmap and inter-departmental dependencies
-  - Represents Project Alchemist in critical external engagements and community leadership
-  - Oversees budget, resource allocation, and long-term sustainability
-- **Department**: Engineering Leadership
-- **Profile**: Brenda is the visionary behind Project Alchemist, setting the technical direction and fostering a culture of innovation. Her focus is on the long-term health and strategic evolution of the project, empowering her teams to take day-to-day ownership.
+## 2. Domain Owners & Profiles
+### **The Alchemists Council**  
+**Lead:** @brendadeeznuts1111 (Brenda Williams)  
+**Mission:** Set the **global state**—long-term vision, budget, final `level/strategic` approval.  
+**Profile:** Owns the **Alchemist Profile** for strategic decisions; mirrors [alchemy.run/concepts/profiles](https://alchemy.run/concepts/profiles) but scopes **people** instead of **tokens**.
 
-#### **Core Engineering Department - *Principles: Ownership, Quality, Collaboration***
+### **Infrastructure Team**  
+**Lead:** @alice.smith (Alice Smith)  
+**Mission:** Keep the **pipeline** green and **artefacts** immutable.  
+**Profile:** Implements every rule in [alchemy.run/guides/ci](https://alchemy.run/guides/ci):  
+- GitOps only—no click-ops snowflakes  
+- Preview → Prod promotion locks the **exact** SHA  
+- Zero-downtime via blue-green & rolling updates  
 
-**🚀 Infrastructure Team**
-- **Team Name**: Alchemist Core Infra
-- **Lead**: @alice.smith (Alice Smith)
-- **Email**: alice.smith@alchemists.dev
-- **Role**: Infrastructure Lead (Domain Owner, Primary Decision-Maker & Technical Reviewer)
-- **Profile**: Alice leads the Infrastructure Team, acting as the primary owner for all foundational components. She champions the robust CI/CD practices defined in our [Alchemist CI Guide](https://alchemy.run/guides/ci/), driving efficiency through GitOps principles and immutable infrastructure. She's the primary decision-maker for tactical infrastructure changes and reviews all core infrastructure PRs, fostering a culture of reliability and automation.
-  - **CI/CD Implementation**: Alice ensures every pipeline follows the **immutable artefact** pattern described in the guide—what passes in `preview` is **byte-for-byte** what runs in `prod`.
-  - **GitOps Guardrails**: All environment changes flow through Git; no manual clicks, no snowflakes.
-  - **Zero-Downtime Deployments**: Blue-green and rolling updates are enforced via the **stage promotion** workflow.
-- **Members**:
-  - @infra_dev1 (Bob Johnson)
-    - **Email**: bob.johnson@alchemists.dev
-    - **Role**: CI/CD & DevOps Specialist (Focus: Automation, Monitoring, SRE)
-    - **Profile**: Bob is instrumental in maintaining and evolving our automated build, test, and deployment pipelines. He specializes in site reliability engineering and ensuring robust system monitoring.
-  - @infra_dev2 (Carol White)
-    - **Email**: carol.white@alchemists.dev
-    - **Role**: Core Framework Architect (Focus: Scalability, Performance, Core API Design)
-    - **Profile**: Carol is responsible for the design and evolution of our core framework, focusing on performance, scalability, and clean API abstractions that enable other teams.
-- **Domain Ownership**:
-  - End-to-end CI/CD and deployment pipelines
-  - Core framework design, stability, and API contracts
-  - System reliability, performance, and monitoring infrastructure
-  - Cloud resource management and cost optimization strategies
-- **Focus**: CI/CD, deployment, resource providers, core framework
-- **Components**: Queue, Tunnel, Worker, CLI tools
-- **Expertise**: Cloudflare integration, TypeScript patterns, infrastructure-as-code, GitOps, observability
+### **Providers Team**  
+**Lead:** @charlie.brown (Charlie Brown)  
+**Mission:** Ship **resource providers** that feel native to Alchemy.  
+**Profile:** `dept/providers`—owns `@alch/*` packages and the provider SDK.
 
-**⚡ Resource Provider Team**
-- **Team Name**: Alchemist Integrations Hub
-- **Lead**: @charlie.brown (Charlie Brown)
-- **Email**: charlie.brown@alchemists.dev
-- **Role**: Resource Provider Lead (Domain Owner, Primary Decision-Maker & Technical Reviewer)
-- **Profile**: Charlie leads the Integrations Hub, overseeing the development and maintenance of all external service integrations. He ensures our providers are robust, secure, and user-friendly, setting the standards for API interaction and resource lifecycle management. He fosters expertise in diverse cloud ecosystems.
-- **Members**:
-  - @provider_dev1 (David Green)
-    - **Email**: david.green@alchemists.dev
-    - **Role**: Cloud Integration Specialist (Focus: API Design, Security, External Service Hooks)
-    - **Profile**: David excels at connecting Alchemist to the vast ecosystem of cloud services, ensuring secure, efficient, and well-documented integrations.
-- **Domain Ownership**:
-  - Implementation and maintenance of all specific cloud service integrations (Docker, GitHub, Neon, AWS, GCP, etc.)
-  - Lifecycle management of external resources created via Alchemist
-  - Secure API wrapper design and credential management
-  - Compliance with external service provider terms and best practices
-- **Focus**: Implementing cloud service providers
-- **Components**: All resource implementations (Docker, GitHub, Neon, etc.)
-- **Expertise**: API integration, resource lifecycle management, security protocols (OAuth, API Keys), idempotency, error handling
+### **Quality Team**  
+**Lead:** @diana.prince (Diana Prince)  
+**Mission:** Gate quality **before** promotion.  
+**Profile:** Enforces CI gates: ≥ 80% coverage, lint clean, type clean, perf budget.
 
-**🧪 Quality & Testing Team**
-- **Team Name**: Alchemist Quality Gate
-- **Lead**: @diana.prince (Diana Prince)
-- **Email**: diana.prince@alchemists.dev
-- **Role**: Quality Assurance Lead (Domain Owner, Primary Decision-Maker & Quality Advocate)
-- **Profile**: Diana leads the Quality Gate, establishing and enforcing testing standards across the project. She designs and implements robust test frameworks, ensuring every release meets the highest quality standards and provides a reliable user experience. She advocates for quality throughout the development lifecycle.
-- **Members**:
-  - @qa_analyst1 (Eve Adams)
-    - **Email**: eve.adams@alchemists.dev
-    - **Role**: Automation Engineer (Focus: Test Framework Development, E2E Testing)
-    - **Profile**: Eve is the architect of our automated test suites, developing and maintaining the tools that validate functionality, performance, and reliability across the entire system.
-- **Domain Ownership**:
-  - Definition and enforcement of project-wide quality standards and testing methodologies
-  - Development and maintenance of test frameworks (unit, integration, E2E, performance)
-  - Management of CI validation pipelines and release gating criteria, *directly supporting the integrity of our [CI processes](https://alchemy.run/guides/ci/).*
-  - Regression prevention strategies and bug triaging processes
-  - Ensuring adherence to defined quality gates within the CI pipeline (test coverage ≥ 80%, lint clean, type clean)
-  - Educating teams on effective testing practices
-- **Focus**: Test frameworks, CI validation, quality assurance
-- **Components**: Test suites, automation, validation pipelines
-- **Expertise**: Vitest, Playwright/Cypress, end-to-end testing, performance testing, security testing basics, test-driven development (TDD)
+---
 
-**📚 Documentation Team**
-- **Team Name**: Alchemist Knowledge Base
-- **Lead**: @frank.taylor (Frank Taylor)
-- **Email**: frank.taylor@alchemists.dev
-- **Role**: Documentation Lead (Domain Owner, Primary Decision-Maker & User Advocate)
-- **Profile**: Frank leads the Knowledge Base team, ensuring Project Alchemist is accessible and understandable to all users and contributors. He champions clear, comprehensive, and accurate documentation, driving content strategy and user experience for learning.
-- **Members**:
-  - @doc_writer1 (Grace Kim)
-    - **Email**: grace.kim@alchemists.dev
-    - **Role**: Technical Writer & UX Content Strategist (Focus: User Guides, API Docs, Accessibility)
-    - **Profile**: Grace transforms complex technical concepts into clear, concise, and user-friendly documentation. She ensures our guides, examples, and API references are accurate and enhance the user journey.
-- **Domain Ownership**:
-  - Content strategy and information architecture for all project documentation
-  - Creation and maintenance of user guides, tutorials, and examples
-  - Development and upkeep of API documentation and reference materials
-  - Management of the documentation site platform and tooling
-  - Driving contributor experience through clear documentation
-- **Focus**: Guides, examples, API documentation
-- **Components**: Documentation site, examples, guides
-- **Expertise**: Technical writing, user experience (UX), static site generators (e.g., Docusaurus, Next.js), content management, information architecture
+## 3. Workflow Mechanics
+### **PR Title Grammar**  
+`[DOMAIN][SCOPE][TYPE] Imperative description`  
+- **DOMAIN** = `dept/` label (`INFRA`, `PROVIDERS`, `QUALITY`)  
+- **SCOPE** = component (`QUEUE`, `DOCKER-PROVIDER`, `API-DOCS`)  
+- **TYPE** = `type/` label (`FEAT`, `BUG`, `REFACTOR`)  
 
-### 🏷️ Labels and Workflow Indicators
+Example:  
+`[INFRA][QUEUE][FEAT] Add dead-letter queue support` 
 
-#### **Department Labels (Domain of ownership)**
-- `dept/leadership` 👔 - Leadership team decisions (Brenda's involvement)
-- `dept/infrastructure` 🏗️ - Infrastructure and deployment (Infrastructure Team ownership)
-- `dept/providers` 🔌 - Resource provider implementations (Resource Provider Team ownership)
-- `dept/quality` 🧪 - Testing and quality assurance (Quality & Testing Team ownership)
-- `dept/documentation` 📚 - Documentation and guides (Documentation Team ownership)
-- `dept/cross-functional` 🤝 - Initiatives requiring multiple teams
+### **Review & Approval Matrix**
+| Level | Who | Gate |
+|-------|-----|------|
+| `tactical` | Domain Lead | 1 LGTM |
+| `strategic` | Brenda | Lead-sync + final approve |
+| `mentoring` | Any senior | Teach, don't gate |
 
-#### **Role-Based Labels (Reviewer responsibility)**
-- `role/lead` 👑 - Department Lead responsibilities (e.g., Alice, Charlie, Diana, Frank)
-- `role/reviewer` 👀 - Designated team member for code review
-- `role/maintainer` 🔧 - Package maintenance
-- `role/contributor` 🤝 - Community contributors
-- `role/final-approver` ⭐ - Strategic final approval (Brenda's specific role for high-level changes)
-- `role/mentoring` 🌱 - Indicates a PR or task is for mentee growth/learning
+### **Definition of Done (lifted from CI guide)**
+- [ ] Code reviewed & approved by required parties  
+- [ ] All tests (unit, integration, E2E) pass  
+- [ ] Docs updated (API, user guide, examples)  
+- [ ] Performance & security implications reviewed  
+- [ ] Artefact SHA locked in preview → prod promotion
 
-#### **Hierarchy Level Labels (Impact/Risk assessment)**
-- `level/strategic` 🎯 - Strategic decisions (Requires Brenda's final-approver review)
-- `level/tactical` ⚡ - Tactical implementations (Department Lead/Reviewer approval)
-- `level/operational` 🔨 - Operational tasks (Team member/Reviewer approval)
+---
 
-#### **PR/Issue Type Labels (Nature of the change)**
-- `type/bug` 🐞 - Report a defect or issue
-- `type/feature` ✨ - Implement a new capability
-- `type/enhancement` 🚀 - Improve existing functionality
-- `type/chore` 🧹 - Routine maintenance, build updates, etc.
-- `type/refactor` ♻️ - Code restructuring without changing behavior
-- `type/docs` 📖 - Documentation additions or changes
-- `type/test` ✅ - Adding or updating tests
-- `type/security` 🔒 - Security vulnerability or improvement
+## 4. Cross-Functional Alignment
+| Human Gate | CI Analogue | Frequency |
+|------------|-------------|-----------|
+| **Leads Sync** | `plan` stage | Weekly |
+| **RFC PR** | `preview` stage | Ad-hoc |
+| **Retro** | Post-mortem artefact | Bi-weekly |
 
-#### **Workflow Status Labels (New! To guide PR/Issue progression)**
-- `status/triage` 🔍 - New issue/PR, needs initial assessment
-- `status/ready-for-dev` ✅ - Approved for development
-- `status/in-progress` 👨‍💻 - Actively being worked on
-- `status/ready-for-review` 👀 - Code is ready for peer review
-- `status/changes-requested` ✏️ - Review feedback needs addressing
-- `status/approved` 👍 - Approved by required reviewers (awaiting merge or final approval)
-- `status/blocked` 🛑 - Cannot proceed due to external dependency or issue
-- `status/stale` 🕰️ - Inactive, needs attention or closure
-- `status/merged` 🚀 - Successfully merged
-- `status/closed` ❌ - Closed without merging
+---
 
-### 📋 Assignment Rules and Review Workflow
+## 5. Growth & Mentorship
+- `role/mentoring` PRs = scoped profile for learners (only the permissions they need)  
+- Pair programming = live review loop  
+- 1:1s = personal backlog grooming  
+- Skill matrix = public RFC for career path  
 
-**Goal:** Empower teams to own their merges for most changes, routing strategic decisions to Brenda.
+---
 
-#### **Automatic Assignment Based on Component (Primary reviewers + backup)**
-```yaml
-# Infrastructure Components (Lead: @alice.smith)
-packages/@alch/queue/*: @alice.smith, @infra_dev1
-packages/@alch/tunnel/*: @alice.smith, @infra_dev2
-src/backend/*: @alice.smith, @infra_dev2
-.github/workflows/*: @alice.smith, @infra_dev1
-
-# Provider Components (Lead: @charlie.brown)
-alchemy/src/cloudflare/*: @charlie.brown, @provider_dev1
-alchemy/src/docker/*: @charlie.brown, @provider_dev1
-alchemy/src/github/*: @charlie.brown, @provider_dev1
-
-# Documentation (Lead: @frank.taylor)
-docs/*: @frank.taylor, @doc_writer1
-examples/*: @frank.taylor, @doc_writer1
-alchemy-web/*: @frank.taylor, @doc_writer1
-
-# Testing (Lead: @diana.prince)
-src/__tests__/*: @diana.prince, @qa_analyst1
-**/*.test.ts: @diana.prince, @qa_analyst1
-```
-
-#### **Review Requirements Based on Hierarchy**
-
-**General Principle:** All PRs require at least one `role/reviewer` approval from the relevant `dept/` team.
-
-**Workflow:**
-1. **Submission**: Developer opens PR (self-assigns `status/in-progress` and relevant `type/`)
-2. **Initial Review**: Automated assignment or developer requests review from appropriate `dept/` team's `role/reviewer`. PR gets `status/ready-for-review`
-3. **Department Lead Review (Tactical/Strategic)**: If the change is `level/tactical` or `level/strategic`, the `role/lead` of the relevant `dept/` must review and approve
-4. **Strategic Final Approval (Brenda Only)**: If the change is `level/strategic`, *after* department lead approval, `role/final-approver` (@brendadeeznuts1111) is requested for final review and merge
-
-```yaml
-# Strategic Changes (`level/strategic`)
-- Architecture decisions, major breaking changes, new core frameworks, substantial shifts in product direction
-- **Workflow**: Requires 1 `dept/X` `role/reviewer` + `dept/X` `role/lead` approval **AND** `dept/leadership` `role/final-approver` (@brendadeeznuts1111) approval
-- Labels: `dept/X`, `level/strategic`, `type/X`, `status/ready-for-review` -> `status/approved` (by lead) -> `status/approved` (by Brenda) -> `status/merged`
-
-# Tactical Changes (`level/tactical`)
-- New resource implementations, significant infrastructure improvements, major refactors impacting a single domain
-- **Workflow**: Requires 1 `dept/X` `role/reviewer` + `dept/X` `role/lead` approval. **No Brenda review required**
-- Labels: `dept/X`, `level/tactical`, `type/X`, `status/ready-for-review` -> `status/approved` (by reviewer/lead) -> `status/merged`
-
-# Operational Changes (`level/operational`)
-- Bug fixes, documentation updates, test improvements, minor enhancements, small refactors
-- **Workflow**: Requires at least 1 `dept/X` `role/reviewer` approval
-- Labels: `dept/X`, `level/operational`, `type/X`, `status/ready-for-review` -> `status/approved` (by reviewer) -> `status/merged`
-
-# Cross-functional Changes (`dept/cross-functional`)
-- Features or bug fixes that span multiple `dept/` domains
-- **Workflow**: Requires at least one `role/reviewer` from *each* relevant department. If `level/strategic`, still requires Brenda's final approval
-- Labels: `dept/cross-functional`, plus relevant `dept/X` labels, `level/X`, `type/X`
-```
-
-### 🔄 Escalation Path (Clearer Roles & Responsibilities)
-
-The escalation path ensures issues are resolved at the lowest appropriate level, empowering teams while providing fallback.
-
-1. **Developer/Contributor**: Initiates change/identifies issue
-   - `role/contributor`
-2. **Department Reviewer**: First line of review, provides feedback, ensures code quality and adherence to team standards
-   - `role/reviewer` (within relevant `dept/X`)
-3. **Department Lead**: For `level/tactical` changes or unresolved `level/operational` issues/conflicts. Approves merges for their domain (unless strategic). Mentors reviewers
-   - `role/lead` (within relevant `dept/X`)
-4. **Cross-functional Leads**: For `dept/cross-functional` changes, leads from all impacted teams collaborate. If unresolved, escalates to Leadership
-   - Multiple `role/lead`
-5. **Leadership Final Approver (Brenda)**: For `level/strategic` changes, or as a final escalation point for unresolved cross-functional conflicts. Provides final sign-off and ensures alignment with strategic vision
-   - `role/final-approver` (@brendadeeznuts1111)
-
-### 📊 Reporting Structure
-```
-Engineering Leadership (@brendadeeznuts1111 - Alchemists Council)
-├── Infrastructure Team (Alchemist Core Infra - Lead: @alice.smith)
-│   ├── @infra_dev1 (Bob Johnson) - CI/CD & DevOps Specialist
-│   └── @infra_dev2 (Carol White) - Core Framework Architect
-├── Resource Provider Team (Alchemist Integrations Hub - Lead: @charlie.brown)
-│   └── @provider_dev1 (David Green) - Cloud Integration Specialist
-├── Quality & Testing Team (Alchemist Quality Gate - Lead: @diana.prince)
-│   └── @qa_analyst1 (Eve Adams) - Automation Engineer
-└── Documentation Team (Alchemist Knowledge Base - Lead: @frank.taylor)
-    └── @doc_writer1 (Grace Kim) - Technical Writer & UX Content Strategist
-```
-
-### 🎯 Department Responsibilities (Expanded for Ownership)
-
-#### **Engineering Leadership (@brendadeeznuts1111 - Alchemists Council)**
-- ✅ **Defines and maintains project vision and long-term strategy**
-- ✅ **Final architectural decision-making and project governance**
-- ✅ **Final merge approvals for `level/strategic` changes**
-- ✅ Oversees cross-departmental alignment and conflict resolution
-- ✅ Mentors Department Leads and fosters leadership growth
-- ✅ Manages external partnerships and community relations
-
-**Cross-Functional Alignment Mechanisms (borrowing from CI guide's "promotion" concept):**
-- **Weekly Leads Sync**: A human "promotion gate"—every Thursday we run the equivalent of `alchemy deploy --stage leads-sync` to surface cross-team dependencies before they hit main.
-- **Shared Roadmap Visibility**: Central board acts like a **global state file**; any dependency change triggers a "plan" review.
-- **Joint Design Sessions**: For complex features we create an **RFC PR** first (lightweight blueprint), exactly like a **preview stage** before the real PR.
-- **RFC (Request for Comments) Process**: Lightweight blueprint → feedback → merge; mirrors the **artefact-lock** principle in the CI guide.
-
-#### **Infrastructure Team (@alice.smith Lead - Alchemist Core Infra)**
-- ✅ **Full ownership of CI/CD, deployment, core framework, and operational stability**
-- ✅ **Primary review and merge authority for all `dept/infrastructure` `level/tactical` and `level/operational` changes**
-- ✅ Proactive identification and resolution of performance bottlenecks
-- ✅ Development and enforcement of secure infrastructure practices
-- ✅ Maintenance of monitoring, logging, and alerting systems
-- ✅ Provides infrastructure-as-code expertise to all teams
-
-#### **Resource Provider Team (@charlie.brown Lead - Alchemist Integrations Hub)**
-- ✅ **Full ownership of all cloud service integrations and their lifecycle**
-- ✅ **Primary review and merge authority for all `dept/providers` `level/tactical` and `level/operational` changes**
-- ✅ Ensures secure, performant, and reliable interactions with external APIs
-- ✅ Manages provider versioning and compatibility
-- ✅ Proactively researches and integrates new cloud services based on roadmap needs
-- ✅ Develops internal tools to streamline provider development and testing
-
-#### **Quality & Testing Team (@diana.prince Lead - Alchemist Quality Gate)**
-- ✅ **Full ownership of project quality standards, test frameworks, and validation processes**
-- ✅ **Primary review and merge authority for all `dept/quality` `level/tactical` and `level/operational` changes**
-- ✅ Designs and implements comprehensive automated test suites (unit, integration, E2E, performance, security)
-- ✅ Defines and manages release gating criteria within CI/CD pipelines
-- ✅ Triages incoming bugs and works with development teams to ensure timely resolution
-- ✅ Evangelizes testing best practices and provides training across teams
-
-#### **Documentation Team (@frank.taylor Lead - Alchemist Knowledge Base)**
-- ✅ **Full ownership of all project documentation, examples, and user learning experience**
-- ✅ **Primary review and merge authority for all `dept/documentation` `level/tactical` and `level/operational` changes**
-- ✅ Develops and maintains a clear and accessible documentation portal
-- ✅ Ensures accuracy, completeness, and clarity of API documentation
-- ✅ Creates compelling examples and tutorials to onboard new users and contributors
-- ✅ Collects user feedback on documentation and drives continuous improvement
-
-### 🛠️ Tools & Practices to Reinforce This Structure
-
-#### **GitHub CODEOWNERS File**
-Configure your `.github/CODEOWNERS` file to automatically request reviews from `@[team-lead]` and `@[team-members]` based on file paths. This formalizes the "Automatic Assignment" section.
-
-#### **GitHub Issue/PR Templates**
-Create templates that guide contributors to select appropriate labels (`dept/`, `level/`, `type/`) and clearly state who needs to approve for different change types.
-
-#### **Regular Sync Meetings**
-- **Team Syncs**: Daily/Weekly standups for each team to manage `status/in-progress` and `status/ready-for-review` tasks
-- **Department Lead Sync**: Weekly sync for Department Leads to discuss cross-functional dependencies, tactical issues, and potential `level/strategic` items that might need Brenda's attention
-- **Brenda's Strategic Review Session**: A dedicated weekly or bi-weekly slot for Brenda to review `level/strategic` PRs and discuss high-level roadmap items with leads
-
-#### **Mentorship Program**
-Implement a formal mentorship aspect where Leads/Senior members actively guide junior `role/contributor`s, potentially using the `role/mentoring` label on PRs for specific learning opportunities.
-
-#### **Definition of Done (DoD)**
-Each team should have a clear DoD checklist for PRs (e.g., "Tests written," "Documentation updated," "Code reviewed by X," "Passing CI").
-  - **Expanded DoD Examples (lifted verbatim from CI guide):** *Code is reviewed and approved by all required parties. All automated tests (unit, integration, E2E) pass. Relevant documentation (API, User Guides) is updated. New functionality includes clear examples. Performance impacts are considered. Security implications are reviewed and addressed.*
-
-#### **Code of Conduct**
-Explicitly link to a project Code of Conduct for all contributors, emphasizing respectful collaboration, aligning with Alchemist's core principles.
-  - **Post-Mortem / Retrospective Culture**: Blame-free environment; every incident ends with an ADR-like **lessons-learned** file, exactly like a **failed deployment artifact**.
-
-## Branching Strategy & CI/CD
-
-**IMPORTANT**: Always create dedicated feature branches for specific work following the pattern:
-
-```bash
-# For new features or specific work
-git checkout -b feat/descriptive-name
-
-# For bug fixes  
-git checkout -b fix/descriptive-name
-
-# For documentation
-git checkout -b docs/descriptive-name
-```
-
-### CI/CD Pipeline
-- **Main branch**: Deploys to production (`prod` stage)
-- **Pull requests**: Creates preview environments (`pr-{number}` stage)
-- **PR cleanup**: Automatic teardown when PR is closed
-- **GitHub Actions**: Uses Bun for package management and deployment
-
-### Slash Commands
-Available GitHub slash commands for PR management:
-- `/deploy` - Trigger manual deployment
-- `/destroy` - Clean up preview environment
-- `/test` - Run test suite
-- `/lint` - Run code formatting and linting
+## 6. Quick-Start for New Contributors
+1. Fork → branch `feat/your-name`  
+2. Install: `npm create alchemy@latest`  
+3. Run: `alchemy deploy --stage preview`  
+4. PR title: `[PROVIDERS][YOUR-SCOPE][FEAT] Add your thing`  
+5. Tag reviewer listed in `CODEOWNERS`  
+6. Merge → artefact auto-promotes to prod
 
 # Alchemy
 
