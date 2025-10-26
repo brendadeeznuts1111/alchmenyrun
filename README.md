@@ -318,65 +318,93 @@ Resources are automatically named with the pattern: `${app}-${stage}-${id}`
 
 ## 🔧 Configuration
 
+### Profiles
+
+Alchemy profiles manage credentials without `.env` files:
+
+```bash
+# Configure profile
+alchemy configure [--profile name]
+
+# Login
+alchemy login [--profile name]
+
+# Deploy with profile
+alchemy deploy --profile prod
+```
+
+**Profile Storage**: `~/.alchemy/`
+- `config.json` - Profile settings (no secrets)
+- `credentials/{profile}/{provider}.json` - Credentials (sensitive)
+
+See [docs/PROFILES_GUIDE.md](./docs/PROFILES_GUIDE.md) for details.
+
+### Execution Phases
+
+Three modes for running infrastructure:
+
+| Phase | Purpose | Usage |
+|-------|---------|-------|
+| `up` | Deploy (default) | `bun ./alchemy.run.ts` |
+| `destroy` | Tear down | `PHASE=destroy bun ./alchemy.run.ts` |
+| `read` | Access only | `PHASE=read bun ./alchemy.run.ts` |
+
+**Read phase example**:
+```bash
+# Build frontend with infrastructure URLs
+PHASE=read bun ./scripts/build-frontend.ts
+```
+
+See [docs/EXECUTION_PHASES.md](./docs/EXECUTION_PHASES.md) for details.
+
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ALCHEMY_PASSWORD` | Encryption password for secrets | Yes |
-| `ALCHEMY_PROFILE` | Override default Alchemy profile | Optional |
-| `CLOUDFLARE_PROFILE` | Override default Cloudflare profile | Optional |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PHASE` | Execution phase (`up`/`destroy`/`read`) | `up` |
+| `STAGE` | Deployment stage | `$USER` |
+| `ALCHEMY_PROFILE` | Profile to use | `default` |
+| `CLOUDFLARE_PROFILE` | Cloudflare-specific profile | `default` |
 
-**Note**: Cloudflare credentials are managed through Alchemy profiles using `bun alchemy configure` and `bun alchemy login`. Environment variables are only needed for profile overrides.
+### Infrastructure Definition
 
-### Alchemy Configuration
-
-The infrastructure is defined in `alchemy.run.ts`:
+`alchemy.run.ts` defines all resources:
 
 ```typescript
-import alchemy from "alchemy";
-import { Website } from "alchemy/cloudflare";
+const phase = (process.env.PHASE as "up" | "destroy" | "read") ?? "up";
+const stage = process.env.STAGE ?? process.env.USER ?? "dev";
 
-// Uses default profile - can be overridden with --profile flag
 const app = await alchemy("cloudflare-demo", {
-  password: process.env.ALCHEMY_PASSWORD,
-  stateStore: (scope) => new CloudflareStateStore(scope),
-  // profile: "default", // This is implicit, can be set to "prod" etc.
+  phase,
+  stage,
+  profile: process.env.ALCHEMY_PROFILE ?? "default"
 });
 
-const website = await Website("app", {
-  name: "cloudflare-demo-website",
-  scriptPath: "./src/backend/server.ts",
-  assetsPath: "./src/frontend",
-  database: true,
-  storage: true,
-  cache: true,
-  chat: true,
-  workflow: true,
-  // profile: "default", // Individual resource profile override
+// Resources use automatic naming: ${app}-${resource}-${stage}
+export const website = await Worker("website", {
+  script: "./src/backend/server.ts"
 });
 
 await app.finalize();
 ```
 
-### Profile Usage Examples
+### Common Patterns
 
 ```bash
-# Use default profile
-bun run alchemy:dev
+# Deploy to dev
 bun run deploy
 
+# Deploy to prod
+STAGE=prod bun run deploy
+
+# Destroy dev
+PHASE=destroy bun run deploy
+
+# Read infrastructure
+PHASE=read bun run deploy
+
 # Use specific profile
-ALCHEMY_PROFILE=prod bun run deploy
-bun run deploy --profile prod
-
-# Use specific Cloudflare profile
-CLOUDFLARE_PROFILE=prod bun run deploy
-
-# Configure different profiles
-bun alchemy configure --profile dev
-bun alchemy configure --profile prod
-bun alchemy login --profile dev
-bun alchemy login --profile prod
+alchemy deploy --profile prod
 ```
 
 ## 🚀 Deployment
