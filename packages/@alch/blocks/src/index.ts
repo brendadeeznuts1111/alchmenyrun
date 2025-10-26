@@ -3,11 +3,15 @@
  * One-line resource creation with sensible defaults
  */
 
-import type { Worker as WorkerType, DurableObjectNamespace as DOType, Queue as QueueType } from "alchemy";
+import type {
+  Worker as WorkerType,
+  DurableObjectNamespace as DOType,
+  Queue as QueueType,
+} from "alchemy";
 
 /**
  * Create a WebSocket chat room with Durable Object
- * 
+ *
  * @example
  * ```ts
  * const { worker, room } = ChatBlock("support");
@@ -15,7 +19,7 @@ import type { Worker as WorkerType, DurableObjectNamespace as DOType, Queue as Q
  */
 export function ChatBlock(name: string, opts?: { className?: string }) {
   const className = opts?.className ?? `${name}Room`;
-  
+
   // Note: These are type definitions, actual resources created by consumer
   return {
     config: {
@@ -30,7 +34,7 @@ export function ChatBlock(name: string, opts?: { className?: string }) {
 
 /**
  * Create a job queue for async processing
- * 
+ *
  * @example
  * ```ts
  * const emails = JobQueue("emails");
@@ -47,13 +51,17 @@ export function JobQueue(name: string) {
 
 /**
  * Create a scheduled task (CRON job)
- * 
+ *
  * @example
  * ```ts
  * const cleanup = ScheduledTask("cleanup", "0 4 * * *", "src/cron/cleanup.ts");
  * ```
  */
-export function ScheduledTask(name: string, cron: string, handlerEntry: string) {
+export function ScheduledTask(
+  name: string,
+  cron: string,
+  handlerEntry: string,
+) {
   return {
     config: {
       name: `${name}-cron`,
@@ -66,7 +74,7 @@ export function ScheduledTask(name: string, cron: string, handlerEntry: string) 
 
 /**
  * Create a KV cache with worker
- * 
+ *
  * @example
  * ```ts
  * const { kv, worker } = CacheBlock("api-cache");

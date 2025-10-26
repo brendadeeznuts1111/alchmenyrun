@@ -1,6 +1,14 @@
 /// <reference types="node" />
 import alchemy from "alchemy";
-import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, } from "alchemy/cloudflare";
+import {
+  BunSPA,
+  D1Database,
+  R2Bucket,
+  Queue,
+  KVNamespace,
+  DurableObjectNamespace,
+  Workflow,
+} from "alchemy/cloudflare";
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 // API token for Cloudflare resources (bypasses profile OAuth)
@@ -11,10 +19,11 @@ const cfToken = process.env.CLOUDFLARE_API_TOKEN;
 // Root scope: cloudflare-demo
 // State directory: .alchemy/cloudflare-demo/
 const app = await alchemy("cloudflare-demo", {
-    phase: process.env.PHASE || "up",
-    password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
-    stateStore: (scope) => new CloudflareStateStore(scope),
-    profile: process.env.ALCHEMY_PROFILE || "default",
+  phase: process.env.PHASE || "up",
+  password:
+    process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+  stateStore: (scope) => new CloudflareStateStore(scope),
+  profile: process.env.ALCHEMY_PROFILE || "default",
 });
 // Note: API token is passed directly to each resource via apiToken parameter
 // ========================================
@@ -27,47 +36,47 @@ const resources = {};
 // ========================================
 // Database scope - Organizes all data storage resources
 await alchemy.run("database", async () => {
-    // D1 Database for user and file storage
-    const db = await D1Database("db", {
-        name: "alchemy-demo-db",
-        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    });
-    // Share with other scopes
-    resources.db = db;
+  // D1 Database for user and file storage
+  const db = await D1Database("db", {
+    name: "alchemy-demo-db",
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+  // Share with other scopes
+  resources.db = db;
 });
 // Storage scope - Organizes file and object storage
 await alchemy.run("file-storage", async () => {
-    // R2 Bucket for file storage
-    const storage = await R2Bucket("storage", {
-        name: "alchemy-demo-storage",
-        adopt: true,
-        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    });
-    // KV Namespace for caching
-    const cache = await KVNamespace("cache", {
-        adopt: true,
-        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    });
-    // KV Namespace for MCP server (rate limiting & feature flags)
-    const mcpKv = await KVNamespace("mcp-kv", {
-        adopt: true,
-        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    });
-    // Share with other scopes
-    resources.storage = storage;
-    resources.cache = cache;
-    resources.mcpKv = mcpKv;
+  // R2 Bucket for file storage
+  const storage = await R2Bucket("storage", {
+    name: "alchemy-demo-storage",
+    adopt: true,
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+  // KV Namespace for caching
+  const cache = await KVNamespace("cache", {
+    adopt: true,
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+  // KV Namespace for MCP server (rate limiting & feature flags)
+  const mcpKv = await KVNamespace("mcp-kv", {
+    adopt: true,
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+  // Share with other scopes
+  resources.storage = storage;
+  resources.cache = cache;
+  resources.mcpKv = mcpKv;
 });
 // Compute scope - Organizes processing and workflow resources
 await alchemy.run("compute", async () => {
-    // Queue for async job processing
-    const jobs = await Queue("jobs", {
-        name: "alchemy-demo-jobs",
-        adopt: true,
-        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    });
-    // Share with other scopes
-    resources.jobs = jobs;
+  // Queue for async job processing
+  const jobs = await Queue("jobs", {
+    name: "alchemy-demo-jobs",
+    adopt: true,
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+  // Share with other scopes
+  resources.jobs = jobs;
 });
 // ========================================
 // APPLICATION RESOURCES
@@ -78,34 +87,34 @@ await alchemy.run("compute", async () => {
 // The worker exports ChatRoom and OnboardingWorkflow classes,
 // but we can't bind them yet because the namespaces don't exist.
 export const website = await BunSPA("website", {
-    frontend: "src/frontend/index.html",
-    entrypoint: "src/backend/server.ts",
-    adopt: true,
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-    bindings: {
-        // Database bindings
-        DB: resources.db,
-        // Storage bindings
-        STORAGE: resources.storage,
-        CACHE: resources.cache,
-        // Compute bindings
-        JOBS: resources.jobs,
-        // Note: CHAT and WORKFLOW bindings added in Phase 2
-        // Secret binding
-        API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
-    },
+  frontend: "src/frontend/index.html",
+  entrypoint: "src/backend/server.ts",
+  adopt: true,
+  apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  bindings: {
+    // Database bindings
+    DB: resources.db,
+    // Storage bindings
+    STORAGE: resources.storage,
+    CACHE: resources.cache,
+    // Compute bindings
+    JOBS: resources.jobs,
+    // Note: CHAT and WORKFLOW bindings added in Phase 2
+    // Secret binding
+    API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
+  },
 });
 // ========================================
 // PHASE 2: Create Durable Object namespaces and update worker
 // ========================================
 // Now that the worker exists, we can create namespaces that reference it
 const chatNamespace = await DurableObjectNamespace("chat", {
-    className: "ChatRoom",
-    scriptName: "website", // References the worker created above
+  className: "ChatRoom",
+  scriptName: "website", // References the worker created above
 });
 const workflowNamespace = await Workflow("onboarding", {
-    className: "OnboardingWorkflow",
-    scriptName: "website", // References the worker created above
+  className: "OnboardingWorkflow",
+  scriptName: "website", // References the worker created above
 });
 // Update the worker with Durable Object bindings
 // Note: BunSPA doesn't support updates, so we document this limitation
@@ -136,18 +145,18 @@ const workflowNamespace = await Workflow("onboarding", {
 //   ]
 // });
 console.log({
-    url: website.url,
-    apiUrl: website.apiUrl,
-    // mcpUrl: mcpWorker.url,
+  url: website.url,
+  apiUrl: website.apiUrl,
+  // mcpUrl: mcpWorker.url,
 });
 // -------------  PREVIEW COMMENT  -------------
 // Automatically post preview URLs to PR comments
 if (process.env.PULL_REQUEST) {
-    await GitHubComment("preview-comment", {
-        owner: "brendadeeznuts1111", // Your GitHub username
-        repository: "alchmenyrun", // Your repo name
-        issueNumber: Number(process.env.PULL_REQUEST),
-        body: `
+  await GitHubComment("preview-comment", {
+    owner: "brendadeeznuts1111", // Your GitHub username
+    repository: "alchmenyrun", // Your repo name
+    issueNumber: Number(process.env.PULL_REQUEST),
+    body: `
 ## 🚀 Preview Deployed
 
 Your changes have been deployed to a preview environment:
@@ -159,7 +168,7 @@ Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
 
 ---
 <sub>🤖 This comment updates automatically with each push.</sub>`,
-    });
+  });
 }
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();

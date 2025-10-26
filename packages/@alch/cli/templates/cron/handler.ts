@@ -6,9 +6,9 @@
 export default {
   async scheduled(event: ScheduledEvent, env: any): Promise<void> {
     console.log("__NAME__ CRON triggered at", new Date().toISOString());
-    
+
     // Your scheduled task logic here
-    
+
     console.log("__NAME__ CRON completed");
   },
 };

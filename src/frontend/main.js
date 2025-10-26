@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 // Hot Module Replacement
 if (import.meta.hot) {
-    import.meta.hot.accept();
+  import.meta.hot.accept();
 }
 const root = createRoot(document.getElementById("root"));
 root.render(_jsx(App, {}));

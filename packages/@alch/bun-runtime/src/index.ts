@@ -38,8 +38,8 @@ export const BunBuild = (entry: string, out: string) => ({
   name: "bun-build",
   async run() {
     try {
-      await Bun.build({ 
-        entrypoints: [entry], 
+      await Bun.build({
+        entrypoints: [entry],
         outdir: out,
         minify: true,
         sourcemap: "external",
@@ -54,7 +54,10 @@ export const BunBuild = (entry: string, out: string) => ({
 /**
  * Package management using Bun
  */
-export const BunPackage = (command: "install" | "update" | "add" | "remove", pkg?: string) => ({
+export const BunPackage = (
+  command: "install" | "update" | "add" | "remove",
+  pkg?: string,
+) => ({
   name: "bun-package",
   async run() {
     try {
@@ -62,7 +65,9 @@ export const BunPackage = (command: "install" | "update" | "add" | "remove", pkg
       await $`${cmd}`;
       return new Response(`Package ${command} completed`, { status: 200 });
     } catch (error) {
-      return new Response(`Package ${command} failed: ${error}`, { status: 500 });
+      return new Response(`Package ${command} failed: ${error}`, {
+        status: 500,
+      });
     }
   },
 });

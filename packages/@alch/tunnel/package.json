@@ -1,0 +1,102 @@
+{
+  "name": "@alch/tunnel",
+  "version": "0.1.0",
+  "description": "Cloudflare Tunnel resource for Alchemy - Secure connections between origin servers and Cloudflare's edge",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./types/index.ts",
+    "./examples": "./examples/basic.ts",
+    "./templates/*": "./templates/*.ts"
+  },
+  "files": [
+    "src/",
+    "examples/",
+    "templates/",
+    "types/",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun test src",
+    "type-check": "bun tsc --noEmit",
+    "test:watch": "bun test src --watch",
+    "test:coverage": "bun test src --coverage",
+    "lint": "bun tsc --noEmit && bun format",
+    "dev": "bun --watch src/index.ts",
+    "prepublishOnly": "bun run build && bun run test"
+  },
+  "dependencies": {
+    "alchemy": "^0.76.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "@types/node": "24.9.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "alchemy": "^0.76.1"
+  },
+  "keywords": [
+    "alchemy",
+    "cloudflare",
+    "tunnel",
+    "infrastructure",
+    "typescript",
+    "networking",
+    "proxy",
+    "ingress",
+    "routing",
+    "development",
+    "production",
+    "secure-connections",
+    "edge-computing",
+    "zero-trust"
+  ],
+  "author": "Alchemy Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brendadeeznuts1111/alchmenyrun",
+    "directory": "packages/@alch/tunnel"
+  },
+  "bugs": {
+    "url": "https://github.com/brendadeeznuts1111/alchmenyrun/issues"
+  },
+  "homepage": "https://github.com/brendadeeznuts1111/alchmenyrun/tree/main/packages/@alch/tunnel",
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "alchemy": {
+    "resource": "cloudflare::Tunnel",
+    "category": "networking",
+    "provider": "cloudflare",
+    "type": "infrastructure",
+    "phase": "foundation",
+    "templates": [
+      "basic-tunnel",
+      "web-app-tunnel",
+      "secure-tunnel",
+      "development-tunnel"
+    ],
+    "features": [
+      "ingress-rules",
+      "origin-configuration",
+      "warp-routing",
+      "tunnel-adoption",
+      "dns-management",
+      "lifecycle-management"
+    ],
+    "compatibility": {
+      "alchemy": ">=0.76.1",
+      "cloudflare": ">=2024.1.0"
+    }
+  }
+}

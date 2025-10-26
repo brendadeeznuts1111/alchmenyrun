@@ -8,13 +8,13 @@ export { __NAME__Room } from "./do";
 export default {
   async fetch(request: Request, env: any): Promise<Response> {
     const url = new URL(request.url);
-    
+
     if (request.headers.get("Upgrade") === "websocket") {
       const id = env.ROOM.idFromName("main-room");
       const room = env.ROOM.get(id);
       return room.fetch(request);
     }
-    
+
     return new Response("__NAME__ chat worker ready", { status: 200 });
   },
 };
