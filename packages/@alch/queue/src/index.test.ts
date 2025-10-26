@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { JobQueue } from "./index";
+import { JobQueue, isJobQueue } from "./index";
 
 describe("JobQueue", () => {
   test("should validate JobQueueProps interface", () => {
@@ -39,5 +39,17 @@ describe("JobQueue", () => {
 
   test("should export JobQueue function", () => {
     expect(typeof JobQueue).toBe("function");
+  });
+});
+
+describe('JobQueue type guard', () => {
+  test('recognises a JobQueue output', () => {
+    const fake = { type: 'job-queue', id: 'q-123', name: 'emails' };
+    expect(isJobQueue(fake)).toBe(true);
+  });
+
+  test('rejects non-JobQueue', () => {
+    expect(isJobQueue({ type: 'cloudflare::worker' })).toBe(false);
+    expect(isJobQueue(null)).toBe(false);
   });
 });

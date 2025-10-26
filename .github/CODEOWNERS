@@ -1,0 +1,79 @@
+# Project Alchemist - CODEOWNERS Configuration
+# This file automatically requests reviews from the appropriate teams based on file paths
+
+# Global fallback - Leadership team for strategic files
+* @brendadeeznuts1111
+
+# Infrastructure Team (Alchemist Core Infra) - Lead: @alice.smith
+packages/@alch/queue/* @alice.smith @infra_dev1
+packages/@alch/tunnel/* @alice.smith @infra_dev2
+packages/@alch/blocks/* @alice.smith @infra_dev2
+packages/@alch/bun-runtime/* @alice.smith @infra_dev1
+packages/@alch/cli/* @alice.smith @infra_dev1
+src/backend/* @alice.smith @infra_dev2
+src/frontend/* @alice.smith @infra_dev2
+.github/workflows/* @alice.smith @infra_dev1
+.github/actions/* @alice.smith @infra_dev1
+scripts/* @alice.smith @infra_dev1
+
+# Resource Provider Team (Alchemist Integrations Hub) - Lead: @charlie.brown
+alchemy/src/cloudflare/* @charlie.brown @provider_dev1
+alchemy/src/docker/* @charlie.brown @provider_dev1
+alchemy/src/github/* @charlie.brown @provider_dev1
+alchemy/src/aws/* @charlie.brown @provider_dev1
+alchemy/src/gcp/* @charlie.brown @provider_dev1
+alchemy/src/neon/* @charlie.brown @provider_dev1
+alchemy/src/vercel/* @charlie.brown @provider_dev1
+
+# Documentation Team (Alchemist Knowledge Base) - Lead: @frank.taylor
+docs/* @frank.taylor @doc_writer1
+examples/* @frank.taylor @doc_writer1
+examples/cloudflare-worker-loader/* @frank.taylor @doc_writer1
+examples/simple-chat/* @frank.taylor @doc_writer1
+examples/mcp/* @frank.taylor @doc_writer1
+README.md @frank.taylor @doc_writer1
+CONTRIBUTING.md @frank.taylor @doc_writer1
+QUICK_START.md @frank.taylor @doc_writer1
+COMMANDS.md @frank.taylor @doc_writer1
+ROADMAP.md @frank.taylor @doc_writer1
+LICENSE @frank.taylor @doc_writer1
+
+# Quality & Testing Team (Alchemist Quality Gate) - Lead: @diana.prince
+src/__tests__/* @diana.prince @qa_analyst1
+**/*.test.ts @diana.prince @qa_analyst1
+**/*.test.js @diana.prince @qa_analyst1
+**/*.spec.ts @diana.prince @qa_analyst1
+vitest.config.ts @diana.prince @qa_analyst1
+.vitest.config.ts @diana.prince @qa_analyst1
+**/test-setup.* @diana.prince @qa_analyst1
+
+# Configuration files (Infrastructure Team ownership)
+package.json @alice.smith @infra_dev1
+bun.lock @alice.smith @infra_dev1
+bunfig.toml @alice.smith @infra_dev1
+tsconfig.json @alice.smith @infra_dev2
+**/tsconfig.json @alice.smith @infra_dev2
+tailwind.config.js @alice.smith @infra_dev2
+postcss.config.js @alice.smith @infra_dev2
+.env.example @alice.smith @infra_dev1
+
+# Templates and configuration (Documentation Team ownership)
+.github/ISSUE_TEMPLATE/* @frank.taylor @doc_writer1
+.github/PULL_REQUEST_TEMPLATE.md @frank.taylor @doc_writer1
+.github/dependabot.yml @alice.smith @infra_dev1
+
+# Core Alchemy framework (Infrastructure Team ownership)
+alchemy.run.ts @alice.smith @infra_dev2
+alchemy.run.js @alice.smith @infra_dev2
+src/* @alice.smith @infra_dev2
+
+# Cross-functional files (require multiple team approvals)
+CLAUDE.md @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
+.github/CODEOWNERS @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
+.github/workflows/deploy.yml @alice.smith @infra_dev1 @diana.prince @qa_analyst1
+.github/workflows/ci-matrix.yml @alice.smith @infra_dev1 @diana.prince @qa_analyst1
+
+# Strategic files (Leadership approval required)
+LICENSE @brendadeeznuts1111 @frank.taylor
+.github/FUNDING.yml @brendadeeznuts1111
+.github/SECURITY.md @brendadeeznuts1111 @charlie.brown @diana.prince

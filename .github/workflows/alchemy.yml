@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  ALCHEMY_PROFILE: default        # or prod, ci, etc.
+  ALCHEMY_PROFILE: ci        # Use ci profile as documented - implements alchemy.run/guides/ci patterns
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -76,9 +76,11 @@ jobs:
       - name: Health check (prod only)
         if: steps.stage.outputs.name == 'prod'
         run: |
-          if [[ -n "${{ secrets.PROD_URL }}" ]]; then
-            curl -f ${{ secrets.PROD_URL }}/api/health || echo "Health check failed or PROD_URL not set"
+          if [[ -n "${PROD_URL:-}" ]]; then
+            curl -f "$PROD_URL/api/health" || echo "Health check failed"
           else
             echo "Skipping health check - PROD_URL not configured"
           fi
+        env:
+          PROD_URL: ${{ secrets.PROD_URL }}
 
