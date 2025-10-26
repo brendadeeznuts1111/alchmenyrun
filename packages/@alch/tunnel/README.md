@@ -1,15 +1,18 @@
 # @alch/tunnel
 
-Cloudflare Tunnel resource for Alchemy - provides secure connectivity between your origin services and Cloudflare's edge network.
+Cloudflare Tunnel resource for Alchemy - provides secure connectivity between your origin services and Cloudflare's edge network with real API integration.
 
 ## Features
 
-- ✅ **Automatic Tunnel Management** - Create, update, and delete Cloudflare Tunnels
+- ✅ **Real Cloudflare API Integration** - Direct integration with Cloudflare's API for tunnel management
+- ✅ **Automatic Tunnel Management** - Create, update, and delete Cloudflare Tunnels via real API calls
 - ✅ **DNS Automation** - Automatically create CNAME records for ingress hostnames
 - ✅ **Tunnel Adoption** - Adopt existing tunnels to prevent conflicts
 - ✅ **Advanced Configuration** - Support for ingress rules, origin configuration, and WARP routing
 - ✅ **Type Safety** - Full TypeScript support with comprehensive interfaces
 - ✅ **Error Handling** - Robust error handling and retry mechanisms
+- ✅ **Secret Redaction** - Automatic redaction of sensitive information in logs
+- ✅ **Integration Testing** - Real API testing with Cloudflare test accounts
 
 ## Installation
 
@@ -18,6 +21,32 @@ bun add @alch/tunnel
 ```
 
 ## Quick Start
+
+### Prerequisites
+
+You'll need a Cloudflare API token and account ID:
+
+```bash
+export CLOUDFLARE_API_TOKEN="your_api_token_here"
+export CLOUDFLARE_ACCOUNT_ID="your_account_id_here"
+```
+
+### Basic Usage
+
+```typescript
+import { Tunnel } from "@alch/tunnel";
+import alchemy from "alchemy";
+
+const app = await alchemy("my-app");
+
+// Create a basic tunnel with real Cloudflare API
+const tunnel = await Tunnel("my-tunnel", {
+  name: `${app.name}-tunnel`,
+});
+
+console.log(`Tunnel ID: ${tunnel.tunnelId}`);
+console.log(`Run: cloudflared tunnel run --token ${tunnel.token.unencrypted}`);
+```
 
 ### Basic Tunnel
 

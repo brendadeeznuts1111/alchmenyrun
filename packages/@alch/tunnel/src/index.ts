@@ -7,8 +7,9 @@
 
 import alchemy from "alchemy";
 import type { Context } from "alchemy";
-import { Resource, ResourceKind } from "alchemy";
-import type { Secret } from "alchemy";
+import { Resource, Secret } from "alchemy";
+import { CloudflareApiClient, createCloudflareClient, type CloudflareTunnelResponse } from "./cloudflare-api.js";
+import { createSafeLogger, redactObject, validateApiToken, validateAccountId } from "./utils.js";
 import { logger } from "alchemy";
 
 /**
@@ -283,7 +284,7 @@ export interface Tunnel extends Omit<TunnelProps, "delete" | "tunnelSecret"> {
  * Type guard for Tunnel resources
  */
 export function isTunnel(resource: any): resource is Tunnel {
-  return resource?.[ResourceKind] === "cloudflare::Tunnel";
+  return resource?.["ResourceKind"] === "cloudflare::Tunnel";
 }
 
 /**
@@ -478,7 +479,9 @@ export const Tunnel = Resource(
   },
 );
 
-// Mock implementations for Phase 1 (will be replaced with actual Cloudflare API calls in Phase 2)
+// Real Cloudflare API implementations for Phase 2
+
+const safeLogger = createSafeLogger(logger);
 
 async function createTunnel(props: {
   name: string;
@@ -486,65 +489,145 @@ async function createTunnel(props: {
   tunnelSecret?: Secret<string>;
   metadata?: Record<string, any>;
 }): Promise<CloudflareTunnel> {
-  logger.log(`Creating tunnel: ${props.name}`);
+  safeLogger.log(`Creating tunnel: ${props.name}`);
 
-  // Mock implementation - will be replaced with actual Cloudflare API call
-  const id = `tunnel_${Date.now()}`;
-  const mockTunnel: CloudflareTunnel = {
-    id,
-    account_tag: "mock_account_tag",
-    created_at: new Date().toISOString(),
-    deleted_at: null,
-    name: props.name,
-    metadata: props.metadata,
-    credentials_file: {
-      AccountTag: "mock_account_tag",
-      TunnelID: id,
-      TunnelName: props.name,
-      TunnelSecret: "mock_tunnel_secret",
-    },
-    token: "mock_tunnel_token",
-  };
+  try {
+    const client = createCloudflareClient();
+    
+    const request = {
+      name: props.name,
+      configSrc: props.configSrc || "cloudflare",
+      tunnelSecret: props.tunnelSecret?.unencrypted,
+      metadata: props.metadata,
+    };
 
-  return mockTunnel;
+    safeLogger.log("Creating tunnel with request:", redactObject(request));
+    const tunnelResponse: CloudflareTunnelResponse = await client.createTunnel(request);
+    
+    safeLogger.log("Tunnel created successfully:", redactObject(tunnelResponse));
+
+    // Convert Cloudflare API response to our internal format
+    const tunnel: CloudflareTunnel = {
+      id: tunnelResponse.id,
+      account_tag: tunnelResponse.account_tag,
+      created_at: tunnelResponse.created_at,
+      deleted_at: tunnelResponse.deleted_at,
+      name: tunnelResponse.name,
+      metadata: tunnelResponse.metadata,
+      credentials_file: tunnelResponse.credentials_file,
+      token: tunnelResponse.token,
+    };
+
+    return tunnel;
+  } catch (error) {
+    safeLogger.error(`Failed to create tunnel: ${error}`);
+    throw error;
+  }
 }
 
 async function getTunnel(tunnelId: string): Promise<CloudflareTunnel> {
-  logger.log(`Getting tunnel: ${tunnelId}`);
+  safeLogger.log(`Getting tunnel: ${tunnelId}`);
 
-  // Mock implementation
-  return {
-    id: tunnelId,
-    account_tag: "mock_account_tag",
-    created_at: new Date().toISOString(),
-    deleted_at: null,
-    name: "mock_tunnel",
-    token: "mock_tunnel_token",
-  };
+  try {
+    const client = createCloudflareClient();
+    const tunnelResponse: CloudflareTunnelResponse = await client.getTunnel(tunnelId);
+    
+    safeLogger.log("Tunnel retrieved successfully:", redactObject(tunnelResponse));
+
+    // Convert Cloudflare API response to our internal format
+    const tunnel: CloudflareTunnel = {
+      id: tunnelResponse.id,
+      account_tag: tunnelResponse.account_tag,
+      created_at: tunnelResponse.created_at,
+      deleted_at: tunnelResponse.deleted_at,
+      name: tunnelResponse.name,
+      metadata: tunnelResponse.metadata,
+      credentials_file: tunnelResponse.credentials_file,
+      token: tunnelResponse.token,
+    };
+
+    return tunnel;
+  } catch (error) {
+    safeLogger.error(`Failed to get tunnel: ${error}`);
+    throw error;
+  }
 }
 
 async function updateTunnelConfiguration(
   tunnelId: string,
   config: TunnelConfig,
 ): Promise<void> {
-  logger.log(`Updating tunnel configuration: ${tunnelId}`);
-  // Mock implementation - will be replaced with actual Cloudflare API call
+  safeLogger.log(`Updating tunnel configuration: ${tunnelId}`);
+
+  try {
+    const client = createCloudflareClient();
+    
+    const request = {
+      ingress: config.ingress,
+      warpRouting: config.warpRouting,
+      originRequest: config.originRequest,
+    };
+
+    safeLogger.log("Updating tunnel with request:", redactObject(request));
+    await client.updateTunnel(tunnelId, request);
+    
+    safeLogger.log("Tunnel configuration updated successfully");
+  } catch (error) {
+    safeLogger.error(`Failed to update tunnel configuration: ${error}`);
+    throw error;
+  }
 }
 
 async function findTunnelByName(
   name: string,
 ): Promise<CloudflareTunnel | null> {
-  logger.log(`Finding tunnel by name: ${name}`);
+  safeLogger.log(`Finding tunnel by name: ${name}`);
 
-  // Mock implementation - will be replaced with actual Cloudflare API call
-  return null;
+  try {
+    const client = createCloudflareClient();
+    const tunnels = await client.listTunnels();
+    
+    const foundTunnel = tunnels.find(tunnel => tunnel.name === name);
+    
+    if (foundTunnel) {
+      safeLogger.log("Tunnel found by name:", redactObject(foundTunnel));
+      
+      // Convert to our internal format
+      const tunnel: CloudflareTunnel = {
+        id: foundTunnel.id,
+        account_tag: foundTunnel.account_tag,
+        created_at: foundTunnel.created_at,
+        deleted_at: foundTunnel.deleted_at,
+        name: foundTunnel.name,
+        metadata: foundTunnel.metadata,
+        credentials_file: foundTunnel.credentials_file,
+        token: foundTunnel.token,
+      };
+      
+      return tunnel;
+    }
+    
+    safeLogger.log(`No tunnel found with name: ${name}`);
+    return null;
+  } catch (error) {
+    safeLogger.error(`Failed to find tunnel by name: ${error}`);
+    throw error;
+  }
 }
 
 async function getTunnelToken(tunnelId: string): Promise<string> {
-  logger.log(`Getting tunnel token: ${tunnelId}`);
+  safeLogger.log(`Getting tunnel token: ${tunnelId}`);
 
-  // Mock implementation - will be replaced with actual Cloudflare API call
-  return "mock_tunnel_token";
+  try {
+    const client = createCloudflareClient();
+    const token = await client.getTunnelToken(tunnelId);
+    
+    safeLogger.log(`Tunnel token retrieved successfully for tunnel: ${tunnelId}`);
+    return token;
+  } catch (error) {
+    safeLogger.error(`Failed to get tunnel token: ${error}`);
+    throw error;
+  }
 }
 
 // Export all types and the main Tunnel resource
