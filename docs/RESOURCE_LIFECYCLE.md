@@ -29,16 +29,75 @@ A **Resource** is the core building block of Alchemy. It represents infrastructu
 - **Physical Name**: Actual name in the cloud provider
 - **Fully Qualified Name (FQN)**: Complete path including app and stage
 
+### Physical Name
+
+The **Physical Name** is the actual name used to identify the resource in the infrastructure provider (e.g., Cloudflare).
+
+#### Explicit Physical Name
+
+You can provide a specific physical name:
+
+```typescript
+const worker = await Worker("worker1", {
+  name: "my-custom-worker", // Explicit physical name
+});
+
+console.log(worker.name); // "my-custom-worker"
+```
+
+#### Automatic Physical Name
+
+If you don't provide a physical name, Alchemy generates one automatically:
+
+```typescript
+const app = await alchemy("my-app");
+
+const worker = await Worker("worker1");
+
+console.log(worker.name); // "my-app-worker1-${stage}"
+```
+
+**Naming Pattern**: `${appName}-${resourceId}-${stage}`
+
+**Examples**:
+- Dev stage: `alchemy deploy --stage dev` → `my-app-worker1-dev`
+- Prod stage: `alchemy deploy --stage prod` → `my-app-worker1-prod`
+- Personal stage: `alchemy deploy` → `my-app-worker1-${USER}`
+
+#### Why Automatic Names?
+
+Automatic naming provides:
+- ✅ **Uniqueness**: No naming conflicts across stages
+- ✅ **Isolation**: Each stage has separate resources
+- ✅ **Traceability**: Easy to identify resource origin
+- ✅ **Consistency**: Predictable naming pattern
+
+#### When to Use Explicit Names
+
+Use explicit names when:
+- Integrating with external systems expecting specific names
+- Migrating existing infrastructure
+- Sharing resources across stages (use with caution)
+- Custom branding requirements
+
+⚠️ **Warning**: Explicit names can cause conflicts across stages. Use stage-specific names or rely on automatic naming.
+
 ### Example Resource
 
 ```typescript
-const bucket = await R2Bucket("my-bucket", {
-  name: "my-app-storage", // Physical name
+// Automatic naming (recommended)
+const bucket = await R2Bucket("storage");
+// Name: "my-app-storage-prod"
+
+// Explicit naming
+const bucket = await R2Bucket("storage", {
+  name: "my-app-storage", // Same name across all stages
 });
 
-// Access outputs
-console.log(bucket.name); // "my-app-storage"
-console.log(bucket.id);   // Resource ID
+// Stage-specific explicit naming
+const bucket = await R2Bucket("storage", {
+  name: `my-app-storage-${process.env.STAGE}`,
+});
 ```
 
 ---
