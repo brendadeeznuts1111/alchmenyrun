@@ -5,9 +5,7 @@
  * from 'wrangler login' cannot create D1 databases. D1 requires API token
  * authentication even when using OAuth profiles for other operations.
  */
-
 import alchemy from "alchemy";
-
 /**
  * Gets API token for D1 operations with comprehensive error handling
  * D1 database creation requires API token auth - OAuth tokens from 'wrangler login' don't support this
@@ -18,7 +16,6 @@ import alchemy from "alchemy";
 export function getD1ApiToken() {
   // For D1 operations, we always need an API token even when using OAuth profile
   const token = process.env.CLOUDFLARE_API_TOKEN;
-
   if (!token) {
     throw new Error(`
 🚨 D1 DATABASE CREATION REQUIRES API TOKEN
@@ -52,18 +49,15 @@ Token creation steps:
 6. Copy and set the token as environment variable
     `);
   }
-
   return alchemy.secret(token);
 }
-
 /**
  * Checks if D1 operations are properly configured
  * @returns {boolean} True if D1 operations will work
  */
-export function isD1Configured(): boolean {
+export function isD1Configured() {
   return !!process.env.CLOUDFLARE_API_TOKEN;
 }
-
 /**
  * Gets D1 configuration status with helpful messages
  * @returns {object} Configuration status and recommendations
@@ -71,7 +65,6 @@ export function isD1Configured(): boolean {
 export function getD1ConfigurationStatus() {
   const hasToken = !!process.env.CLOUDFLARE_API_TOKEN;
   const hasProfile = !!process.env.ALCHEMY_PROFILE;
-
   return {
     isConfigured: hasToken,
     usingOAuth: hasProfile && !hasToken,

@@ -50,14 +50,17 @@ await alchemy.run("database", async () => {
     const db = await D1Database("db", {
       name: "alchemy-demo-db",
     });
-    
+
     // Share with other scopes
     resources.db = db;
   } catch (error) {
     // If D1 creation fails, it's likely due to OAuth profile authentication
     // Provide helpful error message with API token setup instructions
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes("API token") || errorMessage.includes("authentication")) {
+    if (
+      errorMessage.includes("API token") ||
+      errorMessage.includes("authentication")
+    ) {
       throw new Error(`
 🚨 D1 DATABASE CREATION FAILED
 
