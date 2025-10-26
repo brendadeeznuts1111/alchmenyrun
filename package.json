@@ -28,7 +28,7 @@
     "mcp:claude": "bun run packages/@alch/mcp-server/cli.ts",
     "kit:test": "bun test packages/@alch/*/src",
     "tunnel:test": "bun test packages/@alch/tunnel/src",
-    "tunnel:build": "bun run build:css && bun build packages/@alch/tunnel/src/index.ts --outdir dist/tunnel --target bun",
+    "tunnel:build": "bun build packages/@alch/tunnel/src/index.ts --outdir dist/tunnel --target bun",
     "kit:build": "bun build packages/@alch/bun-runtime/src/index.ts --outdir dist/bun-runtime --target bun && bun build packages/@alch/mcp-server/src/index.ts --outdir dist/mcp-server --target bun",
     "kit:dev": "bun run mcp:claude & alchemy dev",
     "kit:new": "bun run packages/@alch/cli/bin/alchemy-kit.js generate",
