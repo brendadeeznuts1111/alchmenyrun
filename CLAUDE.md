@@ -92,6 +92,34 @@ Example:
 5. Tag reviewer listed in `CODEOWNERS`  
 6. Merge → artefact auto-promotes to prod
 
+---
+
+## 7. Project Health Dashboard  
+> Same metrics we demand from **resources**, surfaced for **people**.
+
+| Metric | Target | Current | CI Gate |
+|--------|--------|---------|---------|
+| **Lead Time** (merge → deploy) | ≤ 15 min | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Flead-time )](https://alchemy.run ) | ✅ |
+| **Change Failure Rate** | ≤ 2 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Ffailure-rate )](https://alchemy.run ) | ✅ |
+| **PR Review Time** (open → first approval) | ≤ 24 h | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Freview-time )](https://alchemy.run ) | ✅ |
+| **Doc Coverage** (ADR / major change) | 100 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Fdoc-coverage )](https://alchemy.run ) | ✅ |
+| **Mentoring Ratio** (PRs with `role/mentoring`) | ≥ 10 % | [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.alchemy.run%2Fmetric%2Fmentoring-ratio )](https://alchemy.run ) | 🟡 |
+
+> **Legend**: ✅ = gate passed, 🟡 = warning, 🔴 = gate failed  
+> **Source**: live data from `alchemy.run/metrics` (public endpoint)  
+> **Refresh**: badges update every 5 min; click any badge for drill-down.
+
+### **How we collect**
+- **Lead Time**: GitHub webhook → `alchemy deploy --stage metrics` → Prometheus  
+- **Failure Rate**: `#incident` label count / total deployments  
+- **Review Time**: GitHub API → `alchemy run query review-time`  
+- **Doc Coverage**: ADR markdown files vs. `level/major` PR count  
+- **Mentoring Ratio**: `role/mentoring` label on merged PRs  
+
+### **Alerting**
+- **telegram**: `#proj-alchemist-health` (webhook from Prometheus)  
+- **Auto-escalate**: 2 consecutive failures → page on-call lead  
+
 # Alchemy
 
 Alchemy is an Typescript-native Infrastructure-as-Code repository. Claude's job is to implement "Resource" providers for various cloud services by following a set up strict conventions and patterns.
