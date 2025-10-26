@@ -1,6 +1,241 @@
 # Alchemy Concepts in This Project
 
-This guide explains how this project implements Alchemy's core concepts: Phase, Secret, Bindings, and Resources.
+This guide explains how this project implements Alchemy's core concepts: Apps & Stages, Scope, Phase, Secret, Bindings, and Resources.
+
+## 🏗️ Apps & Stages
+
+### What are Apps & Stages?
+
+An **Alchemy App** is a collection of Stages where each deployed Stage is an isolated copy of your Resources including Workers, Databases, Queues, etc.
+
+### Scope Hierarchy
+
+This project implements Alchemy's hierarchical scope structure:
+
+```
+cloudflare-demo (Application Scope)
+├── $USER/ (Stage Scope - your username)
+│   ├── database/ (Nested Scope)
+│   │   └── db.json
+│   ├── storage/ (Nested Scope)
+│   │   ├── storage.json
+│   │   ├── cache.json
+│   │   └── mcp-kv.json
+│   ├── compute/ (Nested Scope)
+│   │   ├── jobs.json
+│   │   ├── ChatDO.json
+│   │   └── OnboardingWorkflow.json
+│   └── website.json (Resource)
+└── prod/ (Stage Scope - production)
+    └── [same structure as above]
+```
+
+### App Structure
+
+```typescript
+// alchemy.run.ts
+import alchemy from "alchemy";
+
+// Application Scope - Root level
+const app = await alchemy("cloudflare-demo"); // App name
+
+// Nested Scopes - Organized by function
+await alchemy.run("database", async () => {
+  const db = await D1Database("db", { ... });
+});
+
+await alchemy.run("storage", async () => {
+  const storage = await R2Bucket("storage", { ... });
+  const cache = await KVNamespace("cache", { ... });
+});
+
+await alchemy.run("compute", async () => {
+  const jobs = await Queue("jobs", { ... });
+  const workflow = await Workflow("workflow", { ... });
+});
+
+// Resource in application scope
+export const website = await BunSPA("website", { ... });
+
+// Clean up unused resources
+await app.finalize();
+```
+
+### Stage Management
+
+Each App contains multiple Stages with isolated infrastructure:
+
+```bash
+# Default stage (your username)
+bun run deploy
+
+# Specific stage
+bun run deploy --stage prod
+
+# Pull request stage (automatically created)
+bun run deploy --stage pr-123
+```
+
+### Recommended Setup
+
+This project follows the recommended team setup:
+
+1. **Personal Stage** - Each developer uses `bun run deploy` (defaults to `$USER` stage)
+2. **Pull Request Stage** - Each PR deploys to `pr-${number}` stage automatically
+3. **Production Stage** - Main branch deploys to `prod` stage
+
+### Stage Examples
+
+```bash
+# Development (personal stage)
+bun run alchemy:dev        # Uses your username as stage
+bun run deploy            # Deploys to your personal stage
+
+# Production
+bun run deploy:prod       # Deploys to prod stage
+
+# Pull Request (automated)
+bun run deploy --stage pr-123  # Deploys to PR stage
+
+# Cleanup
+bun run destroy           # Cleans up your personal stage
+bun run destroy:prod      # Cleans up production stage
+```
+
+### Resource Naming
+
+Resources are automatically named with the pattern: `${app}-${stage}-${id}`
+
+```typescript
+const app = await alchemy("cloudflare-demo");
+const worker = await Worker("api");
+console.log(worker.name); // "cloudflare-demo-api-${stage}"
+```
+
+## 📁 Scope
+
+### What is Scope?
+
+Scope in Alchemy provides hierarchical organization of infrastructure resources. Each scope level manages its own state and resource lifecycle.
+
+### Scope Types
+
+#### 1. Application Scope
+The root scope created with `alchemy()`:
+```typescript
+const app = await alchemy("cloudflare-demo");
+```
+- **State Directory**: `.alchemy/cloudflare-demo/`
+- **Purpose**: Root container for all stages and resources
+- **Finalization**: Manual (requires `await app.finalize()`)
+
+#### 2. Stage Scope
+Environment-specific scopes under the application:
+```typescript
+// Implicit stage (your username)
+const app = await alchemy("cloudflare-demo");
+
+// Explicit stage
+const app = await alchemy("cloudflare-demo", { stage: "prod" });
+```
+- **State Directory**: `.alchemy/cloudflare-demo/$USER/` or `.alchemy/cloudflare-demo/prod/`
+- **Purpose**: Environment isolation (dev, prod, pr-123, etc.)
+- **Finalization**: Manual
+
+#### 3. Nested Scope
+Custom organization scopes created with `alchemy.run()`:
+```typescript
+await alchemy.run("database", async () => {
+  const db = await D1Database("db", { ... });
+});
+```
+- **State Directory**: `.alchemy/cloudflare-demo/$USER/database/`
+- **Purpose**: Logical grouping of related resources
+- **Finalization**: Automatic
+
+#### 4. Resource Scope
+Each resource gets its own scope:
+```typescript
+const db = await D1Database("db", { ... });
+```
+- **State Directory**: `.alchemy/cloudflare-demo/$USER/database/db.json`
+- **Purpose**: Individual resource state management
+- **Finalization**: Automatic
+
+### Scope Benefits
+
+#### 1. Organization
+- **Logical Grouping**: Database, storage, compute resources grouped together
+- **Clear Structure**: Easy to understand resource relationships
+- **Maintainability**: Simplified code organization
+
+#### 2. State Management
+- **Isolated State**: Each scope manages its own state files
+- **Independent Lifecycle**: Resources can be created/updated/deleted independently
+- **Clean Cleanup**: Orphaned resources automatically detected and removed
+
+#### 3. Resource Sharing
+Resources created in nested scopes can be shared with other scopes:
+
+```typescript
+const resources = {} as any;
+
+// Database scope creates resources
+await alchemy.run("database", async () => {
+  const db = await D1Database("db", { ... });
+  resources.db = db; // Share with other scopes
+});
+
+// Storage scope uses shared resources
+await alchemy.run("storage", async () => {
+  const storage = await R2Bucket("storage", { ... });
+  // Can access resources.db if needed
+});
+```
+
+### Scope Finalization
+
+#### Automatic Finalization
+Nested scopes finalize automatically when execution completes:
+```typescript
+await alchemy.run("storage", async () => {
+  const bucket = await R2Bucket("files", { ... });
+  // Scope finalizes here - orphaned resources cleaned up
+});
+```
+
+#### Manual Finalization
+Application scopes need manual finalization:
+```typescript
+const app = await alchemy("my-app");
+await Bucket("assets", {});
+
+// Manual finalization required
+await app.finalize(); // Deletes orphaned resources
+```
+
+### State Directory Structure
+
+The complete state directory for this project:
+
+```
+.alchemy/
+└── cloudflare-demo/           # Application scope
+    ├── $USER/                 # Stage scope (your username)
+    │   ├── database/          # Nested scope
+    │   │   └── db.json        # Resource state
+    │   ├── storage/           # Nested scope
+    │   │   ├── storage.json   # Resource state
+    │   │   ├── cache.json     # Resource state
+    │   │   └── mcp-kv.json    # Resource state
+    │   ├── compute/           # Nested scope
+    │   │   ├── jobs.json      # Resource state
+    │   │   ├── ChatDO.json    # Resource state
+    │   │   └── OnboardingWorkflow.json # Resource state
+    │   └── website.json       # Resource state
+    └── prod/                  # Production stage scope
+        └── [same structure as above]
+```
 
 ## 🔄 Phase
 
@@ -289,6 +524,145 @@ console.log(db.name);  // "my-app-db-${stage}"
 
 ### Resources in This Project
 
+This project uses nested scopes to organize resources by function:
+
+#### Database Scope
+```typescript
+// alchemy.run.ts
+await alchemy.run("database", async () => {
+  const db = await D1Database("db", {
+    name: "alchemy-demo-db",
+    adopt: true,
+  });
+  
+  // Share with other scopes
+  resources.db = db;
+});
+```
+
+#### Storage Scope
+```typescript
+await alchemy.run("storage", async () => {
+  const storage = await R2Bucket("storage", {
+    name: "alchemy-demo-storage",
+    adopt: true,
+  });
+  
+  const cache = await KVNamespace("cache", {
+    adopt: true,
+  });
+  
+  const mcpKv = await KVNamespace("mcp-kv", {
+    adopt: true,
+  });
+  
+  // Share with other scopes
+  resources.storage = storage;
+  resources.cache = cache;
+  resources.mcpKv = mcpKv;
+});
+```
+
+#### Compute Scope
+```typescript
+await alchemy.run("compute", async () => {
+  const jobs = await Queue("jobs", {
+    name: "alchemy-demo-jobs",
+    adopt: true,
+  });
+  
+  const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
+    className: "ChatRoom",
+    scriptName: "website",
+  });
+  
+  const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
+    workflowName: "OnboardingWorkflow",
+    className: "OnboardingWorkflow",
+    scriptName: "website",
+  });
+  
+  // Share with other scopes
+  resources.jobs = jobs;
+  resources.ChatDurableObject = ChatDurableObject;
+  resources.OnboardingWorkflow = OnboardingWorkflow;
+});
+```
+
+#### Application Resource
+```typescript
+// Main website application (uses resources from nested scopes)
+export const website = await BunSPA("website", {
+  frontend: "src/frontend/index.html",
+  entrypoint: "src/backend/server.ts",
+  bindings: {
+    // Resources from nested scopes
+    DB: resources.db,
+    STORAGE: resources.storage,
+    CACHE: resources.cache,
+    JOBS: resources.jobs,
+    CHAT: resources.ChatDurableObject,
+    WORKFLOW: resources.OnboardingWorkflow,
+    
+    // Secret binding
+    API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
+  },
+});
+```
+
+#### Worker Configuration Options
+
+```typescript
+await Worker("api", {
+  // Basic configuration
+  name: "api-worker",              // Worker name (defaults to ${app}-${stage}-${id})
+  entrypoint: "./src/api.ts",      // Main entrypoint for bundling
+  format: "esm",                   // Module format: 'esm' (default) or 'cjs'
+  
+  // Compatibility
+  compatibilityDate: "2025-09-13", // Workers runtime version
+  compatibilityFlags: ["nodejs_compat"],
+  compatibility: "node",           // Compatibility preset
+  
+  // Development
+  adopt: true,                     // Adopt existing Worker if present
+  dev: {
+    port: 8787,                   // Local development port
+    tunnel: true,                  // Create Cloudflare Tunnel
+    remote: false,                 // Run locally vs in Cloudflare
+  },
+  
+  // Bindings
+  bindings: {
+    KV_STORE: kvNamespace,         // KV Namespace binding
+    STORAGE: r2Bucket,             // R2 bucket binding
+    API_KEY: alchemy.secret("key"), // Secret binding
+    STAGE: "prod",                 // Plain text binding
+  },
+  
+  // Observability
+  observability: { enabled: true }, // Enable worker logs
+  sourceMap: true,                 // Upload source maps
+  
+  // Performance
+  limits: {
+    cpu_ms: 50_000,               // Max CPU time in ms
+  },
+  placement: {
+    mode: "smart",                 // Smart placement optimization
+  },
+  
+  // Advanced
+  routes: ["api.example.com/*"],   // Route patterns
+  domains: ["example.com"],        // Custom domains
+  crons: ["0 0 * * *"],           // Scheduled triggers
+  assets: {                       // Static assets
+    path: "./public",
+    run_worker_first: false,
+  },
+});
+```
+
 #### Database Resource
 
 ```typescript
@@ -342,12 +716,12 @@ export const website = await BunSPA("website", {
   entrypoint: "src/backend/server.ts",
   bindings: {
     // Connect resources through bindings
-    DB: db,
-    STORAGE: storage,
-    CACHE: cache,
-    CHAT: ChatDurableObject,
-    WORKFLOW: OnboardingWorkflow,
-    API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
+    DB: db,                    // Resource binding
+    STORAGE: storage,          // Resource binding
+    CACHE: cache,              // Resource binding
+    CHAT: ChatDurableObject,   // Resource binding
+    WORKFLOW: OnboardingWorkflow, // Resource binding
+    API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"), // Secret binding
   },
 });
 ```

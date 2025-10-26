@@ -12,7 +12,7 @@ describe("API Integration Tests", () => {
   test("should pass health check", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-health`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
@@ -21,10 +21,9 @@ describe("API Integration Tests", () => {
       const response = await fetch(`${website.url}/api/health`);
       expect(response.status).toBe(200);
 
-      const data = await response.json() as any;
+      const data = (await response.json()) as any;
       expect(data.status).toBe("ok");
       expect(data.timestamp).toBeDefined();
-
     } finally {
       await destroy(scope);
     }
@@ -33,20 +32,21 @@ describe("API Integration Tests", () => {
   test("should handle CORS headers", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-cors`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
 
       // Test CORS preflight
       const response = await fetch(`${website.url}/api/health`, {
-        method: "OPTIONS"
+        method: "OPTIONS",
       });
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
-      expect(response.headers.get("Access-Control-Allow-Methods")).toContain("GET");
-
+      expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+        "GET",
+      );
     } finally {
       await destroy(scope);
     }
@@ -58,7 +58,7 @@ describe("Database Operations", () => {
     const resourceId = `${BRANCH_PREFIX}-user`;
     let website: any;
     let createdUser: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
@@ -70,12 +70,12 @@ describe("Database Operations", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: testEmail,
-          name: "Test User"
-        })
+          name: "Test User",
+        }),
       });
 
       expect(createResponse.status).toBe(201);
-      createdUser = await createResponse.json() as any;
+      createdUser = (await createResponse.json()) as any;
 
       expect(createdUser.user).toMatchObject({
         email: testEmail,
@@ -87,17 +87,18 @@ describe("Database Operations", () => {
       const getResponse = await fetch(`${website.url}/api/users`);
       expect(getResponse.status).toBe(200);
 
-      const data = await getResponse.json() as any;
+      const data = (await getResponse.json()) as any;
       expect(Array.isArray(data.users)).toBe(true);
       expect(data.users.length).toBeGreaterThan(0);
-      
+
       // Verify our test user is in the list
-      const testUserInList = data.users.find((user: any) => user.email === testEmail);
+      const testUserInList = data.users.find(
+        (user: any) => user.email === testEmail,
+      );
       expect(testUserInList).toMatchObject({
         email: testEmail,
         name: "Test User",
       });
-
     } finally {
       await destroy(scope);
     }
@@ -106,7 +107,7 @@ describe("Database Operations", () => {
   test("should handle user validation errors", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-user-validation`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
@@ -117,12 +118,11 @@ describe("Database Operations", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "invalid-email",
-          name: "Test User"
-        })
+          name: "Test User",
+        }),
       });
 
       expect([400, 422]).toContain(invalidResponse.status);
-
     } finally {
       await destroy(scope);
     }
@@ -134,7 +134,7 @@ describe("File Operations", () => {
     const resourceId = `${BRANCH_PREFIX}-file`;
     let website: any;
     let uploadedFile: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
@@ -147,18 +147,20 @@ describe("File Operations", () => {
 
       const uploadResponse = await fetch(`${website.url}/api/upload`, {
         method: "POST",
-        body: formData
+        body: formData,
       });
 
       if (uploadResponse.status === 201) {
-        uploadedFile = await uploadResponse.json() as any;
+        uploadedFile = (await uploadResponse.json()) as any;
         expect(uploadedFile.file).toMatchObject({
           id: expect.any(String),
           size: expect.any(Number),
         });
 
         // READ
-        const retrieveResponse = await fetch(`${website.url}/api/files/${uploadedFile.file.id}`);
+        const retrieveResponse = await fetch(
+          `${website.url}/api/files/${uploadedFile.file.id}`,
+        );
         if (retrieveResponse.status === 200) {
           const retrievedContent = await retrieveResponse.text();
           expect(retrievedContent).toBe(testContent);
@@ -167,7 +169,6 @@ describe("File Operations", () => {
         // Endpoint might not be implemented yet - that's ok for now
         expect([404, 500]).toContain(uploadResponse.status);
       }
-
     } finally {
       await destroy(scope);
     }
@@ -178,27 +179,27 @@ describe("Cache Operations", () => {
   test("should set and get KV cache values", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-cache`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
 
-      const testKey = generateTestId('cache');
+      const testKey = generateTestId("cache");
       const testValue = { data: "test-value", timestamp: Date.now() };
 
       // CREATE
       const setResponse = await fetch(`${website.url}/api/cache/${testKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testValue)
+        body: JSON.stringify(testValue),
       });
 
       if (setResponse.status === 201) {
         // READ
         const getResponse = await fetch(`${website.url}/api/cache/${testKey}`);
         expect(getResponse.status).toBe(200);
-        
-        const data = await getResponse.json() as any;
+
+        const data = (await getResponse.json()) as any;
         expect(data).toMatchObject({
           key: testKey,
           found: true,
@@ -208,7 +209,6 @@ describe("Cache Operations", () => {
         // Endpoint might not be implemented yet
         expect([404, 500]).toContain(setResponse.status);
       }
-
     } finally {
       await destroy(scope);
     }
@@ -219,23 +219,22 @@ describe("Durable Object (Chat)", () => {
   test("should handle WebSocket upgrade and messaging", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-chat`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
 
       // Test WebSocket upgrade request
       const response = await fetch(`${website.url}/api/chat`, {
-        headers: { 
-          "Upgrade": "websocket",
-          "Connection": "Upgrade"
-        }
+        headers: {
+          Upgrade: "websocket",
+          Connection: "Upgrade",
+        },
       });
 
       // When Chat is properly configured, should return 101 (Switching Protocols)
       // When disabled, returns 404
       expect([404, 101]).toContain(response.status);
-
     } finally {
       await destroy(scope);
     }
@@ -246,33 +245,32 @@ describe("Workflow Operations", () => {
   test("should trigger and execute workflows", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-workflow`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
 
       const workflowData = {
-        userId: generateTestId('workflow'),
+        userId: generateTestId("workflow"),
         email: "test@example.com",
-        name: "Test User"
+        name: "Test User",
       };
 
       // CREATE
       const response = await fetch(`${website.url}/api/workflow/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(workflowData)
+        body: JSON.stringify(workflowData),
       });
 
       // When Workflow is enabled, should return 201 with workflowId
       // When disabled, returns 404
       expect([404, 201]).toContain(response.status);
-      
+
       if (response.status === 201) {
-        const data = await response.json() as any;
+        const data = (await response.json()) as any;
         expect(data.workflowId).toBeDefined();
       }
-
     } finally {
       await destroy(scope);
     }
@@ -283,17 +281,16 @@ describe("Error Handling", () => {
   test("should handle 404 for unknown endpoints", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-404`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
 
       const response = await fetch(`${website.url}/api/unknown-endpoint`);
       expect(response.status).toBe(404);
-      
-      const data = await response.json() as any;
-      expect(data.error).toBe("Not found");
 
+      const data = (await response.json()) as any;
+      expect(data.error).toBe("Not found");
     } finally {
       await destroy(scope);
     }
@@ -302,7 +299,7 @@ describe("Error Handling", () => {
   test("should handle malformed JSON", async (scope: any) => {
     const resourceId = `${BRANCH_PREFIX}-malformed`;
     let website: any;
-    
+
     try {
       const deployed = await scope.deploy();
       website = deployed.website;
@@ -310,11 +307,10 @@ describe("Error Handling", () => {
       const response = await fetch(`${website.url}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: "invalid-json{"
+        body: "invalid-json{",
       });
 
       expect([400, 422]).toContain(response.status);
-
     } finally {
       await destroy(scope);
     }

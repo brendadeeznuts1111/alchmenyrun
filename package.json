@@ -9,6 +9,7 @@
     "deploy": "bun run build:css && bun ./alchemy.run.ts",
     "deploy:prod": "bun run build:css && bun ./alchemy.run.ts --stage prod",
     "deploy:read": "PHASE=read bun ./alchemy.run.ts",
+    "scope:test": "PHASE=read bun ./alchemy.run.ts",
     "destroy": "PHASE=destroy bun ./alchemy.run.ts",
     "destroy:prod": "PHASE=destroy bun ./alchemy.run.ts --stage prod",
     "build": "bun run build:css",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
+    "@types/node": "24.9.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitest/ui": "^1.0.0",

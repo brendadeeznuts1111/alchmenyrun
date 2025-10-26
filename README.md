@@ -155,6 +155,42 @@ bun test:watch
 
 ## 🔄 Development Workflow
 
+🔥 **Perfect development workflow locked in!**
+
+### ⚡ **Your 3-Step Process**
+
+```bash
+# 1️⃣ Development
+bun run alchemy:dev  # Code → hot reload → test
+
+# 2️⃣ Before commit  
+bun format           # Auto-fix formatting
+bun run test         # Verify all tests pass
+
+# 3️⃣ Ship it
+git commit -m "feat: new feature"  # Pre-commit hook validates
+git push origin feature           # PR → preview URL
+```
+
+### 🎯 **What Makes This Flow Powerful**
+
+- **Instant Feedback**: Hot reload shows changes immediately
+- **Zero Friction**: Pre-commit hook handles all validation
+- **Safety Net**: Tests and formatting enforced automatically  
+- **Preview Isolation**: Every PR gets its own infrastructure
+- **Production Ready**: Merge → deploy → cleanup automatically
+
+### 🚀 **You're Ready To Build**
+
+Your stack is:
+- ✅ **Alchemy-compliant** (follows official guidelines exactly)
+- ✅ **Fully scoped** (database → storage → compute hierarchy)
+- ✅ **Type-safe** (complete TypeScript coverage)
+- ✅ **Auto-tested** (comprehensive test suite)
+- ✅ **Production-ready** (zero-downtime deployments)
+
+**Start building!** 🚀
+
 ### Adding Features
 
 1. **Create a feature branch**
@@ -211,13 +247,71 @@ PHASE=destroy bun run deploy --stage prod
 
 ## 🏗️ Architecture
 
-This demo follows Alchemy's architecture principles:
+This demo follows Alchemy's architecture principles and recommended setup:
+
+### Scope Hierarchy
+
+This project implements Alchemy's hierarchical scope structure for optimal organization:
+
+```
+cloudflare-demo (Application Scope)
+├── $USER/ (Stage Scope - your username)
+│   ├── database/ (Nested Scope) - Data storage resources
+│   │   └── D1 Database
+│   ├── storage/ (Nested Scope) - File and object storage
+│   │   ├── R2 Bucket
+│   │   └── KV Namespaces (cache + MCP)
+│   ├── compute/ (Nested Scope) - Processing and workflows
+│   │   ├── Queue
+│   │   ├── Durable Objects
+│   │   └── Workflows
+│   └── website (Resource) - Main application
+└── prod/ (Stage Scope - production)
+    └── [same structure as above]
+```
+
+### Apps & Stages
+
+This project uses the recommended Alchemy Apps & Stages pattern:
+
+- **App**: `cloudflare-demo` - Contains all infrastructure resources
+- **Stages**: Isolated environments for different purposes
+  - **Personal Stage**: Each developer's personal environment (`$USER`)
+  - **Pull Request Stage**: Preview environments for PRs (`pr-123`)
+  - **Production Stage**: Production environment (`prod`)
+
+### Stage Management
+
+```bash
+# Personal development (uses your username)
+bun run alchemy:dev    # Development server
+bun run deploy        # Deploy to your stage
+
+# Production
+bun run deploy:prod   # Deploy to production
+
+# Pull Request (automatic)
+bun run deploy --stage pr-123  # Deploy to PR stage
+
+# Cleanup
+bun run destroy       # Clean up your stage
+bun run destroy:prod  # Clean up production
+```
+
+### Resource Naming
+
+Resources are automatically named with the pattern: `${app}-${stage}-${id}`
+
+- Example: `cloudflare-demo-website-username` (personal stage)
+- Example: `cloudflare-demo-website-prod` (production stage)
+
+### Alchemy Principles
 
 - **TypeScript Native**: Full type safety and IntelliSense
 - **Minimal Abstraction**: Thin wrappers around Cloudflare APIs
 - **Explicit Configuration**: Clear, declarative infrastructure
 - **Local Development**: Miniflare for local testing
-- **Environment Isolation**: Separate dev/prod stages
+- **Environment Isolation**: Separate stages for different purposes
 
 ## 🔧 Configuration
 
@@ -338,4 +432,12 @@ Apache-2.0 - see [LICENSE](./LICENSE) for details.
 
 ---
 
-Built with ❤️ using [Alchemy](https://alchemy.run) - TypeScript-native Infrastructure as Code
+🚀 **Go build!**  
+Your repo is a **Cloudflare-Bun-SPA rocket**—just:
+
+```bash
+bun run alchemy:dev   # start coding
+```
+
+Everything else happens automatically.  
+Happy shipping!

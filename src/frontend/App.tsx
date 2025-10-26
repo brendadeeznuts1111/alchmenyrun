@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getBackendUrl } from "alchemy/cloudflare/bun-spa";
 import Users from "./components/Users";
 import FileUpload from "./components/FileUpload";
-import Chat from "./components/Chat";
+// import Chat from "./components/Chat"; // Temporarily disabled
 import WorkflowTrigger from "./components/WorkflowTrigger";
 import CacheDemo from "./components/CacheDemo";
 
@@ -28,7 +28,7 @@ function App() {
             {[
               { id: "users", label: "👥 Users" },
               { id: "files", label: "📁 Files" },
-              { id: "chat", label: "💬 Chat" },
+              // { id: "chat", label: "💬 Chat" }, // Temporarily disabled
               { id: "workflow", label: "⚙️ Workflow" },
               { id: "cache", label: "💾 Cache" },
             ].map((tab) => (
@@ -51,7 +51,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === "users" && <Users />}
         {activeTab === "files" && <FileUpload />}
-        {activeTab === "chat" && <Chat />}
+        {/* {activeTab === "chat" && <Chat />} */} {/* Temporarily disabled */}
         {activeTab === "workflow" && <WorkflowTrigger />}
         {activeTab === "cache" && <CacheDemo />}
       </main>
