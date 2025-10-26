@@ -77,7 +77,7 @@ async function authenticateWithJWT(token, env) {
       false,
       ["verify"],
     );
-    const signature = base64UrlDecode(signatureB64);
+    const signature = new Uint8Array(base64UrlDecode(signatureB64));
     const isValid = await crypto.subtle.verify(
       "HMAC",
       key,

@@ -22,7 +22,7 @@ export interface Env {
   JOBS: Queue;
   CACHE: KVNamespace;
   CHAT: DurableObjectNamespace;
-  WORKFLOW: WorkflowNamespace;
+  WORKFLOW: DurableObjectNamespace; // Fixed: Use DurableObjectNamespace instead
 
   // MCP-specific KV for rate limiting and dark launch
   MCP_KV: KVNamespace;

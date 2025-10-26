@@ -11,10 +11,10 @@ import alchemy from "alchemy";
 
 /**
  * Basic Tunnel Template
- * 
+ *
  * Creates a simple Cloudflare Tunnel for local development
  * with minimal configuration and automatic token generation.
- * 
+ *
  * @example
  * ```typescript
  * const tunnel = await basicTunnel();
@@ -34,7 +34,8 @@ export async function basicTunnel(name = "basic-tunnel") {
     tunnel,
     app,
     // Helper method to get the run command
-    getRunCommand: () => `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
+    getRunCommand: () =>
+      `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
     // Helper method to get tunnel URL
     getTunnelUrl: () => `https://${tunnel.tunnelId}.trycloudflare.com`,
   };
@@ -45,11 +46,11 @@ export async function basicTunnel(name = "basic-tunnel") {
  */
 export async function example() {
   const { tunnel, getRunCommand, getTunnelUrl } = await basicTunnel();
-  
+
   console.log("🚀 Basic Tunnel Created:");
   console.log(`  Tunnel ID: ${tunnel.tunnelId}`);
   console.log(`  Run Command: ${getRunCommand()}`);
   console.log(`  Tunnel URL: ${getTunnelUrl()}`);
-  
+
   return tunnel;
 }

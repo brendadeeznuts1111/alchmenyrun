@@ -30,7 +30,7 @@ export default function FileUpload() {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { file: string };
       setUploadedFile(data.file);
       setFile(null);
     } catch (error) {

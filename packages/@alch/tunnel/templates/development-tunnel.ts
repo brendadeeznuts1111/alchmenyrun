@@ -27,14 +27,14 @@ export interface DevelopmentTunnelConfig {
 
 /**
  * Development Tunnel Template
- * 
+ *
  * Creates a development-optimized tunnel with:
  * - Tunnel adoption for team collaboration
  * - Multiple local service routing
  * - Development metadata
  * - WARP routing for private services
  * - Easy service discovery
- * 
+ *
  * @example
  * ```typescript
  * const tunnel = await developmentTunnel({
@@ -51,7 +51,7 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
   const app = await alchemy("development-tunnel-app");
 
   // Build ingress rules from local services
-  const ingressRules = config.localServices.map(service => ({
+  const ingressRules = config.localServices.map((service) => ({
     hostname: service.hostname,
     path: service.path,
     service: `http://localhost:${service.port}`,
@@ -73,7 +73,7 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
     ingress: ingressRules,
     metadata: {
       environment: "development",
-      services: config.localServices.map(s => s.name),
+      services: config.localServices.map((s) => s.name),
       createdAt: new Date().toISOString(),
       ...config.metadata,
     },
@@ -84,24 +84,31 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
     app,
     config,
     // Development helper methods
-    getRunCommand: () => `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
-    getServiceUrls: () => 
-      config.localServices.reduce((urls, service) => {
-        const baseUrl = service.hostname 
-          ? `https://${service.hostname}`
-          : `https://${tunnel.tunnelId}.trycloudflare.com`;
-        
-        urls[service.name] = service.path 
-          ? `${baseUrl}${service.path}`
-          : baseUrl;
-        
-        return urls;
-      }, {} as Record<string, string>),
-    getLocalServiceUrls: () => 
-      config.localServices.reduce((urls, service) => {
-        urls[service.name] = `http://localhost:${service.port}`;
-        return urls;
-      }, {} as Record<string, string>),
+    getRunCommand: () =>
+      `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
+    getServiceUrls: () =>
+      config.localServices.reduce(
+        (urls, service) => {
+          const baseUrl = service.hostname
+            ? `https://${service.hostname}`
+            : `https://${tunnel.tunnelId}.trycloudflare.com`;
+
+          urls[service.name] = service.path
+            ? `${baseUrl}${service.path}`
+            : baseUrl;
+
+          return urls;
+        },
+        {} as Record<string, string>,
+      ),
+    getLocalServiceUrls: () =>
+      config.localServices.reduce(
+        (urls, service) => {
+          urls[service.name] = `http://localhost:${service.port}`;
+          return urls;
+        },
+        {} as Record<string, string>,
+      ),
     getDevelopmentInfo: () => ({
       tunnelName: config.tunnelName,
       tunnelId: tunnel.tunnelId,
@@ -113,15 +120,15 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
     }),
     validateDevelopmentSetup: () => {
       const issues: string[] = [];
-      
+
       if (!config.tunnelName || config.tunnelName.trim() === "") {
         issues.push("Tunnel name is required");
       }
-      
+
       if (!config.localServices || config.localServices.length === 0) {
         issues.push("At least one local service must be configured");
       }
-      
+
       config.localServices.forEach((service, index) => {
         if (!service.name || service.name.trim() === "") {
           issues.push(`Service ${index + 1}: Name is required`);
@@ -130,7 +137,7 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
           issues.push(`Service ${index + 1}: Invalid port number`);
         }
       });
-      
+
       return {
         isValid: issues.length === 0,
         issues,
@@ -143,7 +150,14 @@ export async function developmentTunnel(config: DevelopmentTunnelConfig) {
  * Usage example
  */
 export async function example() {
-  const { tunnel, getRunCommand, getServiceUrls, getLocalServiceUrls, getDevelopmentInfo, validateDevelopmentSetup } = await developmentTunnel({
+  const {
+    tunnel,
+    getRunCommand,
+    getServiceUrls,
+    getLocalServiceUrls,
+    getDevelopmentInfo,
+    validateDevelopmentSetup,
+  } = await developmentTunnel({
     tunnelName: "my-app-dev",
     localServices: [
       { name: "frontend", port: 3000 },
@@ -157,19 +171,26 @@ export async function example() {
       project: "my-app",
     },
   });
-  
+
   console.log("🛠️ Development Tunnel Created:");
   console.log(`  Tunnel ID: ${tunnel.tunnelId}`);
   console.log(`  Run Command: ${getRunCommand()}`);
   console.log("  Service URLs:", getServiceUrls());
   console.log("  Local URLs:", getLocalServiceUrls());
-  console.log("  Development Info:", JSON.stringify(getDevelopmentInfo(), null, 2));
-  
+  console.log(
+    "  Development Info:",
+    JSON.stringify(getDevelopmentInfo(), null, 2),
+  );
+
   const validation = validateDevelopmentSetup();
-  console.log(`  Setup Validation: ${validation.isValid ? "✅ Valid" : "❌ Issues found"}`);
+  console.log(
+    `  Setup Validation: ${
+      validation.isValid ? "✅ Valid" : "❌ Issues found"
+    }`,
+  );
   if (!validation.isValid) {
     console.log("  Issues:", validation.issues);
   }
-  
+
   return tunnel;
 }

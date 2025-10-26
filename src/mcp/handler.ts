@@ -17,7 +17,7 @@ export interface MCPRequest {
 
 export interface MCPResponse {
   jsonrpc: "2.0";
-  id: string | number;
+  id: string | number | null;
   result?: unknown;
   error?: {
     code: number;
@@ -117,7 +117,7 @@ async function routeMethod(
       const toolArguments = (params.arguments as Record<string, unknown>) || {};
 
       if (!toolName) {
-        return createErrorResponse(
+        return createErrorMCPResponse(
           id,
           -32602,
           "Invalid params: name is required",
@@ -141,9 +141,9 @@ async function routeMethod(
     }
 
     // Unknown method
-    return createErrorResponse(id, -32601, `Method not found: ${method}`);
+    return createErrorMCPResponse(id, -32601, `Method not found: ${method}`);
   } catch (error) {
-    return createErrorResponse(
+    return createErrorMCPResponse(
       id,
       -32603,
       `Tool execution error: ${
@@ -151,6 +151,26 @@ async function routeMethod(
       }`,
     );
   }
+}
+
+/**
+ * Create an error MCPResponse object
+ */
+function createErrorMCPResponse(
+  id: string | number | null,
+  code: number,
+  message: string,
+  data?: unknown,
+): MCPResponse {
+  return {
+    jsonrpc: "2.0",
+    id: id || 0,
+    error: {
+      code,
+      message,
+      ...(data !== undefined ? { data } : {}),
+    },
+  };
 }
 
 /**
@@ -162,15 +182,6 @@ function createErrorResponse(
   message: string,
   data?: unknown,
 ): Response {
-  const response: MCPResponse = {
-    jsonrpc: "2.0",
-    id: id || 0,
-    error: {
-      code,
-      message,
-      ...(data && { data }),
-    },
-  };
-
+  const response: MCPResponse = createErrorMCPResponse(id, code, message, data);
   return Response.json(response);
 }
