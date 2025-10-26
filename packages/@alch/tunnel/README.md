@@ -62,6 +62,98 @@ const tunnel = await Tunnel("web-app", {
 // api.example.com → {tunnelId}.cfargotunnel.com
 ```
 
+## Terraform-style Getting Started
+
+### Prerequisites
+
+You'll need a Cloudflare API token and account ID:
+
+```bash
+export CLOUDFLARE_API_TOKEN="your_api_token_here"
+export CLOUDFLARE_ACCOUNT_ID="your_account_id_here"
+```
+
+### Basic Tunnel (like Terraform resource)
+
+```typescript
+import { Tunnel } from "@alch/tunnel";
+import alchemy from "alchemy";
+
+// Create your Alchemy app
+const app = await alchemy("my-app");
+
+// Create a basic tunnel (like Terraform resource)
+const tunnel = await Tunnel("my-tunnel", {
+  name: `${app.name}-tunnel`,
+});
+
+// Output tunnel information
+console.log(`Tunnel ID: ${tunnel.tunnelId}`);
+console.log(`Run command: cloudflared tunnel run --token ${tunnel.token.unencrypted}`);
+```
+
+### Production-ready Tunnel with DNS
+
+```typescript
+import { Tunnel } from "@alch/tunnel";
+import alchemy from "alchemy";
+
+const app = await alchemy("production-app");
+
+const tunnel = await Tunnel("prod-tunnel", {
+  name: `${app.name}-production`,
+  ingress: [
+    {
+      hostname: "app.example.com",
+      service: "https://localhost:443",
+    },
+    {
+      hostname: "api.example.com", 
+      service: "https://localhost:8443",
+    },
+    {
+      service: "http_status:404",
+    },
+  ],
+  warpRouting: {
+    enabled: true,
+  },
+  originRequest: {
+    connectTimeout: 60,
+    tlsTimeout: 30,
+    httpHostHeader: "app.example.com",
+    http2Origin: true,
+    noTLSVerify: false,
+  },
+});
+
+console.log(`Production tunnel ready: ${tunnel.tunnelId}`);
+console.log(`DNS records automatically configured for hostnames`);
+```
+
+### Environment Configuration
+
+Create a `.env` file for your Cloudflare credentials:
+
+```bash
+# .env
+CLOUDFLARE_API_TOKEN=your_api_token_here
+CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+```
+
+### Running Your Tunnel
+
+```bash
+# Install dependencies
+bun install
+
+# Run your Alchemy application
+bun run dev
+
+# Or run cloudflared manually with the token
+cloudflared tunnel run --token your_tunnel_token_here
+```
+
 ## Advanced Usage
 
 ### Path-Based Routing

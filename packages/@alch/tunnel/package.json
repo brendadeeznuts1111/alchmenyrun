@@ -1,7 +1,7 @@
 {
   "name": "@alch/tunnel",
-  "version": "0.1.0",
-  "description": "Cloudflare Tunnel resource for Alchemy - Secure connections between origin servers and Cloudflare's edge",
+  "version": "1.0.0",
+  "description": "Cloudflare Tunnel resource for Alchemy - Production-ready secure connections between origin servers and Cloudflare's edge with real API integration, metrics, and graceful shutdown",
   "type": "module",
   "main": "src/index.ts",
   "exports": {

@@ -7,8 +7,9 @@
 
 import alchemy from "alchemy";
 import type { Context } from "alchemy";
-import { Resource, ResourceKind } from "alchemy";
-import type { Secret } from "alchemy";
+import { Resource, Secret } from "alchemy";
+import { CloudflareApiClient, createCloudflareClient, type CloudflareTunnelResponse } from "./cloudflare-api.js";
+import { createSafeLogger, redactObject, validateApiToken, validateAccountId } from "./utils.js";
 import { logger } from "alchemy";
 
 /**
@@ -283,7 +284,7 @@ export interface Tunnel extends Omit<TunnelProps, "delete" | "tunnelSecret"> {
  * Type guard for Tunnel resources
  */
 export function isTunnel(resource: any): resource is Tunnel {
-  return resource?.[ResourceKind] === "cloudflare::Tunnel";
+  return resource?.["ResourceKind"] === "cloudflare::Tunnel";
 }
 
 /**
