@@ -36,7 +36,8 @@
     "kit:release": "npm version prerelease && git push --tags",
     "app:new": "./scripts/create-app.sh",
     "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom",
-    "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts"
+    "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts",
+    "monitor:collisions": "./scripts/monitor-collisions.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

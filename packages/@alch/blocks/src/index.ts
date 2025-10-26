@@ -12,6 +12,9 @@ import type {
 // Re-export Database with automatic stage suffixing
 export { Database } from "./database";
 
+// Re-export Storage resources with automatic stage suffixing
+export { Bucket, KV, Queue } from "./storage";
+
 /**
  * Create a WebSocket chat room with Durable Object
  *
