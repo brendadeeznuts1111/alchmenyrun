@@ -1,7 +1,8 @@
 import { getDb } from "../db";
 import { ChatRoom } from "./durable-object";
-// Re-export ChatRoom to make it available to the worker
-export { ChatRoom };
+import OnboardingWorkflow from "./workflow";
+// Re-export Durable Object and Workflow classes
+export { ChatRoom, OnboardingWorkflow };
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
