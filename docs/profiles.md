@@ -12,10 +12,10 @@ This project uses **4 profiles** for different environments:
 
 | Profile | Purpose | Auth Method | Usage |
 |---------|---------|-------------|-------|
-| `default` | Personal development | OAuth | Local dev with `bun run alchemy:dev` |
-| `prod` | Production deployment | API Token | Production releases |
-| `staging` | Staging environment | API Token | Pre-production testing |
-| `ci` | GitHub Actions | API Token | Automated CI/CD |
+| `default` | Local development | OAuth | `bun alchemy deploy` or `bun run alchemy:dev` |
+| `prod` | Production deployment | API Token | `bun alchemy deploy --profile prod` |
+| `staging` | Staging environment | API Token | `bun alchemy deploy --profile staging` |
+| `ci` | GitHub Actions | API Token | Used automatically in CI/CD |
 
 ### Why Multiple Profiles?
 

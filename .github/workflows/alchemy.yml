@@ -22,6 +22,32 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      - name: Setup CI Profile
+        run: |
+          mkdir -p ~/.alchemy/credentials/ci
+          cat > ~/.alchemy/config.json << 'EOF'
+          {
+            "version": 1,
+            "profiles": {
+              "ci": {
+                "cloudflare": {
+                  "method": "api-token",
+                  "metadata": {
+                    "id": "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+                    "name": "CI Account"
+                  }
+                }
+              }
+            }
+          }
+          EOF
+          cat > ~/.alchemy/credentials/ci/cloudflare.json << 'EOF'
+          {
+            "type": "api-token",
+            "token": "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          }
+          EOF
+
       - name: Compute stage
         id: stage
         run: |

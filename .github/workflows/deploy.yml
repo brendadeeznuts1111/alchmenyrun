@@ -25,6 +25,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
+      
+      - name: Setup CI Profile
+        run: |
+          mkdir -p ~/.alchemy/credentials/ci
+          cat > ~/.alchemy/config.json << 'EOF'
+          {
+            "version": 1,
+            "profiles": {
+              "ci": {
+                "cloudflare": {
+                  "method": "api-token",
+                  "metadata": {
+                    "id": "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+                    "name": "CI Account"
+                  }
+                }
+              }
+            }
+          }
+          EOF
+          cat > ~/.alchemy/credentials/ci/cloudflare.json << 'EOF'
+          {
+            "type": "api-token",
+            "token": "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          }
+          EOF
+      
       - run: bun alchemy deploy --stage ${{ env.STAGE }}
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
@@ -47,6 +74,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
+      
+      - name: Setup CI Profile
+        run: |
+          mkdir -p ~/.alchemy/credentials/ci
+          cat > ~/.alchemy/config.json << 'EOF'
+          {
+            "version": 1,
+            "profiles": {
+              "ci": {
+                "cloudflare": {
+                  "method": "api-token",
+                  "metadata": {
+                    "id": "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+                    "name": "CI Account"
+                  }
+                }
+              }
+            }
+          }
+          EOF
+          cat > ~/.alchemy/credentials/ci/cloudflare.json << 'EOF'
+          {
+            "type": "api-token",
+            "token": "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          }
+          EOF
+      
       - run: bun alchemy destroy --stage ${{ env.STAGE }}
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
