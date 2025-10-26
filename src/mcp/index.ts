@@ -9,6 +9,7 @@ import { authenticateRequest } from "./auth";
 import { checkRateLimit } from "./rate-limit";
 import { handleMCPRequest } from "./handler";
 import { getDarkLaunchPercentage } from "./feature-flags";
+import { logger } from "alchemy";
 
 export interface Env {
   // MCP Configuration
@@ -22,7 +23,7 @@ export interface Env {
   JOBS: Queue;
   CACHE: KVNamespace;
   CHAT: DurableObjectNamespace;
-  WORKFLOW: WorkflowNamespace;
+  WORKFLOW: DurableObjectNamespace; // Fixed: Use DurableObjectNamespace instead
 
   // MCP-specific KV for rate limiting and dark launch
   MCP_KV: KVNamespace;
@@ -138,11 +139,17 @@ export default {
           },
         });
       } catch (error) {
-        console.error("MCP request error:", error);
+        // Use structured logging without sensitive data
+        logger.error("MCP request failed", {
+          error: error instanceof Error ? error.message : "Unknown error",
+          timestamp: Date.now(),
+          environment: env.ENVIRONMENT || "unknown"
+        });
+        
         return Response.json(
           {
             error: "Internal server error",
-            message: error instanceof Error ? error.message : "Unknown error",
+            message: "Request processing failed",
           },
           {
             status: 500,

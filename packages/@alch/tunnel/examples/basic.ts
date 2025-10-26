@@ -1,6 +1,4 @@
-/**
- * Basic Cloudflare Tunnel Usage Examples
- */
+/** Basic Cloudflare Tunnel Usage Examples */
 
 import { Tunnel } from "../src/index.js";
 import alchemy from "alchemy";
@@ -38,7 +36,7 @@ export async function webAppTunnel() {
         service: "http://localhost:8080",
       },
       {
-        service: "http_status:404", // catch-all rule
+        service: "http_status:404",
       },
     ],
   });
@@ -68,7 +66,7 @@ export async function pathBasedTunnel() {
       },
       {
         hostname: "api.example.com",
-        service: "http://localhost:8080", // default
+        service: "http://localhost:8080",
       },
       {
         service: "http_status:404",
@@ -117,8 +115,8 @@ export async function developmentTunnel() {
 
   const tunnel = await Tunnel("dev-tunnel", {
     name: "development-tunnel",
-    adopt: true, // Adopt if exists
-    delete: false, // Keep tunnel when resource is deleted
+    adopt: true,
+    delete: false,
     ingress: [
       {
         hostname: "dev.example.com",

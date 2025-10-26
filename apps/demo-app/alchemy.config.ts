@@ -6,7 +6,7 @@ export default {
 
   // Define your Cloudflare resources
   resources: {
-    // Example: Worker for API endpoints
+    // Product page worker
     api: {
       type: "worker",
       script: "./src/api.ts",

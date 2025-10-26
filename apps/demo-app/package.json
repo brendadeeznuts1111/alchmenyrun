@@ -2,20 +2,25 @@
   "name": "demo-app",
   "version": "0.1.0",
   "private": true,
+  "main": "src/index.tsx",
   "scripts": {
     "dev": "alchemy dev",
     "deploy": "alchemy deploy --profile prod",
-    "build": "bun build src/client.tsx --outdir dist",
+    "build": "bun build src/index.tsx --outdir dist",
     "test": "bun test"
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "date-fns": "^2.30.0"
   },
   "devDependencies": {
     "alchemy": "^0.76.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
   }
 }

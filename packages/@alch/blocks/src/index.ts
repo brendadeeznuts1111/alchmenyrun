@@ -1,6 +1,10 @@
 /**
  * Reusable infrastructure building blocks for Alchemy
  * One-line resource creation with sensible defaults
+ * 
+ * @see {@link https://alchemy.run/docs | Alchemy Framework Documentation}
+ * @see {@link https://developers.cloudflare.com/workers/ | Cloudflare Workers Documentation}
+ * @see {@link https://developers.cloudflare.com/durable-objects/ | Durable Objects Documentation}
  */
 
 import type {
@@ -11,7 +15,8 @@ import type {
 
 /**
  * Create a WebSocket chat room with Durable Object
- *
+ * 
+ * @see {@link https://developers.cloudflare.com/durable-objects/ | Durable Objects Documentation}
  * @example
  * ```ts
  * const { worker, room } = ChatBlock("support");
@@ -34,7 +39,8 @@ export function ChatBlock(name: string, opts?: { className?: string }) {
 
 /**
  * Create a job queue for async processing
- *
+ * 
+ * @see {@link https://developers.cloudflare.com/queues/ | Cloudflare Queues Documentation}
  * @example
  * ```ts
  * const emails = JobQueue("emails");
@@ -51,7 +57,8 @@ export function JobQueue(name: string) {
 
 /**
  * Create a scheduled task (CRON job)
- *
+ * 
+ * @see {@link https://developers.cloudflare.com/workers/configuration/cron-triggers/ | Cron Triggers Documentation}
  * @example
  * ```ts
  * const cleanup = ScheduledTask("cleanup", "0 4 * * *", "src/cron/cleanup.ts");
@@ -74,7 +81,8 @@ export function ScheduledTask(
 
 /**
  * Create a KV cache with worker
- *
+ * 
+ * @see {@link https://developers.cloudflare.com/kv/ | Workers KV Documentation}
  * @example
  * ```ts
  * const { kv, worker } = CacheBlock("api-cache");

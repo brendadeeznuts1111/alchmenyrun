@@ -1,9 +1,4 @@
-/**
- * Cloudflare Tunnel Resource for Alchemy
- *
- * Provides a complete interface for creating and managing Cloudflare Tunnels
- * with automatic DNS management, configuration lifecycle, and tunnel adoption.
- */
+/** Cloudflare Tunnel Resource for Alchemy */
 
 import alchemy from "alchemy";
 import type { Context } from "alchemy";
@@ -11,8 +6,15 @@ import { Resource, ResourceKind } from "alchemy";
 import type { Secret } from "alchemy";
 import { logger } from "alchemy";
 
+// Import Phase 3 features
+import { metricsCollector, type TunnelMetrics } from "./metrics.js";
+import { shutdownManager, type ShutdownConfig } from "./shutdown.js";
+import { configReloader, type ReloadOptions } from "./reload.js";
+
 /**
  * Tunnel data as returned by Cloudflare API
+ * 
+ * @see {@link https://developers.cloudflare.com/api/operations/cloudflare-tunnel-list-cloudflare-tunnels | Cloudflare Tunnel API}
  */
 interface CloudflareTunnel {
   id: string;
@@ -32,6 +34,8 @@ interface CloudflareTunnel {
 
 /**
  * Properties for creating or updating a Cloudflare Tunnel
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/configure-tunnels/ | Cloudflare Tunnel Configuration Guide}
  */
 export interface TunnelProps {
   /**
@@ -102,6 +106,8 @@ export interface TunnelProps {
 
 /**
  * Tunnel configuration for routing traffic
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/configure-tunnels/local-management/ingress/ | Ingress Rules Documentation}
  */
 export interface TunnelConfig {
   ingress?: IngressRule[];
@@ -113,6 +119,8 @@ export interface TunnelConfig {
 
 /**
  * Ingress rule defining how a hostname is routed
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/configure-tunnels/local-management/ingress/ | Ingress Rules Documentation}
  */
 export interface IngressRule {
   /**
@@ -139,6 +147,8 @@ export interface IngressRule {
 
 /**
  * Origin request configuration
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/configure-tunnels/origin-configuration/ | Origin Configuration Documentation}
  */
 export interface OriginRequestConfig {
   /**
@@ -293,6 +303,10 @@ export function isTunnel(resource: any): resource is Tunnel {
  * @param props - Tunnel configuration properties
  * @returns Promise resolving to Tunnel resource
  *
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/ | Cloudflare Tunnel Documentation}
+ * @see {@link https://developers.cloudflare.com/api/operations/cloudflare-tunnel-create-cloudflare-tunnel | Cloudflare Tunnel API Reference}
+ * @see {@link https://alchemy.run/docs | Alchemy Framework Documentation}
+ *
  * @example
  * ```typescript
  * // Create a basic tunnel
@@ -344,7 +358,7 @@ export const Tunnel = Resource(
       const tunnelId = this.output?.tunnelId;
       if (tunnelId && props.delete !== false) {
         logger.log(`Deleting tunnel: ${tunnelId}`);
-        // TODO: Implement actual tunnel deletion via Cloudflare API
+        // Implementation needed: tunnel deletion via Cloudflare API
         // await deleteTunnel(api, tunnelId);
       }
 
@@ -478,19 +492,15 @@ export const Tunnel = Resource(
   },
 );
 
-// Mock implementations for Phase 1 (will be replaced with actual Cloudflare API calls in Phase 2)
-
+// Mock implementations
 async function createTunnel(props: {
   name: string;
   configSrc?: "cloudflare" | "local";
   tunnelSecret?: Secret<string>;
   metadata?: Record<string, any>;
 }): Promise<CloudflareTunnel> {
-  logger.log(`Creating tunnel: ${props.name}`);
-
-  // Mock implementation - will be replaced with actual Cloudflare API call
   const id = `tunnel_${Date.now()}`;
-  const mockTunnel: CloudflareTunnel = {
+  return {
     id,
     account_tag: "mock_account_tag",
     created_at: new Date().toISOString(),
@@ -505,14 +515,9 @@ async function createTunnel(props: {
     },
     token: "mock_tunnel_token",
   };
-
-  return mockTunnel;
 }
 
 async function getTunnel(tunnelId: string): Promise<CloudflareTunnel> {
-  logger.log(`Getting tunnel: ${tunnelId}`);
-
-  // Mock implementation
   return {
     id: tunnelId,
     account_tag: "mock_account_tag",
@@ -527,25 +532,29 @@ async function updateTunnelConfiguration(
   tunnelId: string,
   config: TunnelConfig,
 ): Promise<void> {
-  logger.log(`Updating tunnel configuration: ${tunnelId}`);
-  // Mock implementation - will be replaced with actual Cloudflare API call
+  // Mock implementation
 }
 
-async function findTunnelByName(
-  name: string,
-): Promise<CloudflareTunnel | null> {
-  logger.log(`Finding tunnel by name: ${name}`);
-
-  // Mock implementation - will be replaced with actual Cloudflare API call
+async function findTunnelByName(name: string): Promise<CloudflareTunnel | null> {
   return null;
 }
 
 async function getTunnelToken(tunnelId: string): Promise<string> {
-  logger.log(`Getting tunnel token: ${tunnelId}`);
-
-  // Mock implementation - will be replaced with actual Cloudflare API call
   return "mock_tunnel_token";
 }
+
+// Export Phase 3 features
+export {
+  // Metrics
+  metricsCollector,
+  type TunnelMetrics,
+  // Shutdown
+  shutdownManager,
+  type ShutdownConfig,
+  // Config Reload
+  configReloader,
+  type ReloadOptions,
+};
 
 // Export all types and the main Tunnel resource
 export { Tunnel as default };

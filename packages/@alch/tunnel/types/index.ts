@@ -4,6 +4,9 @@
  * @category networking
  * @provider cloudflare
  * @phase foundation
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/ | Cloudflare Tunnel Documentation}
+ * @see {@link https://alchemy.run/docs | Alchemy Framework Documentation}
  */
 
 // Re-export all types from the main module
@@ -135,25 +138,33 @@ export interface DevelopmentTunnelResult {
 /**
  * Utility types
  */
-export type TunnelTemplate = 
+export type TunnelTemplate =
   | "basic-tunnel"
-  | "web-app-tunnel" 
+  | "web-app-tunnel"
   | "secure-tunnel"
   | "development-tunnel";
 
-export type TunnelTemplateConfig<T extends TunnelTemplate> = 
-  T extends "basic-tunnel" ? BasicTunnelConfig :
-  T extends "web-app-tunnel" ? WebAppTunnelConfig :
-  T extends "secure-tunnel" ? SecureTunnelConfig :
-  T extends "development-tunnel" ? DevelopmentTunnelConfig :
-  never;
+export type TunnelTemplateConfig<T extends TunnelTemplate> =
+  T extends "basic-tunnel"
+    ? BasicTunnelConfig
+    : T extends "web-app-tunnel"
+      ? WebAppTunnelConfig
+      : T extends "secure-tunnel"
+        ? SecureTunnelConfig
+        : T extends "development-tunnel"
+          ? DevelopmentTunnelConfig
+          : never;
 
-export type TunnelTemplateResult<T extends TunnelTemplate> = 
-  T extends "basic-tunnel" ? BasicTunnelResult :
-  T extends "web-app-tunnel" ? WebAppTunnelResult :
-  T extends "secure-tunnel" ? SecureTunnelResult :
-  T extends "development-tunnel" ? DevelopmentTunnelResult :
-  never;
+export type TunnelTemplateResult<T extends TunnelTemplate> =
+  T extends "basic-tunnel"
+    ? BasicTunnelResult
+    : T extends "web-app-tunnel"
+      ? WebAppTunnelResult
+      : T extends "secure-tunnel"
+        ? SecureTunnelResult
+        : T extends "development-tunnel"
+          ? DevelopmentTunnelResult
+          : never;
 
 /**
  * Resource metadata types
@@ -167,11 +178,14 @@ export interface TunnelResourceMetadata {
   templates: TunnelTemplate[];
   features: [
     "ingress-rules",
-    "origin-configuration", 
+    "origin-configuration",
     "warp-routing",
     "tunnel-adoption",
     "dns-management",
-    "lifecycle-management"
+    "lifecycle-management",
+    "prometheus-metrics",
+    "graceful-shutdown",
+    "zero-downtime-reload"
   ];
   compatibility: {
     alchemy: ">=0.76.1";
@@ -208,20 +222,16 @@ export interface TunnelEvent {
   data?: any;
 }
 
-export interface TunnelMetrics {
-  tunnelId: string;
-  activeConnections: number;
-  bytesTransferred: number;
-  requestCount: number;
-  errorCount: number;
-  uptime: number;
-  lastActivity: Date;
-}
-
 /**
  * Export all template functions
  */
 export declare function basicTunnel(name?: string): Promise<BasicTunnelResult>;
-export declare function webAppTunnel(config: WebAppTunnelConfig): Promise<WebAppTunnelResult>;
-export declare function secureTunnel(config: SecureTunnelConfig): Promise<SecureTunnelResult>;
-export declare function developmentTunnel(config: DevelopmentTunnelConfig): Promise<DevelopmentTunnelResult>;
+export declare function webAppTunnel(
+  config: WebAppTunnelConfig,
+): Promise<WebAppTunnelResult>;
+export declare function secureTunnel(
+  config: SecureTunnelConfig,
+): Promise<SecureTunnelResult>;
+export declare function developmentTunnel(
+  config: DevelopmentTunnelConfig,
+): Promise<DevelopmentTunnelResult>;

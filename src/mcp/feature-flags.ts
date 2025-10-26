@@ -1,10 +1,14 @@
 /**
  * Feature Flags Module
  *
- * Dark launch and feature flag management for gradual rollouts
+ * KV-based feature flag management with dark launch support
+ * 
+ * @see {@link https://developers.cloudflare.com/workers/runtime-apis/kv/ | Cloudflare KV Documentation}
+ * @taxonomy [BUN/CLOUDFLARE/SPORTSBETTING]<TEST-STANDARDS:AGENT>[SECURITY]{#FANTASY402}@v2
  */
 
 import type { Env } from "./index";
+import { logger } from "alchemy";
 
 /**
  * Get the current dark launch percentage (0-100)
@@ -20,7 +24,11 @@ export async function getDarkLaunchPercentage(env: Env): Promise<number> {
     const percentage = parseInt(valueStr, 10);
     return Math.max(0, Math.min(100, percentage)); // Clamp to 0-100
   } catch (error) {
-    console.error("Error getting dark launch percentage:", error);
+    logger.error("Failed to get dark launch percentage", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: Date.now(),
+      environment: env.ENVIRONMENT || "unknown"
+    });
     // Fail safe - allow traffic in case of errors
     return 100;
   }
@@ -48,7 +56,12 @@ export async function isFeatureEnabled(
     const value = await env.MCP_KV?.get(`feature:${featureName}`);
     return value === "true" || value === "1";
   } catch (error) {
-    console.error(`Error checking feature ${featureName}:`, error);
+    logger.error(`Failed to check feature ${featureName}`, {
+      error: error instanceof Error ? error.message : "Unknown error",
+      featureName,
+      timestamp: Date.now(),
+      environment: env.ENVIRONMENT || "unknown"
+    });
     // Fail safe - disable unknown features
     return false;
   }
@@ -85,7 +98,11 @@ export async function getAllFeatureFlags(
 
     return flags;
   } catch (error) {
-    console.error("Error getting feature flags:", error);
+    logger.error("Failed to get feature flags", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: Date.now(),
+      environment: env.ENVIRONMENT || "unknown"
+    });
     return {};
   }
 }
