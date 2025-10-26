@@ -13,6 +13,7 @@ import {
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { Database } from "./packages/@alch/blocks/src/database";
+import { Bucket, KV, Queue as StageQueue } from "./packages/@alch/blocks/src/storage";
 
 // API token for Cloudflare resources (bypasses profile OAuth)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -56,21 +57,20 @@ await alchemy.run("database", async () => {
 
 // Storage scope - Organizes file and object storage
 await alchemy.run("file-storage", async () => {
-  // R2 Bucket for file storage
-  const storage = await R2Bucket("storage", {
-    name: "alchemy-demo-storage",
+  // R2 Bucket for file storage (stage-unique)
+  const storage = await Bucket("alchemy-demo-storage", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
 
-  // KV Namespace for caching
-  const cache = await KVNamespace("cache", {
+  // KV Namespace for caching (stage-unique)
+  const cache = await KV("alchemy-demo-cache", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
 
-  // KV Namespace for MCP server (rate limiting & feature flags)
-  const mcpKv = await KVNamespace("mcp-kv", {
+  // KV Namespace for MCP server (stage-unique)
+  const mcpKv = await KV("alchemy-demo-mcp", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
@@ -83,9 +83,8 @@ await alchemy.run("file-storage", async () => {
 
 // Compute scope - Organizes processing and workflow resources
 await alchemy.run("compute", async () => {
-  // Queue for async job processing
-  const jobs = await Queue("jobs", {
-    name: "alchemy-demo-jobs",
+  // Queue for async job processing (stage-unique)
+  const jobs = await StageQueue("alchemy-demo-jobs", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
