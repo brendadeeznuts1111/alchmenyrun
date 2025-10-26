@@ -2,9 +2,16 @@
  * Authentication Module
  *
  * Supports both JWT tokens and shared secrets for MCP authentication
+ * 
+ * @see {@link https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html | OWASP JWT Security}
+ * @see {@link https://github.com/panva/jose | jose JWT Library}
+ * @taxonomy [BUN/CLOUDFLARE/SPORTSBETTING]<TEST-STANDARDS:AGENT>[SECURITY]{#FANTASY402}@v2
  */
 
 import type { Env } from "./index";
+import { jwtVerify, SignJWT } from 'jose';
+import { timingSafeEqual } from 'crypto';
+import { z } from 'zod';
 
 export interface AuthResult {
   success: boolean;
@@ -12,6 +19,22 @@ export interface AuthResult {
   clientId?: string;
   metadata?: Record<string, unknown>;
 }
+
+// Input validation schemas
+const JWTPayloadSchema = z.object({
+  sub: z.string().optional(),
+  client_id: z.string().optional(),
+  iat: z.number().optional(),
+  exp: z.number().optional(),
+  nbf: z.number().optional(),
+  iss: z.string().optional(),
+  aud: z.string().optional(),
+});
+
+const AuthHeaderSchema = z.object({
+  Authorization: z.string().regex(/^Bearer .+$/).optional(),
+  'X-MCP-Secret': z.string().optional(),
+});
 
 /**
  * Authenticate an incoming request using JWT or shared secret
@@ -41,7 +64,9 @@ export async function authenticateRequest(
 }
 
 /**
- * Authenticate using shared secret
+ * Authenticate using shared secret with timing-safe comparison
+ * 
+ * @see {@link https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#side-channel-attacks | OWASP Timing Attacks}
  */
 function authenticateWithSharedSecret(secret: string, env: Env): AuthResult {
   if (!env.MCP_SHARED_SECRET) {
@@ -51,7 +76,20 @@ function authenticateWithSharedSecret(secret: string, env: Env): AuthResult {
     };
   }
 
-  if (secret !== env.MCP_SHARED_SECRET) {
+  // Use timing-safe comparison to prevent timing attacks
+  const secretBuffer = Buffer.from(secret, 'utf8');
+  const expectedBuffer = Buffer.from(env.MCP_SHARED_SECRET, 'utf8');
+  
+  // Length check first (timing-safe)
+  if (secretBuffer.length !== expectedBuffer.length) {
+    return {
+      success: false,
+      error: "Invalid shared secret",
+    };
+  }
+
+  // Constant-time comparison
+  if (!timingSafeEqual(secretBuffer, expectedBuffer)) {
     return {
       success: false,
       error: "Invalid shared secret",
@@ -68,7 +106,9 @@ function authenticateWithSharedSecret(secret: string, env: Env): AuthResult {
 }
 
 /**
- * Authenticate using JWT token
+ * Authenticate using JWT token with secure jose library
+ * 
+ * @see {@link https://github.com/panva/jose#jwts-verification | jose JWT Verification}
  */
 async function authenticateWithJWT(
   token: string,
@@ -82,78 +122,41 @@ async function authenticateWithJWT(
   }
 
   try {
-    // Parse JWT (basic implementation - in production use a proper JWT library)
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return {
-        success: false,
-        error: "Invalid JWT format",
-      };
-    }
+    // Create secret key from environment variable
+    const secret = new TextEncoder().encode(env.MCP_JWT_SECRET);
+    
+    // Verify JWT with strict security settings
+    const { payload, protectedHeader } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'], // Only allow HMAC-SHA256
+      maxTokenAge: '1h', // Maximum token age
+      // issuer and audience validation can be added when needed
+    });
 
-    const [headerB64, payloadB64, signatureB64] = parts;
+    // Validate payload structure
+    const validatedPayload = JWTPayloadSchema.parse(payload);
 
-    // Verify signature
-    const dataToVerify = `${headerB64}.${payloadB64}`;
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(env.MCP_JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"],
-    );
-
-    const signature = new Uint8Array(base64UrlDecode(signatureB64));
-    const isValid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      signature,
-      encoder.encode(dataToVerify),
-    );
-
-    if (!isValid) {
-      return {
-        success: false,
-        error: "Invalid JWT signature",
-      };
-    }
-
-    // Decode payload
-    const payload = JSON.parse(
-      atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
-    );
-
-    // Check expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) {
-      return {
-        success: false,
-        error: "JWT token expired",
-      };
-    }
-
-    // Check not-before
-    if (payload.nbf && payload.nbf > Date.now() / 1000) {
-      return {
-        success: false,
-        error: "JWT token not yet valid",
-      };
-    }
+    // Extract client ID with fallbacks
+    const clientId = validatedPayload.sub || validatedPayload.client_id || "jwt-client";
 
     return {
       success: true,
-      clientId: payload.sub || payload.client_id || "jwt-client",
+      clientId,
       metadata: {
         authMethod: "jwt",
-        claims: payload,
+        claims: validatedPayload,
+        header: protectedHeader,
       },
     };
   } catch (error) {
+    // Log error without sensitive information
+    console.error("JWT authentication failed", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: Date.now(),
+    });
+    
     return {
       success: false,
-      error: `JWT authentication failed: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      error: "Invalid or expired JWT token",
     };
   }
 }
@@ -173,46 +176,36 @@ function base64UrlDecode(str: string): Uint8Array {
 }
 
 /**
- * Generate a JWT token (for testing/development)
+ * Generate a JWT token using secure jose library (for testing/development)
+ * 
+ * @see {@link https://github.com/panva/jose#jwts-creation | jose JWT Creation}
  */
 export async function generateJWT(
   payload: Record<string, unknown>,
   secret: string,
   expiresIn: number = 3600,
+  issuer?: string,
+  audience?: string,
 ): Promise<string> {
-  const header = {
-    alg: "HS256",
-    typ: "JWT",
-  };
-
-  const now = Math.floor(Date.now() / 1000);
-  const claims = {
-    ...payload,
-    iat: now,
-    exp: now + expiresIn,
-  };
-
-  const headerB64 = base64UrlEncode(JSON.stringify(header));
-  const payloadB64 = base64UrlEncode(JSON.stringify(claims));
-  const dataToSign = `${headerB64}.${payloadB64}`;
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(dataToSign),
-  );
-
-  const signatureB64 = base64UrlEncode(signature);
-  return `${dataToSign}.${signatureB64}`;
+  try {
+    // Validate payload
+    const validatedPayload = JWTPayloadSchema.parse(payload);
+    
+    // Create JWT with security best practices
+    const jwt = await new SignJWT(validatedPayload)
+      .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .setIssuer(issuer || 'alchmenyrun-mcp')
+      .setAudience(audience || 'mcp-server')
+      .sign(new TextEncoder().encode(secret));
+    
+    return jwt;
+  } catch (error) {
+    throw new Error(`JWT generation failed: ${
+      error instanceof Error ? error.message : "Unknown error"
+    }`);
+  }
 }
 
 /**

@@ -100,6 +100,13 @@ bun run deploy:prod
 │   │   ├── schema.ts     # Drizzle ORM schema
 │   │   └── index.ts      # Database utilities
 │   └── mcp/              # Model Context Protocol implementation
+├── packages/             # Alchemy Infrastructure Kit
+│   └── @alch/            # Reusable infrastructure packages
+│       ├── tunnel/       # Cloudflare Tunnel resource (v1.0.0)
+│       ├── bun-runtime/  # Bun-native utilities
+│       ├── mcp-server/   # MCP server for AI integration
+│       ├── blocks/       # Reusable infrastructure blocks
+│       └── cli/          # Code generation tools
 ├── docs/                 # Comprehensive documentation
 │   ├── cloudflare.md     # Provider documentation
 │   └── guides/           # Getting started guides
@@ -129,6 +136,20 @@ bun run deploy:prod
 - **Caching Layer**: KV storage for performance
 - **API Endpoints**: RESTful API with proper error handling
 - **React Frontend**: Modern UI with Tailwind CSS
+
+## 📦 Infrastructure Kit
+
+This repository includes the **Alchemy Infrastructure Kit** - a collection of reusable packages for Cloudflare infrastructure:
+
+### Available Packages
+
+- **[@alch/tunnel](./packages/@alch/tunnel)** v1.0.0 - Cloudflare Tunnel resource with metrics, graceful shutdown, and zero-downtime reload
+- **[@alch/bun-runtime](./packages/@alch/bun-runtime)** - Bun-native runtime utilities (Shell, Test, Build, Package)
+- **[@alch/mcp-server](./packages/@alch/mcp-server)** - Model Context Protocol server for AI integration
+- **[@alch/blocks](./packages/@alch/blocks)** - Reusable infrastructure blocks (in development)
+- **[@alch/cli](./packages/@alch/cli)** - Code generation and scaffolding (planned)
+
+See [packages/README.md](./packages/README.md) for detailed documentation.
 
 ## 🧪 Testing
 

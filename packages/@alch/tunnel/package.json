@@ -1,7 +1,7 @@
 {
   "name": "@alch/tunnel",
-  "version": "0.1.0",
-  "description": "Cloudflare Tunnel resource for Alchemy - Secure connections between origin servers and Cloudflare's edge",
+  "version": "1.0.0",
+  "description": "Cloudflare Tunnel resource for Alchemy with metrics and zero-downtime reload",
   "type": "module",
   "main": "src/index.ts",
   "exports": {
@@ -45,16 +45,9 @@
     "cloudflare",
     "tunnel",
     "infrastructure",
-    "typescript",
     "networking",
-    "proxy",
-    "ingress",
-    "routing",
-    "development",
-    "production",
-    "secure-connections",
-    "edge-computing",
-    "zero-trust"
+    "metrics",
+    "monitoring"
   ],
   "author": "Alchemy Team",
   "license": "MIT",
@@ -92,7 +85,10 @@
       "warp-routing",
       "tunnel-adoption",
       "dns-management",
-      "lifecycle-management"
+      "lifecycle-management",
+      "prometheus-metrics",
+      "graceful-shutdown",
+      "zero-downtime-reload"
     ],
     "compatibility": {
       "alchemy": ">=0.76.1",

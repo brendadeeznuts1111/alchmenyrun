@@ -4,6 +4,9 @@
  * @category networking
  * @provider cloudflare
  * @phase foundation
+ * 
+ * @see {@link https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/ | Cloudflare Tunnel Documentation}
+ * @see {@link https://alchemy.run/docs | Alchemy Framework Documentation}
  */
 
 // Re-export all types from the main module
@@ -180,6 +183,9 @@ export interface TunnelResourceMetadata {
     "tunnel-adoption",
     "dns-management",
     "lifecycle-management",
+    "prometheus-metrics",
+    "graceful-shutdown",
+    "zero-downtime-reload"
   ];
   compatibility: {
     alchemy: ">=0.76.1";
@@ -214,16 +220,6 @@ export interface TunnelEvent {
   tunnelId: string;
   timestamp: Date;
   data?: any;
-}
-
-export interface TunnelMetrics {
-  tunnelId: string;
-  activeConnections: number;
-  bytesTransferred: number;
-  requestCount: number;
-  errorCount: number;
-  uptime: number;
-  lastActivity: Date;
 }
 
 /**

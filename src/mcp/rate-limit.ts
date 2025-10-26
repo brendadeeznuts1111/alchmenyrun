@@ -2,9 +2,13 @@
  * Rate Limiting Module
  *
  * KV-based rate limiting with sliding window algorithm
+ * 
+ * @see {@link https://developers.cloudflare.com/workers/runtime-apis/kv/ | Cloudflare KV Documentation}
+ * @taxonomy [BUN/CLOUDFLARE/SPORTSBETTING]<TEST-STANDARDS:AGENT>[SECURITY]{#FANTASY402}@v2
  */
 
 import type { Env } from "./index";
+import { logger } from "alchemy";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -88,7 +92,12 @@ export async function checkRateLimit(
       resetAt,
     };
   } catch (error) {
-    console.error("Rate limit check error:", error);
+    // Use structured logging without sensitive data
+    logger.error("Rate limit check failed", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: Date.now(),
+      environment: env.ENVIRONMENT || "unknown"
+    });
 
     // Fail open - allow request if rate limiting fails
     return {
