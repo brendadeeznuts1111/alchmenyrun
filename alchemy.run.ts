@@ -89,16 +89,20 @@ await alchemy.run("compute", async () => {
   });
   
   // Define Durable Object class for real-time chat
-  // Temporarily disabled for dev mode
-  // const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
-  //   className: "ChatRoom",
-  //   scriptName: "website", // Use the bound worker script
-  // });
+  const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
+    className: "ChatRoom",
+    scriptName: "website",
+  });
+  
+  // Define Workflow for user onboarding
+  const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
+    scriptName: "website",
+  });
   
   // Share with other scopes
   resources.jobs = jobs;
-  // resources.ChatDurableObject = ChatDurableObject;
-  // resources.OnboardingWorkflow = OnboardingWorkflow;
+  resources.ChatDurableObject = ChatDurableObject;
+  resources.OnboardingWorkflow = OnboardingWorkflow;
 });
 
 // ========================================
@@ -120,8 +124,8 @@ export const website = await BunSPA("website", {
     
     // Compute bindings
     JOBS: resources.jobs,
-    // CHAT: resources.ChatDurableObject,
-    // WORKFLOW: resources.OnboardingWorkflow,
+    CHAT: resources.ChatDurableObject,
+    WORKFLOW: resources.OnboardingWorkflow,
     
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
