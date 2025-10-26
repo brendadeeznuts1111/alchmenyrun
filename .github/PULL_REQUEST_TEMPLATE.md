@@ -1,5 +1,13 @@
-## 🎯 Summary
-<!-- Brief description of changes and their purpose -->
+## 🎯 PR Title (Required Format)
+<!-- PR titles MUST follow: [DOMAIN][SCOPE][TYPE] Imperative description -->
+<!-- Example: [INFRA][QUEUE][FEAT] Add dead-letter queue support -->
+
+**Title**: `[    ][    ][    ] `
+
+### Title Components
+- **[DOMAIN]**: `INFRA`, `PROVIDERS`, `QUALITY`, `DOCS` (maps to `dept/` labels)
+- **[SCOPE]**: Component name (e.g., `QUEUE`, `DOCKER-PROVIDER`, `API-DOCS`)
+- **[TYPE]**: `FEAT`, `BUG`, `REFACTOR`, `DOCS`, `TEST` (maps to `type/` labels)
 
 ---
 
