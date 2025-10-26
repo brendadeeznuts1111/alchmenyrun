@@ -1,5 +1,8 @@
 # Alchemy Cloudflare Demo
 
+[![CI Matrix](https://github.com/brendadeeznuts1111/alchmenyrun/actions/workflows/ci-matrix.yml/badge.svg)](https://github.com/brendadeeznuts1111/alchmenyrun/actions/workflows/ci-matrix.yml)
+[![Release Feed](https://img.shields.io/badge/rss-releases-orange)](https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom)
+
 A comprehensive Cloudflare infrastructure demo built with Alchemy, showcasing TypeScript-native Infrastructure as Code with Workers, D1 database, R2 storage, KV cache, Durable Objects, and Workflows.
 
 **Live Demo**: https://cloudflare-demo-website-prod.utahj4754.workers.dev

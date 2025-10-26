@@ -1,0 +1,10 @@
+name: Release RSS
+'on':
+  release:
+    types: [published]
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Feed updated for release" # placeholder for future webhook/RSS integration
