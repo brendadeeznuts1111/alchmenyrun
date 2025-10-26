@@ -1,10 +1,11 @@
 import { getDb } from "../db";
 import { getBackendUrl } from "alchemy/cloudflare/bun-spa";
 import { ChatRoom } from "./durable-object";
+import OnboardingWorkflow from "./workflow";
 import type { WorkerEnv } from "../env.d.ts";
 
-// Re-export ChatRoom to make it available to the worker
-export { ChatRoom };
+// Re-export Durable Object and Workflow classes
+export { ChatRoom, OnboardingWorkflow };
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
