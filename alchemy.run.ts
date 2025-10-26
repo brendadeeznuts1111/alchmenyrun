@@ -12,8 +12,9 @@ import {
 } from "alchemy/cloudflare";
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
+import { getD1ApiToken } from "./src/utils/d1-oauth.js";
 
-// API token for Cloudflare resources (bypasses profile OAuth)
+// Cloudflare API token for other operations (optional when using OAuth profile)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
 
 // ========================================
@@ -44,9 +45,10 @@ const resources = {} as any;
 // Database scope - Organizes all data storage resources
 await alchemy.run("database", async () => {
   // D1 Database for user and file storage
+  // NOTE: D1 requires API token authentication even when using OAuth profile
   const db = await D1Database("db", {
     name: "alchemy-demo-db",
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    apiToken: getD1ApiToken(), // Always use API token for D1 operations
   });
 
   // Share with other scopes
