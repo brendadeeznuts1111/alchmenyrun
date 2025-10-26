@@ -519,4 +519,21 @@ if (msg.text === '/lgtm' && chatId === COUNCIL_ID) {
 
 ---
 
+## 📡 **Enterprise Telegram Stack – Next Actions**
+
+| Who | What | Where | When |
+|---|---|---|---|
+| `@alice.smith` | Create `@alchemist_core_bot` & grab token | BotFather | **Today** |
+| `@alice.smith` | Convert Council group → **Forum** | Group Settings | **Today** |
+| `@diana.prince` | Publish `alchemist/telegram-notifier@v3` | GitHub Marketplace | **This sprint** |
+| `@brendadeeznuts1111` | Add secrets (`TELEGRAM_BOT_TOKEN`, `TG_*_ID`) | GitHub Org | **This sprint** |
+| **All** | First dry-run on **this RFC** | `#infra_team` | **Before prod** |
+
+**Roll-forward**: merge action → tag `v3` → update call-sites  
+**Roll-back**: revert to `v2` bash curl (≤ 5 min)
+
+*Pin this → archive once dry-run succeeds.*
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
