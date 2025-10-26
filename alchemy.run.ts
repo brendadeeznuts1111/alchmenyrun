@@ -13,9 +13,6 @@ import {
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 
-// API token for Cloudflare resources (bypasses profile OAuth)
-const cfToken = process.env.CLOUDFLARE_API_TOKEN;
-
 // ========================================
 // APPLICATION SCOPE
 // ========================================
@@ -25,10 +22,15 @@ const app = await alchemy("cloudflare-demo", {
   phase: process.env.PHASE as "up" | "destroy" | "read" || "up",
   password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
   stateStore: (scope) => new CloudflareStateStore(scope),
+  // Profile selection (default, prod, staging, ci)
+  // - Local dev: uses "default" profile (OAuth)
+  // - CI/CD: uses "ci" profile (API token from GitHub secrets)
+  // - Production: uses "prod" profile (API token)
   profile: process.env.ALCHEMY_PROFILE || "default",
 });
 
-// Note: API token is passed directly to each resource via apiToken parameter
+// Note: Resources will use the profile's credentials automatically
+// No need to pass apiToken to each resource when using profiles
 
 // ========================================
 // RESOURCE SHARING
@@ -45,7 +47,6 @@ await alchemy.run("database", async () => {
   // D1 Database for user and file storage
   const db = await D1Database("db", {
     name: "alchemy-demo-db",
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
   // Share with other scopes
@@ -58,19 +59,16 @@ await alchemy.run("file-storage", async () => {
   const storage = await R2Bucket("storage", {
     name: "alchemy-demo-storage",
     adopt: true,
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
   // KV Namespace for caching
   const cache = await KVNamespace("cache", {
     adopt: true,
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
   // KV Namespace for MCP server (rate limiting & feature flags)
   const mcpKv = await KVNamespace("mcp-kv", {
     adopt: true,
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
   // Share with other scopes
@@ -85,7 +83,6 @@ await alchemy.run("compute", async () => {
   const jobs = await Queue("jobs", {
     name: "alchemy-demo-jobs",
     adopt: true,
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
   // Define Durable Object class for real-time chat
@@ -109,7 +106,6 @@ await alchemy.run("compute", async () => {
 export const website = await BunSPA("website", {
   frontend: "src/frontend/index.html",
   entrypoint: "src/backend/server.ts",
-  apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   bindings: {
     // Database bindings
     DB: resources.db,

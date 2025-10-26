@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import alchemy from "../../alchemy.run";
-import { destroy } from "alchemy/src/destroy";
+import alchemy from "alchemy";
 import { BRANCH_PREFIX, generateTestId } from "./util";
 
 // Initialize test scope with isolated infrastructure

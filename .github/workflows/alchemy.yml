@@ -6,9 +6,10 @@ on:
   pull_request:
 
 env:
-  ALCHEMY_PROFILE: default        # or prod, ci, etc.
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  # Use 'ci' profile for GitHub Actions (configured with API token)
+  # Local dev uses 'default' profile (OAuth)
+  # Production uses 'prod' profile (API token)
+  ALCHEMY_PROFILE: ci
 
 jobs:
   deploy:
@@ -41,11 +42,11 @@ jobs:
         env:
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
           ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           API_KEY: ${{ secrets.API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MCP_SHARED_SECRET: ${{ secrets.MCP_SHARED_SECRET }}
           MCP_JWT_SECRET: ${{ secrets.MCP_JWT_SECRET }}
+          # Note: CLOUDFLARE_API_TOKEN not needed - ci profile handles auth
 
       - name: Health check (prod only)
         if: steps.stage.outputs.name == 'prod'
