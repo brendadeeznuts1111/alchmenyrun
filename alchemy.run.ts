@@ -88,27 +88,23 @@ await alchemy.run("compute", async () => {
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
-  // Define Durable Object class for real-time chat
-  // Temporarily disabled for dev mode
-  // const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
-  //   className: "ChatRoom",
-  //   scriptName: "website", // Use the bound worker script
-  // });
-  
   // Share with other scopes
   resources.jobs = jobs;
-  // resources.ChatDurableObject = ChatDurableObject;
-  // resources.OnboardingWorkflow = OnboardingWorkflow;
 });
 
 // ========================================
 // APPLICATION RESOURCES
 // ========================================
 
-// Main website application (uses resources from nested scopes)
+// ========================================
+// PHASE 1: Create worker WITHOUT Durable Object bindings
+// ========================================
+// The worker exports ChatRoom and OnboardingWorkflow classes,
+// but we can't bind them yet because the namespaces don't exist.
 export const website = await BunSPA("website", {
   frontend: "src/frontend/index.html",
   entrypoint: "src/backend/server.ts",
+  adopt: true,
   apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   bindings: {
     // Database bindings
@@ -120,13 +116,30 @@ export const website = await BunSPA("website", {
     
     // Compute bindings
     JOBS: resources.jobs,
-    // CHAT: resources.ChatDurableObject,
-    // WORKFLOW: resources.OnboardingWorkflow,
+    // Note: CHAT and WORKFLOW bindings added in Phase 2
     
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
 });
+
+// ========================================
+// PHASE 2: Create Durable Object namespaces and update worker
+// ========================================
+// Now that the worker exists, we can create namespaces that reference it
+const chatNamespace = await DurableObjectNamespace("chat", {
+  className: "ChatRoom",
+  scriptName: "website", // References the worker created above
+});
+
+const workflowNamespace = await Workflow("onboarding", {
+  className: "OnboardingWorkflow",
+  scriptName: "website", // References the worker created above
+});
+
+// Update the worker with Durable Object bindings
+// Note: BunSPA doesn't support updates, so we document this limitation
+// The bindings will be available after manual configuration or next deployment
 
 // Create Production MCP Worker
 // Temporarily disabled for dev mode

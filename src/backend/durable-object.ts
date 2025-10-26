@@ -3,11 +3,12 @@
  * Handles WebSocket connections and shared state
  */
 import { DurableObject } from "cloudflare:workers";
+import type { WorkerEnv } from "../env";
 
 export class ChatRoom extends DurableObject {
   private sessions: Map<WebSocket, Session>;
 
-  constructor(ctx: DurableObjectState, env: Env) {
+  constructor(ctx: DurableObjectState, env: WorkerEnv) {
     super(ctx, env);
     this.sessions = new Map();
   }
@@ -102,11 +103,4 @@ export class ChatRoom extends DurableObject {
 interface Session {
   websocket: WebSocket;
   userId: string;
-}
-
-interface Env {
-  DB: D1Database;
-  STORAGE: R2Bucket;
-  JOBS: Queue;
-  CACHE: KVNamespace;
 }

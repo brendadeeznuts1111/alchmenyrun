@@ -1,73 +1,106 @@
+/// <reference types="node" />
 import alchemy from "alchemy";
-import {
-  BunSPA,
-  D1Database,
-  R2Bucket,
-  Queue,
-  KVNamespace,
-  DurableObjectNamespace,
-  Workflow,
-} from "alchemy/cloudflare";
+import { BunSPA, D1Database, R2Bucket, Queue, KVNamespace, DurableObjectNamespace, Workflow, } from "alchemy/cloudflare";
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
-// Initialize the app with Cloudflare state store and encryption password
-// Password is required when using alchemy.secret()
+// API token for Cloudflare resources (bypasses profile OAuth)
+const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+// ========================================
+// APPLICATION SCOPE
+// ========================================
+// Root scope: cloudflare-demo
+// State directory: .alchemy/cloudflare-demo/
 const app = await alchemy("cloudflare-demo", {
-  password:
-    process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
-  stateStore: (scope) => new CloudflareStateStore(scope),
+    phase: process.env.PHASE || "up",
+    password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+    stateStore: (scope) => new CloudflareStateStore(scope),
+    profile: process.env.ALCHEMY_PROFILE || "default",
 });
-// Create D1 Database for user and file storage
-const db = await D1Database("db", {
-  name: "alchemy-demo-db",
-  adopt: true, // Adopt existing database if it exists
+// Note: API token is passed directly to each resource via apiToken parameter
+// ========================================
+// RESOURCE SHARING
+// ========================================
+// Shared resources object to pass between scopes
+const resources = {};
+// ========================================
+// NESTED SCOPES
+// ========================================
+// Database scope - Organizes all data storage resources
+await alchemy.run("database", async () => {
+    // D1 Database for user and file storage
+    const db = await D1Database("db", {
+        name: "alchemy-demo-db",
+        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+    // Share with other scopes
+    resources.db = db;
 });
-// Create R2 Bucket for file storage
-const storage = await R2Bucket("storage", {
-  name: "alchemy-demo-storage",
-  adopt: true,
+// Storage scope - Organizes file and object storage
+await alchemy.run("file-storage", async () => {
+    // R2 Bucket for file storage
+    const storage = await R2Bucket("storage", {
+        name: "alchemy-demo-storage",
+        adopt: true,
+        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+    // KV Namespace for caching
+    const cache = await KVNamespace("cache", {
+        adopt: true,
+        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+    // KV Namespace for MCP server (rate limiting & feature flags)
+    const mcpKv = await KVNamespace("mcp-kv", {
+        adopt: true,
+        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+    // Share with other scopes
+    resources.storage = storage;
+    resources.cache = cache;
+    resources.mcpKv = mcpKv;
 });
-// Create Queue for async job processing
-const jobs = await Queue("jobs", {
-  name: "alchemy-demo-jobs",
-  adopt: true,
+// Compute scope - Organizes processing and workflow resources
+await alchemy.run("compute", async () => {
+    // Queue for async job processing
+    const jobs = await Queue("jobs", {
+        name: "alchemy-demo-jobs",
+        adopt: true,
+        apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+    // Define Durable Object class for real-time chat
+    const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
+        className: "ChatRoom",
+        scriptName: "website",
+    });
+    // Define Workflow for user onboarding
+    const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
+        scriptName: "website",
+    });
+    // Share with other scopes
+    resources.jobs = jobs;
+    resources.ChatDurableObject = ChatDurableObject;
+    resources.OnboardingWorkflow = OnboardingWorkflow;
 });
-// Create KV Namespace for caching
-const cache = await KVNamespace("cache", {
-  name: "alchemy-demo-cache",
-  adopt: true,
-});
-// Create KV Namespace for MCP server (rate limiting & feature flags)
-const mcpKv = await KVNamespace("mcp-kv", {
-  name: "alchemy-demo-mcp-kv",
-  adopt: true,
-});
-// Define Durable Object class for real-time chat
-const ChatDurableObject = await DurableObjectNamespace("ChatDO", {
-  name: "ChatDO",
-  className: "ChatRoom",
-  scriptPath: "./src/backend/durable-object.ts",
-});
-// Define Workflow for multi-step orchestration
-const OnboardingWorkflow = await Workflow("OnboardingWorkflow", {
-  name: "OnboardingWorkflow",
-  className: "OnboardingWorkflow",
-  scriptPath: "./src/backend/workflow.ts",
-});
-// Create BunSPA for full-stack frontend + backend
+// ========================================
+// APPLICATION RESOURCES
+// ========================================
+// Main website application (uses resources from nested scopes)
 export const website = await BunSPA("website", {
-  frontend: "src/frontend/index.html",
-  entrypoint: "src/backend/server.ts",
-  bindings: {
-    DB: db,
-    STORAGE: storage,
-    JOBS: jobs,
-    CACHE: cache,
-    CHAT: ChatDurableObject,
-    // WORKFLOW: OnboardingWorkflow,  // Temporarily disabled
-    // Secrets example
-    API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
-  },
+    frontend: "src/frontend/index.html",
+    entrypoint: "src/backend/server.ts",
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    bindings: {
+        // Database bindings
+        DB: resources.db,
+        // Storage bindings
+        STORAGE: resources.storage,
+        CACHE: resources.cache,
+        // Compute bindings
+        JOBS: resources.jobs,
+        CHAT: resources.ChatDurableObject,
+        WORKFLOW: resources.OnboardingWorkflow,
+        // Secret binding
+        API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
+    },
 });
 // Create Production MCP Worker
 // Temporarily disabled for dev mode
@@ -95,18 +128,18 @@ export const website = await BunSPA("website", {
 //   ]
 // });
 console.log({
-  url: website.url,
-  apiUrl: website.apiUrl,
-  // mcpUrl: mcpWorker.url,
+    url: website.url,
+    apiUrl: website.apiUrl,
+    // mcpUrl: mcpWorker.url,
 });
 // -------------  PREVIEW COMMENT  -------------
 // Automatically post preview URLs to PR comments
 if (process.env.PULL_REQUEST) {
-  await GitHubComment("preview-comment", {
-    owner: "brendadeeznuts1111", // Your GitHub username
-    repository: "alchmenyrun", // Your repo name
-    issueNumber: Number(process.env.PULL_REQUEST),
-    body: `
+    await GitHubComment("preview-comment", {
+        owner: "brendadeeznuts1111", // Your GitHub username
+        repository: "alchmenyrun", // Your repo name
+        issueNumber: Number(process.env.PULL_REQUEST),
+        body: `
 ## 🚀 Preview Deployed
 
 Your changes have been deployed to a preview environment:
@@ -118,7 +151,7 @@ Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
 
 ---
 <sub>🤖 This comment updates automatically with each push.</sub>`,
-  });
+    });
 }
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();
