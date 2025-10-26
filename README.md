@@ -24,7 +24,7 @@ A comprehensive Cloudflare infrastructure demo built with Alchemy, showcasing Ty
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/alchmenyrun.git
+git clone https://github.com/brendadeeznuts1111/alchmenyrun.git
 cd alchmenyrun
 
 # Install dependencies
@@ -429,9 +429,9 @@ Apache-2.0 - see [LICENSE](./LICENSE) for details.
 ## 💡 Need Help?
 
 - Check our [documentation](./docs/)
-- Review [existing issues](https://github.com/your-org/alchmenyrun/issues)
+- Review [existing issues](https://github.com/brendadeeznuts1111/alchmenyrun/issues)
 - Join our [Discord community](https://discord.gg/jwKw8dBJdN)
-- Create a [new issue](https://github.com/your-org/alchmenyrun/issues/new)
+- Create a [new issue](https://github.com/brendadeeznuts1111/alchmenyrun/issues/new)
 
 ---
 
