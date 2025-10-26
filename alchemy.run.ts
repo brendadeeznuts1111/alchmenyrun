@@ -22,8 +22,9 @@ const cfToken = process.env.CLOUDFLARE_API_TOKEN;
 // Root scope: cloudflare-demo
 // State directory: .alchemy/cloudflare-demo/
 const app = await alchemy("cloudflare-demo", {
-  phase: process.env.PHASE as "up" | "destroy" | "read" || "up",
-  password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
+  phase: (process.env.PHASE as "up" | "destroy" | "read") || "up",
+  password:
+    process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
   stateStore: (scope) => new CloudflareStateStore(scope),
   profile: process.env.ALCHEMY_PROFILE || "default",
 });
@@ -47,7 +48,7 @@ await alchemy.run("database", async () => {
     name: "alchemy-demo-db",
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
-  
+
   // Share with other scopes
   resources.db = db;
 });
@@ -60,19 +61,19 @@ await alchemy.run("file-storage", async () => {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
-  
+
   // KV Namespace for caching
   const cache = await KVNamespace("cache", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
-  
+
   // KV Namespace for MCP server (rate limiting & feature flags)
   const mcpKv = await KVNamespace("mcp-kv", {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
-  
+
   // Share with other scopes
   resources.storage = storage;
   resources.cache = cache;
@@ -87,7 +88,7 @@ await alchemy.run("compute", async () => {
     adopt: true,
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
-  
+
   // Share with other scopes
   resources.jobs = jobs;
 });
@@ -109,15 +110,15 @@ export const website = await BunSPA("website", {
   bindings: {
     // Database bindings
     DB: resources.db,
-    
+
     // Storage bindings
     STORAGE: resources.storage,
     CACHE: resources.cache,
-    
+
     // Compute bindings
     JOBS: resources.jobs,
     // Note: CHAT and WORKFLOW bindings added in Phase 2
-    
+
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },

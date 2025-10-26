@@ -9,7 +9,7 @@ import { parseArgs } from "node:util";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-const { positionals } = parseArgs({ 
+const { positionals } = parseArgs({
   allowPositionals: true,
   strict: false,
 });
@@ -26,7 +26,7 @@ async function generate(type: string, name: string) {
 
   // Find template directory
   const templateDir = join(import.meta.dir, "../templates", type);
-  
+
   if (!existsSync(templateDir)) {
     console.error(`❌ Template type "${type}" not found`);
     console.error("\nAvailable types: resource, block, workflow, cron");
@@ -35,7 +35,7 @@ async function generate(type: string, name: string) {
 
   // Create destination directory
   const destDir = join(process.cwd(), "src", `${type}s`, name);
-  
+
   if (existsSync(destDir)) {
     console.error(`❌ Directory already exists: ${destDir}`);
     process.exit(1);
@@ -44,7 +44,7 @@ async function generate(type: string, name: string) {
   // Copy template files
   await $`mkdir -p ${destDir}`;
   await $`cp -r ${templateDir}/* ${destDir}/`;
-  
+
   // Replace __NAME__ placeholder in all files
   const files = await $`find ${destDir} -type f`.text();
   for (const file of files.trim().split("\n")) {

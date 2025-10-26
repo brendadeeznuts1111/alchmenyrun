@@ -1,6 +1,6 @@
 /**
  * Cloudflare Tunnel Resource for Alchemy
- * 
+ *
  * Provides a complete interface for creating and managing Cloudflare Tunnels
  * with automatic DNS management, configuration lifecycle, and tunnel adoption.
  */
@@ -37,7 +37,7 @@ export interface TunnelProps {
   /**
    * Name for the tunnel
    * Note: Tunnel names are immutable and cannot be changed after creation.
-   * 
+   *
    * @default ${app}-${stage}-${id}
    */
   name?: string;
@@ -57,7 +57,7 @@ export interface TunnelProps {
    * Configuration source
    * - 'cloudflare' - Use Cloudflare configuration (default, managed via API)
    * - 'local' - Use local configuration (managed via config file)
-   * 
+   *
    * @default 'cloudflare'
    */
   configSrc?: "cloudflare" | "local";
@@ -86,7 +86,7 @@ export interface TunnelProps {
   /**
    * Whether to adopt an existing tunnel with the same name if it exists
    * If true and a tunnel with the same name exists, it will be adopted rather than creating a new one
-   * 
+   *
    * @default false
    */
   adopt?: boolean;
@@ -94,7 +94,7 @@ export interface TunnelProps {
   /**
    * Whether to delete the tunnel.
    * If set to false, the tunnel will remain but the resource will be removed from state
-   * 
+   *
    * @default true
    */
   delete?: boolean;
@@ -288,22 +288,22 @@ export function isTunnel(resource: any): resource is Tunnel {
 
 /**
  * Creates and manages a Cloudflare Tunnel
- * 
+ *
  * @param id - Unique identifier for the resource
  * @param props - Tunnel configuration properties
  * @returns Promise resolving to Tunnel resource
- * 
+ *
  * @example
  * ```typescript
  * // Create a basic tunnel
  * const tunnel = await Tunnel("my-app", {
  *   name: "my-app-tunnel"
  * });
- * 
+ *
  * // Run cloudflared with:
  * // cloudflared tunnel run --token <tunnel.token.unencrypted>
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Create a tunnel with ingress configuration
@@ -487,7 +487,7 @@ async function createTunnel(props: {
   metadata?: Record<string, any>;
 }): Promise<CloudflareTunnel> {
   logger.log(`Creating tunnel: ${props.name}`);
-  
+
   // Mock implementation - will be replaced with actual Cloudflare API call
   const mockTunnel: CloudflareTunnel = {
     id: `tunnel_${Date.now()}`,
@@ -500,17 +500,17 @@ async function createTunnel(props: {
       AccountTag: "mock_account_tag",
       TunnelID: `tunnel_${Date.now()}`,
       TunnelName: props.name,
-      TunnelSecret: "mock_tunnel_secret"
+      TunnelSecret: "mock_tunnel_secret",
     },
-    token: "mock_tunnel_token"
+    token: "mock_tunnel_token",
   };
-  
+
   return mockTunnel;
 }
 
 async function getTunnel(tunnelId: string): Promise<CloudflareTunnel> {
   logger.log(`Getting tunnel: ${tunnelId}`);
-  
+
   // Mock implementation
   return {
     id: tunnelId,
@@ -518,7 +518,7 @@ async function getTunnel(tunnelId: string): Promise<CloudflareTunnel> {
     created_at: new Date().toISOString(),
     deleted_at: null,
     name: "mock_tunnel",
-    token: "mock_tunnel_token"
+    token: "mock_tunnel_token",
   };
 }
 
@@ -530,16 +530,18 @@ async function updateTunnelConfiguration(
   // Mock implementation - will be replaced with actual Cloudflare API call
 }
 
-async function findTunnelByName(name: string): Promise<CloudflareTunnel | null> {
+async function findTunnelByName(
+  name: string,
+): Promise<CloudflareTunnel | null> {
   logger.log(`Finding tunnel by name: ${name}`);
-  
+
   // Mock implementation - will be replaced with actual Cloudflare API call
   return null;
 }
 
 async function getTunnelToken(tunnelId: string): Promise<string> {
   logger.log(`Getting tunnel token: ${tunnelId}`);
-  
+
   // Mock implementation - will be replaced with actual Cloudflare API call
   return "mock_tunnel_token";
 }

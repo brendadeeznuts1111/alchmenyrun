@@ -150,7 +150,9 @@ export default {
           return json({ error: "Workflow not available" }, 503, corsHeaders);
         }
         const data = (await request.json()) as any;
-        const workflowId = workflowEnv.WORKFLOW.idFromName(data.userId || "default");
+        const workflowId = workflowEnv.WORKFLOW.idFromName(
+          data.userId || "default",
+        );
         const workflow = workflowEnv.WORKFLOW.get(workflowId);
 
         const handle = await workflow.start(data);
@@ -182,7 +184,8 @@ export default {
             // Example: Trigger deployment workflow
             const workflowEnv = env as any;
             if (branch === "main" && workflowEnv.WORKFLOW) {
-              const workflowId = workflowEnv.WORKFLOW.idFromName("github-deploy");
+              const workflowId =
+                workflowEnv.WORKFLOW.idFromName("github-deploy");
               const workflow = workflowEnv.WORKFLOW.get(workflowId);
               await workflow.start({
                 event: "deploy",
@@ -202,7 +205,9 @@ export default {
               (action === "opened" || action === "synchronize") &&
               workflowEnv.WORKFLOW
             ) {
-              const workflowId = workflowEnv.WORKFLOW.idFromName(`pr-${prNumber}`);
+              const workflowId = workflowEnv.WORKFLOW.idFromName(
+                `pr-${prNumber}`,
+              );
               const workflow = workflowEnv.WORKFLOW.get(workflowId);
               await workflow.start({
                 event: "preview",

@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
  * Build frontend with infrastructure URLs
- * 
+ *
  * This script uses PHASE=read to access deployed infrastructure
  * properties without modifying any resources.
- * 
+ *
  * Usage:
  *   PHASE=read bun ./scripts/build-frontend.ts
  *   PHASE=read STAGE=prod bun ./scripts/build-frontend.ts
- * 
+ *
  * Requirements:
  *   - Infrastructure must be deployed first
  *   - PHASE must be set to "read"

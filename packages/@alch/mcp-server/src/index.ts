@@ -28,7 +28,7 @@ export function createMCPServer(resources: Record<string, Resource>) {
       capabilities: {
         tools: {},
       },
-    }
+    },
   );
 
   // List all available tools
@@ -46,7 +46,7 @@ export function createMCPServer(resources: Record<string, Resource>) {
   // Handle tool execution
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const resource = resources[req.params.name];
-    
+
     if (!resource) {
       return {
         content: [
@@ -62,7 +62,7 @@ export function createMCPServer(resources: Record<string, Resource>) {
     try {
       const res = await resource.run();
       const text = await res.text();
-      
+
       return {
         content: [
           {
@@ -94,6 +94,6 @@ export async function startMCPServer(resources: Record<string, Resource>) {
   const server = createMCPServer(resources);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  
+
   console.error("MCP server started");
 }

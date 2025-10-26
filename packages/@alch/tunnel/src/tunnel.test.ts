@@ -28,7 +28,7 @@ describe("Tunnel Resource", () => {
         ["ResourceKind"]: "cloudflare::Tunnel",
         tunnelId: "test-tunnel-id",
       };
-      
+
       expect(isTunnel(mockTunnel)).toBe(true);
     });
 
@@ -37,7 +37,7 @@ describe("Tunnel Resource", () => {
         ["ResourceKind"]: "cloudflare::Worker",
         name: "test-worker",
       };
-      
+
       expect(isTunnel(mockResource)).toBe(false);
     });
 
@@ -100,7 +100,9 @@ describe("Tunnel Resource", () => {
       };
 
       expect(tunnelProps.originRequest?.connectTimeout).toBe(30);
-      expect(tunnelProps.originRequest?.httpHostHeader).toBe("internal.service");
+      expect(tunnelProps.originRequest?.httpHostHeader).toBe(
+        "internal.service",
+      );
       expect(tunnelProps.originRequest?.http2Origin).toBe(true);
       expect(tunnelProps.originRequest?.noTLSVerify).toBe(false);
     });

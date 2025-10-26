@@ -6,13 +6,16 @@
 export default {
   async fetch(request: Request, env: any): Promise<Response> {
     const url = new URL(request.url);
-    
-    return new Response(JSON.stringify({
-      message: "Hello from __NAME__",
-      path: url.pathname,
-      timestamp: new Date().toISOString(),
-    }), {
-      headers: { "Content-Type": "application/json" },
-    });
+
+    return new Response(
+      JSON.stringify({
+        message: "Hello from __NAME__",
+        path: url.pathname,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   },
 };

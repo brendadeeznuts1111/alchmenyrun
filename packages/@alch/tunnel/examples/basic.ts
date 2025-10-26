@@ -10,11 +10,14 @@ export async function basicTunnel() {
   const app = await alchemy("my-app");
 
   const tunnel = await Tunnel("my-tunnel", {
-    name: "my-app-tunnel"
+    name: "my-app-tunnel",
   });
 
   console.log("Tunnel created:", tunnel.tunnelId);
-  console.log("Run with: cloudflared tunnel run --token", tunnel.token.unencrypted);
+  console.log(
+    "Run with: cloudflared tunnel run --token",
+    tunnel.token.unencrypted,
+  );
 
   return app.finalize();
 }
@@ -28,16 +31,16 @@ export async function webAppTunnel() {
     ingress: [
       {
         hostname: "app.example.com",
-        service: "http://localhost:3000"
+        service: "http://localhost:3000",
       },
       {
         hostname: "api.example.com",
-        service: "http://localhost:8080"
+        service: "http://localhost:8080",
       },
       {
-        service: "http_status:404"  // catch-all rule
-      }
-    ]
+        service: "http_status:404", // catch-all rule
+      },
+    ],
   });
 
   console.log("Web app tunnel created:", tunnel.tunnelId);
@@ -56,21 +59,21 @@ export async function pathBasedTunnel() {
       {
         hostname: "api.example.com",
         path: "/v1/*",
-        service: "http://localhost:8080"
+        service: "http://localhost:8080",
       },
       {
         hostname: "api.example.com",
         path: "/v2/*",
-        service: "http://localhost:8081"
+        service: "http://localhost:8081",
       },
       {
         hostname: "api.example.com",
-        service: "http://localhost:8080"  // default
+        service: "http://localhost:8080", // default
       },
       {
-        service: "http_status:404"
-      }
-    ]
+        service: "http_status:404",
+      },
+    ],
   });
 
   console.log("API tunnel with path routing created:", tunnel.tunnelId);
@@ -90,17 +93,17 @@ export async function secureTunnel() {
       httpHostHeader: "internal.service",
       http2Origin: true,
       noTLSVerify: false,
-      keepAliveConnections: 100
+      keepAliveConnections: 100,
     },
     ingress: [
       {
         hostname: "secure.example.com",
-        service: "https://localhost:8443"
+        service: "https://localhost:8443",
       },
       {
-        service: "http_status:404"
-      }
-    ]
+        service: "http_status:404",
+      },
+    ],
   });
 
   console.log("Secure tunnel created:", tunnel.tunnelId);
@@ -114,17 +117,17 @@ export async function developmentTunnel() {
 
   const tunnel = await Tunnel("dev-tunnel", {
     name: "development-tunnel",
-    adopt: true,  // Adopt if exists
-    delete: false,  // Keep tunnel when resource is deleted
+    adopt: true, // Adopt if exists
+    delete: false, // Keep tunnel when resource is deleted
     ingress: [
       {
         hostname: "dev.example.com",
-        service: "http://localhost:3000"
+        service: "http://localhost:3000",
       },
       {
-        service: "http_status:404"
-      }
-    ]
+        service: "http_status:404",
+      },
+    ],
   });
 
   console.log("Development tunnel ready:", tunnel.tunnelId);
@@ -143,17 +146,17 @@ export async function metadataTunnel() {
       team: "platform",
       version: "1.0.0",
       tags: ["web", "api", "production"],
-      created_by: "automation"
+      created_by: "automation",
     },
     ingress: [
       {
         hostname: "app.example.com",
-        service: "http://localhost:3000"
+        service: "http://localhost:3000",
       },
       {
-        service: "http_status:404"
-      }
-    ]
+        service: "http_status:404",
+      },
+    ],
   });
 
   console.log("Metadata tunnel created:", tunnel.tunnelId);
