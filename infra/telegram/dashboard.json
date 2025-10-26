@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Alchemist Comms Health",
+    "tags": ["alchemist", "telegram", "communications"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "id": 1,
+        "title": "tgk Command Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(tgk_command_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(tgk_command_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Policy Violations",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(tgk_policy_violations_total[1h]))",
+            "legendFormat": "Violations"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Messages Sent",
+        "type": "barchart",
+        "targets": [
+          {
+            "expr": "sum(rate(tgk_messages_sent_total[5m])) by (chat_type)",
+            "legendFormat": "{{chat_type}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Customer Actions",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "sum(increase(alchemist_customer_actions_total[1h])) by (action)",
+            "legendFormat": "{{action}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Webapp Status Changes",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(alchemist_webapp_status_changes_total[1h])) by (level)",
+            "legendFormat": "{{level}}"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Active Telegram Entities",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "tgk_active_entities_total",
+            "legendFormat": "Total Entities"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5m"
+  }
+}

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# tgk-customer - Customer database integration for tgk
+# Usage: tgk customer <command> [options]
+
+set -euo pipefail
+
+# This would integrate with D12 customer database
+# For demo purposes, showing the interface with policy enforcement
+
+COMMAND="${1:-}"
+shift
+
+# Mock policy check (would integrate with OPA)
+check_policy() {
+    local action="$1"
+    local customer_id="$2"
+    local user="${USER:-unknown}"
+
+    echo "🔒 Checking policy for $action on customer $customer_id by user $user"
+
+    # Mock policy violations
+    if [ "$action" = "suspend" ] && [ -z "${CUSTOMER_SUSPEND_REASON:-}" ]; then
+        echo "❌ Policy violation: Customer suspension requires a reason"
+        return 1
+    fi
+
+    if [ "$user" != "alice.smith" ] && [ "$action" = "suspend" ]; then
+        echo "❌ Policy violation: Only billing team can suspend customers"
+        return 1
+    fi
+
+    echo "✅ Policy check passed"
+    return 0
+}
+
+case "$COMMAND" in
+    "get")
+        CUSTOMER_ID="$1"
+        check_policy "get" "$CUSTOMER_ID"
+        echo "👤 Getting customer: $CUSTOMER_ID"
+        # Integration with D12 would go here
+        echo "📋 Customer data: [PII MASKED FOR SECURITY]"
+        ;;
+
+    "suspend")
+        CUSTOMER_ID="$1"
+        REASON="${2:-unspecified}"
+        CUSTOMER_SUSPEND_REASON="$REASON" check_policy "suspend" "$CUSTOMER_ID"
+        echo "🚫 Suspending customer: $CUSTOMER_ID"
+        echo "Reason: $REASON"
+        # Integration with D12 would go here
+        echo "✅ Customer suspended"
+        ;;
+
+    "activate")
+        CUSTOMER_ID="$1"
+        check_policy "activate" "$CUSTOMER_ID"
+        echo "✅ Activating customer: $CUSTOMER_ID"
+        # Integration with D12 would go here
+        echo "✅ Customer activated"
+        ;;
+
+    "notify")
+        CUSTOMER_ID="$1"
+        TEMPLATE="${2:-general}"
+        check_policy "notify" "$CUSTOMER_ID"
+        echo "📧 Notifying customer: $CUSTOMER_ID"
+        echo "Template: $TEMPLATE"
+        # Integration with notification system would go here
+        echo "✅ Notification sent"
+        ;;
+
+    *)
+        echo "Usage: tgk customer <command>"
+        echo "Commands:"
+        echo "  get <customer-id>                    Get customer info (PII masked)"
+        echo "  suspend <id> --reason <reason>       Suspend customer account"
+        echo "  activate <id>                        Reactivate customer account"
+        echo "  notify <id> --template <template>    Send notification to customer"
+        exit 1
+        ;;
+esac

@@ -43,7 +43,10 @@
     "telegram:replace-card": "./scripts/replace-card.sh",
     "telegram:unpin": "./scripts/unpin.sh",
     "telegram:cli": "./scripts/tgk",
-    "telegram:enhanced": "python3 ./scripts/tgk-enhanced"
+    "telegram:enhanced": "python3 ./scripts/tgk-enhanced",
+    "telegram:ecosystem:cloudflare": "./scripts/tgk-cf",
+    "telegram:ecosystem:customer": "./scripts/tgk-customer",
+    "telegram:ecosystem:webapp": "./scripts/tgk-webapp"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

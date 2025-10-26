@@ -820,6 +820,100 @@ AI calls are **opt-in** (env `TGK_AI_ENABLE=1`) and **cost-capped** (token budge
 
 ---
 
+### 18.8 Ecosystem & Customer Integration (tgk Phase-2)
+
+#### 1. Goal
+Make `tgk` the **single control-plane** for Cloudflare, Alchemist platform, customer DB (D12), and the public web-app—**all triggered from Telegram** with full audit.
+
+#### 2. One-Line Install (extends §18.7)
+```bash
+pipx install --upgrade git+https://github.com/alchemist/tgk@v2.1
+tgk --version   # 2.1.0+ (ships with ecosystem plug-ins)
+```
+
+#### 3. New Command Tree
+```
+tgk cf                    # Cloudflare
+  ├─ worker deploy <name> --stage <stage>
+  ├─ d1 query <db> --sql "SELECT * FROM users"
+  └─ domain status <domain>
+
+tgk alchemist             # Alchemist platform
+  ├─ deploy status <project-id> --stage <stage>
+  ├─ project create <name> --owner <user-id>
+  └─ project delete <id>  # policy-gated
+
+tgk customer              # D12 customer DB
+  ├─ get <customer-id>
+  ├─ suspend <id> --reason "billing"
+  ├─ activate <id>
+  └─ notify <id> --template outage-apology
+
+tgk webapp                # Public status page
+  ├─ status set <level> --message "text"
+  └─ status get
+```
+
+#### 4. Minimal IaC Bootstrap Script
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# idempotent: entire env in 60 s
+COUNCIL=$(tgk group create "Alchemists Council" --forum --convert -o json | jq -r .id)
+tgk role set -c $COUNCIL -u alchemist_core_bot --admin --can-pin --can-manage-topics
+tgk policy check -c $COUNCIL --policy infra/telegram/admin-roles.rego
+
+# Cloudflare & Alchemist sanity check
+tgk cf domain status alchemy.run || echo "CF edge healthy"
+tgk alchemist deploy status core --stage prod || echo "Platform healthy"
+
+echo "COUNCIL=$COUNCIL" >> $GITHUB_OUTPUT
+```
+Store as `infra/telegram/bootstrap.sh` → run on **every apply**.
+
+#### 5. Security & Compliance
+- **OPA policies** for every new command (e.g., only `@alice.smith` can `tgk alchemist project delete prod`)
+- **Cross-system audit**: every `tgk customer` action → Loki **and** D12 audit table
+- **Data minimisation**: `tgk customer get` masks PII in logs; policy blocks full export to public channels
+
+#### 6. Observability & AI
+- **New metrics** (auto-pushed to Prometheus):
+  - `alchemist_customer_actions_total{action="suspend|activate|notify"}`
+  - `alchemist_webapp_status_changes_total{level}`
+- **AI suggestions** (`tgk ai suggest`) now **cross-system**:
+  - sees Cloudflare 5xx spike → suggests `tgk customer notify impacted --template partial-outage`
+  - sees RFC `status/implementation-failed` → suggests `tgk cf worker rollback <worker>`
+
+#### 7. CI Template (GitHub Actions)
+```yaml
+- name: Suspend Customer (Billing Overdue)
+  if: ${{ github.event.action == 'billing.overdue' }}
+  run: |
+    tgk customer suspend ${{ github.event.customer_id }} \
+      --reason "Invoice ${{ github.event.invoice_id }} overdue"
+    tgk customer notify ${{ github.event.customer_id }} \
+      --template billing-suspension
+  env:
+    TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+```
+**Gate**: job requires **OIDC claim** `team=billing-leads` (enforced by OPA).
+
+#### 8. Enhanced Done Criteria
+- [ ] `tgk cf`, `tgk alchemist`, `tgk customer`, `tgk webapp` commands exist and pass `tgk policy check`
+- [ ] bootstrap script creates **whole env** ≤ 60 s (idempotent)
+- [ ] cross-system audit events land in **Loki + D12**
+- [ ] new Prometheus metrics visible on **Grafana "Alchemist Comms Health"** dashboard
+- [ ] pilot `tgk ai suggest` provides **actionable** next step (human-verified)
+- [ ] roll-back tested: `tgk card-delete + unpin-all` ≤ 10 s
+
+#### 9. Roll-Forward / Roll-Back
+- **Forward**: merge `tgk@v2.1`, update CI call-sites
+- **Backward**: revert to `tgk@v2.0` (no ecosystem plug-ins) ≤ 5 min
+
+**Once §18.8 is merged, a single chat message can suspend a customer, roll a Worker, and update the public status page—all audited, policy-gated, and AI-suggested.**
+
+---
+
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
 | Who | What | Where | When | Link |

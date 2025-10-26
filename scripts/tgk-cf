@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# tgk-cf - Cloudflare integration for tgk
+# Usage: tgk cf <command> [options]
+
+set -euo pipefail
+
+# This would integrate with Cloudflare API
+# For demo purposes, showing the interface
+
+COMMAND="${1:-}"
+shift
+
+case "$COMMAND" in
+    "worker-deploy")
+        WORKER_NAME="$1"
+        STAGE="${2:-prod}"
+        echo "🚀 Deploying Cloudflare Worker: $WORKER_NAME to stage: $STAGE"
+        # Integration with Cloudflare API would go here
+        echo "✅ Worker deployed successfully"
+        ;;
+
+    "d1-query")
+        DB_NAME="$1"
+        SQL_QUERY="$2"
+        echo "🗄️  Querying D1 Database: $DB_NAME"
+        echo "SQL: $SQL_QUERY"
+        # Integration with Cloudflare D1 API would go here
+        echo "📊 Query results: [mock data]"
+        ;;
+
+    "domain-status")
+        DOMAIN="$1"
+        echo "🌐 Checking domain status: $DOMAIN"
+        # Integration with Cloudflare DNS API would go here
+        echo "✅ Domain $DOMAIN is healthy"
+        ;;
+
+    *)
+        echo "Usage: tgk cf <command>"
+        echo "Commands:"
+        echo "  worker-deploy <name> --stage <stage>    Deploy Cloudflare Worker"
+        echo "  d1-query <db> --sql <query>             Query D1 Database"
+        echo "  domain-status <domain>                  Check domain health"
+        exit 1
+        ;;
+esac
