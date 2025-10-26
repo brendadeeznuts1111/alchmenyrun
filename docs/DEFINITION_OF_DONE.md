@@ -308,4 +308,24 @@ Same order of operations as the Slack version—just swap comms to Telegram chan
 
 ---
 
+## 📡 **Telegram Layout Cheat-Sheet**  
+### *(ALC-RFC-2025-10-ZERO-FRICTION)*
+
+| Tier | Telegram Entity | Who's Inside | Max Members | Bot API | Use For |
+|---|---|---|---|---|---|
+| **Council** | **Super-Group** `@AlchemistsCouncil` | leads + council only | 200 k | ✔ | approvals, pinned phone-card |
+| **Broadcast** | **Channel** `@alchemist_releases` | read-only feed | ∞ | ✔ | public changelog, metrics |
+| **Ops** | **Group** `@infra_team` | engineers on-call | 200 k | ✔ | deploy logs, quick triage |
+| **Bot-only** | **Channel** `@ci_status` | bots only | ∞ | ✔ | CI pass/fail, no noise |
+
+**Rule of Thumb**  
+Post **decisions** → Super-Group  
+Post **logs** → Group  
+Post **broadcasts** → Channel  
+Let **bots** own the noisy stuff.
+
+Pick one, paste the ID in the checklist, and the RFC automation will target the correct entity.
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
