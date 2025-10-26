@@ -9,6 +9,9 @@ env:
   ALCHEMY_PROFILE: ci        # Use ci profile as documented - implements alchemy.run/guides/ci patterns
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  # Enable debug logging
+  ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG || 'false' }}
+  ACTIONS_RUNNER_DEBUG: ${{ secrets.ACTIONS_RUNNER_DEBUG || 'false' }}
 
 jobs:
   deploy:
@@ -62,6 +65,18 @@ jobs:
       - name: Build CSS
         run: bun run build:css
 
+      - name: Debug Environment
+        run: |
+          echo "=== Debug Environment Variables ==="
+          echo "Stage: ${{ steps.stage.outputs.name }}"
+          echo "ALCHEMY_PROFILE: $ALCHEMY_PROFILE"
+          echo "CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:+***}"
+          echo "CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:+***}"
+          echo "CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-<not set>}"
+          echo "ACTIONS_STEP_DEBUG: $ACTIONS_STEP_DEBUG"
+          echo "ACTIONS_RUNNER_DEBUG: $ACTIONS_RUNNER_DEBUG"
+          echo "====================================="
+
       - name: Deploy
         run: bun ./alchemy.run.ts --stage ${{ steps.stage.outputs.name }} --adopt
         env:
@@ -72,6 +87,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MCP_SHARED_SECRET: ${{ secrets.MCP_SHARED_SECRET }}
           MCP_JWT_SECRET: ${{ secrets.MCP_JWT_SECRET }}
+          # Debug environment variables
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID || '' }}
+          ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG || 'false' }}
+          ACTIONS_RUNNER_DEBUG: ${{ secrets.ACTIONS_RUNNER_DEBUG || 'false' }}
 
       - name: Health check (prod only)
         if: steps.stage.outputs.name == 'prod'
