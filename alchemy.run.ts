@@ -46,6 +46,7 @@ await alchemy.run("database", async () => {
   // D1 Database for user and file storage
   const db = await D1Database("db", {
     name: "alchemy-demo-db",
+    adopt: true, // Adopt existing database if it exists
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
 
