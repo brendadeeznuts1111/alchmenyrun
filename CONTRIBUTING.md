@@ -268,11 +268,31 @@ See [docs/guides/cloudflare.md](./docs/guides/cloudflare.md) for our complete ge
 
 ## Adding Features
 
+### Alche-men-yt Style: Tiny PRs
+
+We follow the **Alche-men-yt** approach for contributions:
+
+- **One concept per PR** (< 200 lines, ideally < 50)
+- **Green CI before merge** - All checks must pass
+- **Factual title + one-sentence body** - No fluff
+- **Docs go in `docs/`** - Not in PR descriptions
+- **Sequential merges** - One PR lands before the next opens
+
+**Why tiny PRs?**
+- ✅ Faster reviews
+- ✅ Easier to understand
+- ✅ Safer to rollback
+- ✅ Better git history
+- ✅ Less merge conflicts
+
+**Example workflow:**
 1. **Create a feature branch**: `git checkout -b feat/your-feature`
-2. **Implement the feature**: Add backend API, frontend components, tests
+2. **Implement ONE thing**: Add backend API OR frontend component OR tests
 3. **Test thoroughly**: Ensure all tests pass following Alchemy patterns
 4. **Update documentation**: Add relevant docs to `docs/`
-5. **Submit a pull request**: With clear description of changes
+5. **Submit a pull request**: With clear, factual description
+6. **Wait for green CI**: All checks must pass
+7. **Merge**: Then start next tiny PR if needed
 
 ## Code Style
 
