@@ -88,12 +88,24 @@ await alchemy.run("compute", async () => {
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
   
+  // Create Durable Object namespace for WebSocket chat
+  // The ChatRoom class will be exported from the website worker
+  const chatNamespace = await DurableObjectNamespace("chat", {
+    className: "ChatRoom",
+    scriptName: "website", // Must match the worker name below
+  });
+  
+  // Create Workflow namespace for user onboarding
+  // The OnboardingWorkflow class will be exported from the website worker
+  const workflowNamespace = await Workflow("onboarding", {
+    className: "OnboardingWorkflow",
+    scriptName: "website", // Must match the worker name below
+  });
+  
   // Share with other scopes
   resources.jobs = jobs;
-  
-  // Note: Durable Objects and Workflows are exported from the worker
-  // and automatically registered by Cloudflare. No separate namespace
-  // resources are needed - they're accessed via env.CHAT and env.WORKFLOW
+  resources.chatNamespace = chatNamespace;
+  resources.workflowNamespace = workflowNamespace;
 });
 
 // ========================================
@@ -116,13 +128,12 @@ export const website = await BunSPA("website", {
     
     // Compute bindings
     JOBS: resources.jobs,
+    CHAT: resources.chatNamespace,
+    WORKFLOW: resources.workflowNamespace,
     
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
-  
-  // Note: CHAT and WORKFLOW are automatically available via env.CHAT and env.WORKFLOW
-  // because ChatRoom and OnboardingWorkflow classes are exported from server.ts
 });
 
 // Create Production MCP Worker
