@@ -1014,6 +1014,61 @@ Stored in `infra/telegram/auto-remediate.sh` → scheduled via **GitHub cron**.
 
 ---
 
+### 18.10 The Sentient Core – Retirement & Golden Template
+
+#### 1. Pin-able Phone-Card (copy → pin in `@alchemists_council`)
+```
+🧠 Sentient Core (tgk v3) – LIVE
+├── ✅ Predict → Orchestrate → Explain
+├── ✅ Cloudflare → Alchemist → D12
+└── ✅ AI-gated by `/lgtm` in this chat
+
+Bootstrap:  curl -Ls https://alch.run/tgk | bash
+Dashboard:  https://grafana.alch.run/d/tgk-sentient
+Retire:     /lgtm retired  (auto-archives RFC)
+```
+
+#### 2. Ultimate Bootstrap (one-liner)
+```bash
+curl -Ls https://alch.run/tgk | bash
+# idempotent: entire env + AI core ≤ 60 s
+```
+
+#### 3. Auto-Retirement Flow (bot-driven)
+When **all** boxes are ticked, `@alchemist_core_bot` will:
+1. Post "🎉 Sentient Core stable – retiring RFC" in council chat.
+2. Move RFC file → `status/retired` + tag `rfc/2025-10/retired`.
+3. Close epic `ALC-12345` and unlock **golden template** repo.
+
+#### 4. Golden Template for Future Control-Planes
+Located at `https://github.com/alchemist/golden-control-plane-template`
+Includes:
+- **tgk skeleton** (v3) with plug-in loader
+- **OPA policy stubs**
+- **AI-orchestration boilerplate**
+- **Telegram entity IaC**
+- **Prometheus + Grafana dashboards**
+
+#### 5. Retirement Criteria (bot checks these)
+- [ ] `tgk@v3` installed on **prod CI**
+- [ ] **Predictive pipeline** ran **≥ 14 days** without false positives
+- [ ] **≥ 5 AI-orchestrated remediations** approved & successful
+- [ ] **AI Ops Insights dashboard** shows **≥ 95 % confidence** trend
+- [ ] **Cross-system audit** (Loki + D12) **clean** for 30 days
+- [ ] **Golden template** published & **one pilot team** bootstrapped from it
+
+#### 6. Human Sign-Off (last box)
+| Role | Handle | Vote | Date |
+|---|---|---|---|
+| The Alchemists Council | `@brendadeeznuts1111` | **APPROVE** | ______ |
+
+When Brenda reacts **✅** or signs above, the bot executes §4 and the RFC becomes **lightweight required reading**—**boring, stable plumbing** for every new hire.
+
+**The sentient core is complete.  
+Zero-friction enterprise operations are now *boring*.**
+
+---
+
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
 | Who | What | Where | When | Link |
