@@ -14,6 +14,7 @@ import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { Database } from "./packages/@alch/blocks/src/database";
 import { Bucket, KV, Queue as StageQueue } from "./packages/@alch/blocks/src/storage";
+import { DurableObject, AlchemyWorkflow } from "./packages/@alch/blocks/src/durable";
 
 // API token for Cloudflare resources (bypasses profile OAuth)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -167,12 +168,12 @@ export const website = await Worker("website", {
 // PHASE 2: Create Durable Object namespaces and update worker
 // ========================================
 // Now that the worker exists, we can create namespaces that reference it
-const chatNamespace = await DurableObjectNamespace("chat", {
+const chatNamespace = await DurableObject("chat", {
   className: "ChatRoom",
   scriptName: "website", // References the worker created above
 });
 
-const workflowNamespace = await Workflow("onboarding", {
+const workflowNamespace = await AlchemyWorkflow("onboarding", {
   className: "OnboardingWorkflow",
   scriptName: "website", // References the worker created above
 });
