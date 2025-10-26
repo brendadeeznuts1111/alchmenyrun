@@ -739,6 +739,87 @@ jobs:
 
 ---
 
+### 18.7 AI-Driven Telegram Control-Plane (tgk v2)
+
+#### 1. Goal
+Turn `tgk` into an **intelligent, secure, observable** control-plane that:
+- creates **entire Telegram env** in ≤ 60 s from code
+- enforces **OPA policies** before every change
+- pushes **metrics + audit logs** to Prometheus/Grafana
+- offers **AI suggestions** (`tgk ai suggest`) for next RFC action
+
+#### 2. One-Line Install
+```bash
+pipx install git+https://github.com/alchemist/tgk@v2
+tgk --version   # 2.0.0
+```
+
+#### 3. New Commands (JSON out → `jq` friendly)
+```
+tgk config init         # create tgk.yaml (vault-backed)
+tgk auth refresh        # verify token & perms
+tgk group create        # super-group + forum + invite
+tgk channel create      # broadcast channel
+tgk topic create        # forum topic with template
+tgk card post           # rich card (media + buttons)
+tgk card update         # in-place edit
+tgk card delete         # with audit log
+tgk policy check        # local Rego validation
+tgk ai suggest          # GPT-driven next step
+tgk audit log           # structured logs to Loki
+```
+
+#### 4. Minimal IaC Script (creates whole env)
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+source .env  # TELEGRAM_BOT_TOKEN + VAULT_ADDR
+
+# idempotent: creates or returns existing IDs
+COUNCIL=$(tgk group create "Alchemists Council" --forum --convert -o json | jq -r .id)
+tgk role set -c $COUNCIL -u alchemist_core_bot --admin --can-pin --can-manage-topics
+tgk policy check -c $COUNCIL --policy infra/telegram/admin-roles.rego
+
+RELEASES=$(tgk channel create "alchemist_releases" --public -o json | jq -r .id)
+echo "COUNCIL=$COUNCIL" >> $GITHUB_OUTPUT
+echo "RELEASES=$RELEASES" >> $GITHUB_OUTPUT
+```
+Store the script in `infra/telegram/bootstrap.py` → run in CI on **every apply**.
+
+#### 5. Security & Compliance
+- **OPA** policies live in `infra/telegram/policies/*.rego`
+- Every `tgk` call is **PRE-flight checked**; violations abort with exit-code ≥ 1
+- Audit events pushed to **Loki** (`tgk audit log --push`)
+- Secrets fetched from **Vault** (`tgk config init --vault-path telegram/creds`)
+
+#### 6. AI Features
+```bash
+tgk ai suggest -c $COUNCIL --context "RFC ALC-2025-10 is READY-COUNCIL-VOTE"
+# → "Post a reminder to the Council or run policy check."
+```
+AI calls are **opt-in** (env `TGK_AI_ENABLE=1`) and **cost-capped** (token budget in tgk.yaml).
+
+#### 7. Observability
+- **Prometheus** metrics exported by `tgk` itself:
+  `tgk_command_duration_seconds`, `tgk_policy_violations_total`, `tgk_messages_sent_total`
+- **Grafana** dashboard "Alchemist Comms Health" auto-imported from `infra/telegram/dashboard.json`
+
+#### 8. Enhanced Done Criteria
+- [ ] `tgk@v2` installed on CI runners & laptops
+- [ ] entire Telegram env bootstrapped **only** via `tgk` script
+- [ ] OPA policies pass in CI (`tgk policy check`)
+- [ ] audit logs visible in Loki/Grafana
+- [ ] one **dry-run** creates fresh env ≤ 60 s
+- [ ] roll-back tested: `tgk card-delete + unpin-all` ≤ 10 s
+
+#### 9. Roll-Forward / Roll-Back
+- **Forward**: merge `tgk@v2`, update call-sites to new command set
+- **Backward**: revert to `tgk@v1` (bash wrappers) in ≤ 5 min
+
+**Once §18.7 is merged, the Telegram layer is fully IaC, policy-enforced, AI-assisted, and observable—enterprise zero-friction achieved.**
+
+---
+
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
 | Who | What | Where | When | Link |
