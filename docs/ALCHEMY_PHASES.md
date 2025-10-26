@@ -1,27 +1,29 @@
-# Alchemy Phases: Our Journey
+# Deployment Maturity Stages: Our Journey
 
-This document maps our repository evolution to Alchemy's deployment phase concept.
+This document maps our repository evolution through deployment maturity stages.
 
-## 📊 Alchemy Phase Model
+> **Note**: This guide discusses **deployment maturity stages** (our internal progression), not Alchemy's execution phases (`up`, `destroy`, `read`). For Alchemy's phase concept, see [alchemy.run/concepts/phase](https://alchemy.run/concepts/phase.md).
 
-Alchemy defines deployment maturity through phases:
+## 📊 Deployment Maturity Model
+
+We define deployment maturity through progressive stages:
 
 ```
-Phase 0: Local-only, no cloud resources
-Phase 1: Cloud resources, no review
-Phase 2: Review required before deploy
-Phase 3+: Multi-env promotion, policy gates
+Stage 0: Local-only, no cloud resources
+Stage 1: Cloud resources, no review
+Stage 2: Review required before deploy
+Stage 3+: Multi-env promotion, policy gates
 ```
 
 ---
 
-## 🗺️ Our Journey Mapped to Alchemy Phases
+## 🗺️ Our Journey Through Maturity Stages
 
-### Phase 0 → Phase 1: Initial Cloud Deployment
+### Stage 0 → Stage 1: Initial Cloud Deployment
 **Release**: `v1.0-demo`
 
 ```
-Alchemy Phase 0: Local-only, no cloud resources
+Stage 0: Local-only, no cloud resources
 ├─ Our v1.0-demo            – D1, R2, KV, DO, Workflows → cloud resources
 └─ Deployed straight to prod (no gates)
 ```
@@ -41,15 +43,15 @@ Alchemy Phase 0: Local-only, no cloud resources
 
 ---
 
-### Phase 1 → Phase 2: Review Gates
+### Stage 1 → Stage 2: Review Gates
 **Release**: `v2.0.0-kit-final` ✅ **CURRENT**
 
 ```
-Alchemy Phase 1: Cloud resources, no review
+Stage 1: Cloud resources, no review
 ├─ Our infra always deployed straight to prod (profile prod)
 └─ We added branch-protection + CI matrix → review gate
 
-Alchemy Phase 2: Review required before deploy
+Stage 2: Review required before deploy
 ├─ We are **HERE** – PR + CI must pass
 └─ Next: promote to staging first, then prod
 ```
@@ -70,16 +72,16 @@ Alchemy Phase 2: Review required before deploy
 
 ---
 
-### Phase 2 → Phase 3: Multi-Environment Promotion
+### Stage 2 → Stage 3: Multi-Environment Promotion
 **Target**: `v3.0.0-promotion-gate` ⏳ **NEXT**
 
 ```
-Alchemy Phase 2→3: Multi-env promotion
+Stage 2→3: Multi-env promotion
 ├─ Staging environment (auto-deploy)
 ├─ Manual approval gate
 └─ Production environment (promoted after approval)
 
-Alchemy Phase 3+: Policy gates, compliance checks
+Stage 3+: Policy gates, compliance checks
 └─ Road-mapped for future sprints
 ```
 
@@ -98,9 +100,77 @@ Alchemy Phase 3+: Policy gates, compliance checks
 
 ---
 
+## 🔧 Alchemy's Execution Phases
+
+Alchemy has three **execution phases** that control how your infrastructure code runs:
+
+### 1. `"up"` Phase (Default)
+Creates, updates, and deletes resources to match your code.
+
+```typescript
+// alchemy.run.ts
+const app = await alchemy("my-app", {
+  phase: "up" // default
+});
+
+const worker = await Worker("api", { /* ... */ }); // created or updated
+await app.finalize(); // deletes orphaned resources
+```
+
+**Usage**: `bun ./alchemy.run.ts` or `alchemy deploy`
+
+### 2. `"destroy"` Phase
+Deletes all resources in the specified stage.
+
+```typescript
+const app = await alchemy("my-app", {
+  phase: "destroy",
+  stage: "prod"
+});
+
+// Execution stops here - resources are destroyed
+```
+
+**Usage**: `PHASE=destroy bun ./alchemy.run.ts` or `bun run destroy`
+
+### 3. `"read"` Phase
+Runs code without creating, updating, or deleting resources. Useful for scripts that need infrastructure properties.
+
+```typescript
+const app = await alchemy("my-app", {
+  phase: "read"
+});
+
+const worker = await Worker("api", { /* ... */ }); // reconstructed from state
+console.log(worker.url); // access properties without deploying
+```
+
+**Usage**: `PHASE=read bun ./alchemy.run.ts` or `bun run deploy:read`
+
+### Our Implementation
+
+```typescript
+// alchemy.run.ts
+const phase = (process.env.PHASE as "up" | "destroy" | "read") ?? "up";
+
+const app = await alchemy("alchmenyrun", {
+  phase,
+  stage: process.env.STAGE ?? "dev",
+});
+```
+
+**Scripts**:
+- `bun run deploy` → `phase: "up"`
+- `bun run destroy` → `phase: "destroy"`
+- `bun run deploy:read` → `phase: "read"`
+
+**Learn more**: [alchemy.run/concepts/phase](https://alchemy.run/concepts/phase.md)
+
+---
+
 ## 📋 Feature Matrix
 
-| Feature                     | Alchemy Phase | Our Status | Release |
+| Feature                     | Maturity Stage | Our Status | Release |
 |-----------------------------|---------------|------------|---------|
 | Local dev (`alchemy dev`)   | 0             | ✅         | v1.0    |
 | Cloud deploy (prod)         | 1             | ✅         | v1.0    |
@@ -119,7 +189,7 @@ Alchemy Phase 3+: Policy gates, compliance checks
 
 ---
 
-## 🚀 Current State: Phase 2 (v2.0.0-kit-final)
+## 🚀 Current State: Stage 2 (v2.0.0-kit-final)
 
 ### What Works Now
 
@@ -148,7 +218,7 @@ alchemy deploy --profile prod
 
 ---
 
-## 🎯 Next Sprint: Phase 2→3 Promotion
+## 🎯 Next Sprint: Stage 2→3 Promotion
 
 ### Issue #21: Staging → Prod Promotion Gate
 
