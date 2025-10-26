@@ -420,4 +420,103 @@ curl -X POST \
 
 ---
 
+### 18.6 Enterprise Telegram Automation (Enhanced Delta-RFC)
+
+#### 1. Goal
+Turn the basic "curl notify" into a **zero-maintenance, self-reporting, interactive** workflow that:
+- keeps one **rich pinned card** per RFC
+- creates **forum topics** automatically
+- accepts **inline approvals** (`/lgtm` or button)
+- posts **graphs & logs** without spam
+
+#### 2. New Artefacts to Create (once per org)
+| Entity | Telegram UI | Purpose | Rights needed |
+|---|---|---|---|
+| `@alchemist_core_bot` | BotFather → `/newbot` | Orchestration & commands | Pin, Delete, Manage Topics |
+| `@alchemist_releases` | Channel | Public broadcast | Post only |
+| `@alchemist_ci_status` | Channel | High-volume CI logs | Post only |
+| `@alchemist_infra_team` | Super-Group (Forum) | Ops alerts | Pin + Topics |
+| `@alchemist_council` | Super-Group (Forum) | Council votes | Pin + Topics |
+
+#### 3. Secrets to Inject into CI
+```bash
+TELEGRAM_BOT_TOKEN          # from BotFather
+TG_COUNCIL_CHAT_ID          # -100xxxxxxxx
+TG_RELEASES_CHANNEL_ID      # -100yyyyyyyy
+TG_INFRA_GROUP_ID           # -100zzzzzzzz
+TG_CI_STATUS_ID             # -100aaaaaaaa
+```
+
+#### 4. Re-usable GitHub Action
+```yaml
+# alchemist/telegram-notifier@v3
+name: 'Telegram Notifier'
+inputs:
+  action: { required: true, description: 'send_message | pin_card | approve_rfc | retire_rfc' }
+  chat_id:  { required: true }
+  rfc_id:   { required: false }
+  title:    { required: false }
+  description: { required: false }
+  url:      { required: false }
+  status:   { required: false, default: 'info' }
+  token:    { required: true }
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+```
+*(Code already bundled; publish to `alchemist/actions` repo.)*
+
+#### 5. Minimal Call-Site (no bash)
+```yaml
+- uses: alchemist/telegram-notifier@v3
+  with:
+    action: pin_card
+    chat_id: ${{ vars.TG_COUNCIL_CHAT_ID }}
+    rfc_id: ALC-RFC-2025-10-ZERO-FRICTION
+    title: "🚀 Ready for Council Vote"
+    description: "Please review and hit **Approve** or type `/lgtm`"
+    url: https://alchemy.run/rfcs/2025-10
+    token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+```
+
+#### 6. Security Hardening
+- Token stored only in **GitHub Secrets** (never log echo)
+- Bot rights = **least privilege** (no "add users", no "delete group")
+- Action output **masked** in runner logs
+- Optional **IP allow-list** in BotFather → only GitHub runners
+
+#### 7. Rich UX Add-Ons
+| Feature | API Method | When Used |
+|---|---|---|
+| **Forum Topic** | `createForumTopic` | on RFC `status/ready-for-review` |
+| **Inline Keyboard** | `InlineKeyboardMarkup` | Approve / Metrics / Revert buttons |
+| **MarkdownV2** | `parse_mode=MarkdownV2` | bold, italics, links |
+| **Photo** | `sendPhoto` | Grafana snapshot on failure |
+| **Thread** | `reply_to_message_id` | long CI logs under parent |
+
+#### 8. Context-Aware Commands (Bot Code Snippet)
+```javascript
+// /lgtm or button press → moves RFC to status/approved
+if (msg.text === '/lgtm' && chatId === COUNCIL_ID) {
+  await approveRFC(rfcId, user);
+  await updatePinCard(chatId, rfcId, "✅ Council Approved");
+}
+```
+
+#### 9. Enhanced Done Criteria
+- [ ] Bot created & token in GitHub Secrets
+- [ ] All Chat-IDs exported as **vars** (not secrets)
+- [ ] `alchemist/telegram-notifier@v3` published to marketplace
+- [ ] One **dry-run** (pin + button + approve) succeeds
+- [ ] Forum topic auto-created for this RFC
+- [ ] No secret or Chat-ID leaks in CI logs
+
+#### 10. Roll-Forward / Roll-Back
+- **Roll-Forward**: merge the action, tag `v3`, update call-sites
+- **Roll-Back**: revert to `alchemist/telegram-notifier@v2` (bash curl) in ≤ 5 min
+
+**Once §18.6 is merged, the RFC phone-card becomes interactive, council approvals happen in-chat, and every metric snapshot lands threaded under the same pinned message—zero friction achieved.**
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
