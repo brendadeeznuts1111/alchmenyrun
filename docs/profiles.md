@@ -6,6 +6,25 @@ This guide covers how to use Alchemy profiles to manage credentials for your Clo
 
 Alchemy profiles provide a simple way to manage credentials for cloud providers without juggling multiple `.env` files or separate login CLI commands. Profiles are stored locally in your `~/.alchemy` directory and behave similarly to [AWS profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
 
+## Our Profile Setup
+
+This project uses **4 profiles** for different environments:
+
+| Profile | Purpose | Auth Method | Usage |
+|---------|---------|-------------|-------|
+| `default` | Personal development | OAuth | Local dev with `bun run alchemy:dev` |
+| `prod` | Production deployment | API Token | Production releases |
+| `staging` | Staging environment | API Token | Pre-production testing |
+| `ci` | GitHub Actions | API Token | Automated CI/CD |
+
+### Why Multiple Profiles?
+
+1. **Separation of Concerns** - Dev, staging, and prod are isolated
+2. **Safe Testing** - Feature branches won't affect production
+3. **Team Collaboration** - Each developer has their own profile
+4. **Automated Deployments** - CI/CD uses dedicated profile
+5. **Cost Tracking** - Resources tagged by environment
+
 ## Quick Start
 
 ### 1. Configure Profile
