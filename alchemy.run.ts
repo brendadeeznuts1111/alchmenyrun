@@ -114,6 +114,7 @@ await alchemy.run("compute", async () => {
 export const website = await BunSPA("website", {
   frontend: "src/frontend/index.html",
   entrypoint: "src/backend/server.ts",
+  adopt: true,
   apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   bindings: {
     // Database bindings
