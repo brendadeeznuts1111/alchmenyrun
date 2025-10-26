@@ -489,8 +489,9 @@ async function createTunnel(props: {
   logger.log(`Creating tunnel: ${props.name}`);
 
   // Mock implementation - will be replaced with actual Cloudflare API call
+  const id = `tunnel_${Date.now()}`;
   const mockTunnel: CloudflareTunnel = {
-    id: `tunnel_${Date.now()}`,
+    id,
     account_tag: "mock_account_tag",
     created_at: new Date().toISOString(),
     deleted_at: null,
@@ -498,7 +499,7 @@ async function createTunnel(props: {
     metadata: props.metadata,
     credentials_file: {
       AccountTag: "mock_account_tag",
-      TunnelID: `tunnel_${Date.now()}`,
+      TunnelID: id,
       TunnelName: props.name,
       TunnelSecret: "mock_tunnel_secret",
     },
