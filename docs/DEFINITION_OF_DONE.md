@@ -331,8 +331,8 @@ Pick one, paste the ID in the checklist, and the RFC automation will target the 
 ## 🤖 **Telegram Bot Setup for RFC Automation**  
 ### *(ALC-RFC-2025-10-ZERO-FRICTION)*
 
-### 📝 **Bot Created**: `@alchemist_rfc_bot` (t.me/alchemist_rfc_bot)
-### 🔑 **API Token**: `8333499645:AAEsGOqYc_3oVQoSpQESjcpDrQ0xj_PYpeE` *(Store securely in CI secrets)*
+### 📝 **Bot Created**: `@alchemist_core_bot` (t.me/alchemist_core_bot)
+### 🔑 **API Token**: `8372625251:AAFfIFdjLCwYxOO392KrFqsbTksE0t0w5nU` *(Store securely in CI secrets)*
 
 --------------------------------------------------------
 ### 🤖 1. WHAT YOU CREATE (once per org)
@@ -432,11 +432,11 @@ Turn the basic "curl notify" into a **zero-maintenance, self-reporting, interact
 #### 2. New Artefacts to Create (once per org)
 | Entity | Telegram UI | Purpose | Rights needed | Link |
 |---|---|---|---|---|
-| `@alchemist_core_bot` | BotFather → `/newbot` | Orchestration & commands | Pin, Delete, Manage Topics | - |
+| `@alchemist_core_bot` | BotFather → `/newbot` | Orchestration & commands | Pin, Delete, Manage Topics | t.me/alchemist_core_bot |
 | `@alchemist_releases` | Channel | Public broadcast | Post only | https://t.me/+zA-Rw8weDJUwMjg5 |
 | `@alchemist_ci_status` | Channel | High-volume CI logs | Post only | https://t.me/+S7yXUYv8nvs1NGFh |
 | `@alchemist_infra_team` | Super-Group (Forum) | Ops alerts | Pin + Topics | https://t.me/+nieD7pJAJ4NmYWQx |
-| `@alchemist_council` | Super-Group (Forum) | Council votes | Pin + Topics | - |
+| `@alchemist_council` | Super-Group (Forum) | Council votes | Pin + Topics | https://t.me/c/3293940131/1 |
 
 #### 3. Secrets to Inject into CI
 ```bash
@@ -523,8 +523,8 @@ if (msg.text === '/lgtm' && chatId === COUNCIL_ID) {
 
 | Who | What | Where | When | Link |
 |---|---|---|---|---|
-| `@alice.smith` | Create `@alchemist_core_bot` & grab token | BotFather | **Today** | - |
-| `@alice.smith` | Convert Council group → **Forum** | Group Settings | **Today** | - |
+| `@alice.smith` | ✅ Create `@alchemist_core_bot` & grab token | BotFather | **Today** | t.me/alchemist_core_bot |
+| `@alice.smith` | Convert Council group → **Forum** | Group Settings | **Today** | https://t.me/c/3293940131/1 |
 | `@diana.prince` | Publish `alchemist/telegram-notifier@v3` | GitHub Marketplace | **This sprint** | - |
 | `@brendadeeznuts1111` | Add secrets (`TELEGRAM_BOT_TOKEN`, `TG_*_ID`) | GitHub Org | **This sprint** | - |
 | **All** | First dry-run on **this RFC** | `#infra_team` | **Before prod** | https://t.me/+nieD7pJAJ4NmYWQx |
