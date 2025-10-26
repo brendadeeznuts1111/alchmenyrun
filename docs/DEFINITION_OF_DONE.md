@@ -592,6 +592,90 @@ All calls are **idempotent**; running twice is safe.
 
 ---
 
+## 📦 **Telegram CLI Toolkit (tgk)**
+### *(100% Infrastructure-as-Code for Telegram Automation)*
+
+### 📝 **Single Source-of-Truth CLI** for complete Telegram entity management
+### 📦 **Installation**: Available as `tgk` command (infrastructure-as-code)
+
+--------------------------------------------------------
+### 📦 1. INSTALL (one-time)
+--------------------------------------------------------
+```bash
+sudo curl -L https://raw.githubusercontent.com/alchemist/telegram-cli-kit/main/tgk \
+  -o /usr/local/bin/tgk && sudo chmod +x /usr/local/bin/tgk
+```
+The kit exposes sub-commands:
+```
+tgk chat-list           # discover IDs
+tgk group-create        # super-group + convert + forum
+tgk channel-create      # broadcast channel
+tgk topic-create        # forum topic
+tgk member-add          # invite users by @username
+tgk pin-card            # send + pin rich card
+tgk card-replace        # edit in-place
+tgk card-delete         # delete any message
+tgk unpin-all           # nuclear un-pin
+tgk role-set             # promote/demote bot
+tgk permission-set       # lock/unlock group
+```
+Every call returns **JSON**; wrap with `jq` for scripting.
+
+--------------------------------------------------------
+### 🔧 2. QUICK REFERENCE CHEAT-SHEET
+--------------------------------------------------------
+| Task | One-Liner | Idempotent? |
+|---|---|---|
+| **Create Forum Super-Group** | `tgk group-create "Alchemists Council" --forum --convert` | ✅ |
+| **Create Broadcast Channel** | `tgk channel-create "alchemist_releases" --public` | ✅ |
+| **Auto-Invite Bot** | `tgk member-add -c $CHAT_ID -u alchemist_core_bot` | ✅ |
+| **Give Bot Pin Right** | `tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics` | ✅ |
+| **Create RFC Topic** | `tgk topic-create -c $CHAT_ID -n "ALC-RFC-2025-10-Naming"` | ✅ |
+| **Replace Pinned Card** | `tgk card-replace -c $CHAT_ID -m $OLD_ID -t "✅ Approved" -d "New body"` | ✅ |
+| **Delete Last Message** | `tgk card-delete -c $CHAT_ID -m $MSG_ID` | ✅ |
+| **Lock Group (ro)** | `tgk permission-set -c $CHAT_ID --send-messages off` | ✅ |
+| **Unlock Group (rw)** | `tgk permission-set -c $CHAT_ID --send-messages on` | ✅ |
+
+--------------------------------------------------------
+### 🚀 3. CI TEMPLATE (GitHub Actions)
+--------------------------------------------------------
+```yaml
+- name: Ensure Telegram Entities Exist
+  run: |
+    export CHAT_ID=$(tgk group-create "Alchemists Council" --forum --convert -o json | jq .id)
+    echo "CHAT_ID=$CHAT_ID" >> $GITHUB_OUTPUT
+    tgk member-add -c $CHAT_ID -u alchemist_core_bot
+    tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics
+```
+
+--------------------------------------------------------
+### 🛡️ 4. SECURITY CONTROLS
+--------------------------------------------------------
+- **Least-Privilege Bot Rights** – script refuses to add "add users" or "delete group"
+- **Idempotent Calls** – re-run safely; no duplicate groups/topics
+- **Secret Masking** – token never echoed; use GitHub Secrets
+- **IP Lock** – optional BotFather IP whitelist for CI runners
+
+--------------------------------------------------------
+### 📊 5. SPEED & LIMITS
+--------------------------------------------------------
+- Each call ≈ 150–400 ms (HTTP)
+- Bot rate-limit: 30 msgs / sec globally (plenty for Alchemist scale)
+- Forum topic limit: 1 000 per group (archive old ones via script)
+
+--------------------------------------------------------
+### ✅ 6. ENHANCED DONE CRITERIA
+--------------------------------------------------------
+- [ ] `tgk` installed on CI runners & `/usr/local/bin` on laptops
+- [ ] All entities created **via CLI** (not GUI) and stored as CI vars
+- [ ] Bot rights scripted & stored as code (`infra/telegram/roles.json`)
+- [ ] One **dry-run** creates entire fresh env in ≤ 60 s
+- [ ] Roll-back tested: `tgk unpin-all + card-delete` finishes in ≤ 10 s
+
+**Now the Telegram ecosystem is 100% infrastructure-as-code—create, mutate, lock, or nuke any room faster than you can revert a Git commit.**
+
+---
+
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
 | Who | What | Where | When | Link |
