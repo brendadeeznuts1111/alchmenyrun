@@ -24,7 +24,9 @@ const cfToken = process.env.CLOUDFLARE_API_TOKEN;
 const app = await alchemy("cloudflare-demo", {
   phase: process.env.PHASE as "up" | "destroy" | "read" || "up",
   password: process.env.ALCHEMY_PASSWORD || "demo-password-change-in-production",
-  stateStore: (scope) => new CloudflareStateStore(scope),
+  stateStore: (scope) => new CloudflareStateStore(scope, {
+    forceUpdate: true, // Recreate state store worker with new token
+  }),
   profile: process.env.ALCHEMY_PROFILE || "default",
 });
 
