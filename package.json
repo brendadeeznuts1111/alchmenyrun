@@ -13,7 +13,7 @@
     "scope:test": "PHASE=read bun ./alchemy.run.ts",
     "destroy": "PHASE=destroy bun ./alchemy.run.ts",
     "destroy:prod": "PHASE=destroy bun ./alchemy.run.ts --stage prod",
-    "build": "bun run build:css",
+    "build": "bun run build:css && cd apps/demo-app && bun run build",
     "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
     "check": "bun tsc -b && bun run format:check",
     "format": "oxfmt '.' '!./node_modules/' '!./dist/'",

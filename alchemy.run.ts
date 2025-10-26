@@ -102,8 +102,7 @@ await alchemy.run("compute", async () => {
 // ========================================
 // The worker exports ChatRoom and OnboardingWorkflow classes,
 // but we can't bind them yet because the namespaces don't exist.
-export const website = await BunSPA("website", {
-  frontend: "src/frontend/index.html",
+export const website = await Worker("website", {
   entrypoint: "src/backend/server.ts",
   adopt: true,
   apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
@@ -122,6 +121,44 @@ export const website = await BunSPA("website", {
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
+  // Static assets for frontend serving
+  assets: {
+    path: "./apps/demo-app/dist", // Demo app build output directory
+    run_worker_first: true, // Try worker first, fallback to assets
+    not_found_handling: "single-page-application", // SPA routing support
+  },
+  // Production-ready Worker features
+  crons: [
+    "0 2 * * *", // Daily cleanup at 2 AM UTC
+  ],
+  placement: {
+    mode: "smart", // Enable smart placement for better performance
+  },
+  observability: {
+    enabled: true,
+    logs: {
+      enabled: true,
+      headSamplingRate: 1.0, // Log all requests in production
+    },
+    traces: {
+      enabled: true,
+      headSamplingRate: 0.1, // Sample 10% of traces for performance
+    },
+  },
+  limits: {
+    cpu_ms: 50000, // 50 second CPU limit
+  },
+  // Custom domains for production (uncomment when domain is available)
+  // domains: [
+  //   process.env.CUSTOM_DOMAIN || "your-app.com"
+  // ],
+  // Routes for production deployment
+  routes: [
+    // API routes
+    { pattern: "/api/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+    // Catch-all for SPA routing
+    { pattern: "/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+  ],
 });
 
 // ========================================
