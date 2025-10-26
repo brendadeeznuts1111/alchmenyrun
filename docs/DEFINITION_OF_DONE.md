@@ -624,17 +624,17 @@ Every call returns **JSON**; wrap with `jq` for scripting.
 --------------------------------------------------------
 ### 🔧 2. QUICK REFERENCE CHEAT-SHEET
 --------------------------------------------------------
-| Task | One-Liner | Idempotent? |
-|---|---|---|
-| **Create Forum Super-Group** | `tgk group-create "Alchemists Council" --forum --convert` | ✅ |
-| **Create Broadcast Channel** | `tgk channel-create "alchemist_releases" --public` | ✅ |
-| **Auto-Invite Bot** | `tgk member-add -c $CHAT_ID -u alchemist_core_bot` | ✅ |
-| **Give Bot Pin Right** | `tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics` | ✅ |
-| **Create RFC Topic** | `tgk topic-create -c $CHAT_ID -n "ALC-RFC-2025-10-Naming"` | ✅ |
-| **Replace Pinned Card** | `tgk card-replace -c $CHAT_ID -m $OLD_ID -t "✅ Approved" -d "New body"` | ✅ |
-| **Delete Last Message** | `tgk card-delete -c $CHAT_ID -m $MSG_ID` | ✅ |
-| **Lock Group (ro)** | `tgk permission-set -c $CHAT_ID --send-messages off` | ✅ |
-| **Unlock Group (rw)** | `tgk permission-set -c $CHAT_ID --send-messages on` | ✅ |
+| Task                         | One-Liner                                                               | Idempotent? |
+| ---------------------------- | ----------------------------------------------------------------------- | ----------- |
+| **Create Forum Super-Group** | `tgk group-create "Alchemists Council" --forum --convert`               | ✅           |
+| **Create Broadcast Channel** | `tgk channel-create "alchemist_releases" --public`                      | ✅           |
+| **Auto-Invite Bot**          | `tgk member-add -c $CHAT_ID -u alchemist_core_bot`                      | ✅           |
+| **Give Bot Pin Right**       | `tgk role-set -c $CHAT_ID -u alchemist_core_bot --pin --manage-topics`  | ✅           |
+| **Create RFC Topic**         | `tgk topic-create -c $CHAT_ID -n "ALC-RFC-2025-10-Naming"`              | ✅           |
+| **Replace Pinned Card**      | `tgk card-replace -c $CHAT_ID -m $OLD_ID -t "✅ Approved" -d "New body"` | ✅           |
+| **Delete Last Message**      | `tgk card-delete -c $CHAT_ID -m $MSG_ID`                                | ✅           |
+| **Lock Group (ro)**          | `tgk permission-set -c $CHAT_ID --send-messages off`                    | ✅           |
+| **Unlock Group (rw)**        | `tgk permission-set -c $CHAT_ID --send-messages on`                     | ✅           |
 
 --------------------------------------------------------
 ### 🚀 3. CI TEMPLATE (GitHub Actions)
