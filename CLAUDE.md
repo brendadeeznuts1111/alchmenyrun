@@ -120,9 +120,72 @@ Example:
 - **telegram**: `#proj-alchemist-health` (webhook from Prometheus)  
 - **Auto-escalate**: 2 consecutive failures → page on-call lead  
 
-# Alchemy
+---
 
-Alchemy is an Typescript-native Infrastructure-as-Code repository. Claude's job is to implement "Resource" providers for various cloud services by following a set up strict conventions and patterns.
+## 8. Enhanced Assignment & Review Rules (structured by `[DOMAIN][SCOPE][TYPE]`)
++*Quick example:*
++* `[DOMAIN]` → `dept/` label: `INFRA`, `PROVIDERS`  
++* `[SCOPE]` → component: `QUEUE`, `DOCKER-PROVIDER`, `API-DOCS`  
++* `[TYPE]` → `type/` label: `FEAT`, `BUG`, `REFACTOR`  
++*Sample PR title:* `[INFRA][QUEUE][FEAT] Implement durable queue for worker restarts` 
+
+### Assignment Rules by Pattern
+```yaml
+# Infrastructure Components (dept/infrastructure)
+packages/@alch/queue/*: @alice.smith, @infra_dev1
+packages/@alch/tunnel/*: @alice.smith, @infra_dev2
+src/backend/*: @alice.smith, @infra_dev2
+.github/workflows/*: @alice.smith, @infra_dev1
+
+# Provider Components (dept/providers)  
+alchemy/src/cloudflare/*: @charlie.brown, @provider_dev1
+alchemy/src/docker/*: @charlie.brown, @provider_dev1
+alchemy/src/github/*: @charlie.brown, @provider_dev1
+
+# Documentation (dept/documentation)
+docs/*: @frank.taylor, @doc_writer1
+examples/*: @frank.taylor, @doc_writer1
+
+# Quality & Testing (dept/quality)
+src/__tests__/*: @diana.prince, @qa_analyst1
+**/*.test.ts: @diana.prince, @qa_analyst1
+```
+
+### Review Requirements by Hierarchy Level
+| Level | Pattern | Required Reviewers | Approvers | Notes |
+|-------|---------|-------------------|-----------|-------|
+| `strategic` | `level/strategic` | Domain Lead + 1 reviewer | Brenda final | Architecture changes, breaking changes |
+| `tactical` | `level/tactical` | Domain Lead + 1 reviewer | Domain Lead | New features, significant refactors |
+| `operational` | `level/operational` | 1 reviewer | Domain Lead | Bug fixes, docs, small changes |
+
+### PR Title Grammar Enforcement
+- **Format**: `[DOMAIN][SCOPE][TYPE] Imperative description`
+- **DOMAIN**: Maps to `dept/` labels (`INFRA`, `PROVIDERS`, `QUALITY`)
+- **SCOPE**: Specific component (`QUEUE`, `DOCKER-PROVIDER`, `API-DOCS`)  
+- **TYPE**: Maps to `type/` labels (`FEAT`, `BUG`, `REFACTOR`)
+
+**Examples:**
+```
+[INFRA][QUEUE][FEAT] Add dead-letter queue support
+[PROVIDERS][DOCKER][BUG] Fix container cleanup race condition  
+[QUALITY][TESTS][REFACTOR] Migrate to Vitest from Jest
+[DOCS][GUIDES][FEAT] Add Cloudflare deployment tutorial
+```
+
+### Escalation Path
+1. **Contributor** → Opens PR with proper `[DOMAIN][SCOPE][TYPE]` title
+2. **Domain Reviewer** → Technical review, code quality
+3. **Domain Lead** → Tactical approval for their domain
+4. **Cross-functional Leads** → For `dept/cross-functional` changes
+5. **Brenda** → Strategic final approval for `level/strategic` changes
+
+### Quality Gates by Domain
+| Domain | Coverage | Linting | Testing | Docs |
+|--------|----------|---------|---------|------|
+| `INFRA` | ≥80% | ✅ | Unit + Integration | API docs |
+| `PROVIDERS` | ≥80% | ✅ | Unit + E2E | Provider docs |
+| `QUALITY` | ≥90% | ✅ | All test types | Test docs |
+| `DOCS` | N/A | ✅ | Link validation | Content review |
 
 Your job is to build and maintain resource providers following the following convention and structure:
 
