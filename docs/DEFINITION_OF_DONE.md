@@ -263,4 +263,24 @@ This document defines the Definition of Done (DoD) for each team in Project Alch
 
 ---
 
+## 18.5 Day-1 Sprint (0 → First Deploy in ≤ 24 h) – **Telegram Edition**
+
+| Time | Task | Owner | Telegram Chat / Bot | Exit Criterion |
+|---|---|---|---|---|
+| T+0 m  | Brenda `/lgtm approved` | `@brendadeeznuts1111` | `@AlchemistsCouncil` | PR branch unblocked |
+| T+15 m | Fast-forward feature branch to `main` HEAD | `@alice.smith` | `@infra_team` | no merge conflicts |
+| T+30 m | CI unit + integration **must** green | `CI_Bot` | `@ci_status` | 99 % coverage retained |
+| T+60 m | Security regression scan (`sast / iam-diff`) | `SecurityBot` | `@security_alerts` | zero new findings |
+| T+2 h  | Build internal dev image `v1.47.0-d.1` | `ReleaseBot` | `@releases` | image pushed |
+| T+3 h  | Deploy **dev only** (flag `AUTO_SUFFIX_D1=on`) | `@alice.smith` | `@dogfood_logs` | D1 list shows `-dev` suffix |
+| T+4 h  | Run 1-click synthetic transaction test | `@diana.prince` | `@quality_gate` | 100 % pass, latency ≤ baseline +5 % |
+| T+6 h  | Publish **internal** release notes | `@franktaylor` | `@alchemist_dev` | migration hint included |
+| T+24 h | Go/No-Go for staging canary | on-call + Alice | `@release_command` | ✅ proceed → move to §19<br>❌ roll back & reopen RFC |
+
+**Rollback trigger:** any failed check above **or** `#incident` topic opened → `git revert` + flag disabled in ≤ 10 min.
+
+*(Telegram tip: pin the final "✅ Go" message so the retro bot can scrape it automatically.)*
+
+---
+
 **Remember: The Definition of Done is a living document. It should evolve as our project grows and our standards improve. All team members are encouraged to suggest improvements and participate in its ongoing development.** 🚀
