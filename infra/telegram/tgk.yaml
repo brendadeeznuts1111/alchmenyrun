@@ -1,0 +1,47 @@
+# tgk AI Configuration
+ai:
+  enabled: false  # Set to true to enable AI features (TGK_AI_ENABLE=1)
+  provider: "openai"  # AI service provider
+  model: "gpt-4"  # AI model to use
+  temperature: 0.3  # Response creativity (0.0 = deterministic, 1.0 = creative)
+
+  # Token budget and cost management
+  token_budget:
+    monthly_limit: 100000  # Max tokens per month
+    alert_threshold: 0.8    # Alert at 80% usage
+    cost_per_1k_tokens: 0.02  # Cost tracking
+
+  # Predictive analysis settings
+  predictions:
+    confidence_threshold: 0.8  # Minimum confidence for actions
+    sources:
+      - "cf-logs"      # Cloudflare access logs
+      - "d1-metrics"   # D1 database metrics
+      - "customer-signals"  # Customer usage patterns
+    update_interval: 300  # Analysis every 5 minutes
+
+  # Orchestration settings
+  orchestration:
+    require_human_approval: true  # Always require human approval
+    auto_approve_confidence: 0.95  # Auto-approve above this confidence
+    escalation_threshold: 100     # Escalate if >100 customers impacted
+
+  # Explainability settings
+  explainability:
+    log_decisions: true           # Log all AI decisions
+    include_rationale: true       # Include reasoning in responses
+    confidence_transparency: true # Show confidence scores
+
+# Security and compliance
+security:
+  audit_trail: true
+  data_minimization: true
+  rate_limiting:
+    requests_per_minute: 10
+    burst_limit: 20
+
+# Observability
+observability:
+  metrics_enabled: true
+  dashboard_auto_import: true
+  log_level: "INFO"

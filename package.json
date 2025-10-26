@@ -46,7 +46,8 @@
     "telegram:enhanced": "python3 ./scripts/tgk-enhanced",
     "telegram:ecosystem:cloudflare": "./scripts/tgk-cf",
     "telegram:ecosystem:customer": "./scripts/tgk-customer",
-    "telegram:ecosystem:webapp": "./scripts/tgk-webapp"
+    "telegram:ecosystem:webapp": "./scripts/tgk-webapp",
+    "telegram:ai:remediate": "./infra/telegram/auto-remediate.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

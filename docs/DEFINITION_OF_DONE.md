@@ -914,6 +914,106 @@ Store as `infra/telegram/bootstrap.sh` → run on **every apply**.
 
 ---
 
+### 18.9 AI-Orchestrated Autonomy (tgk Phase-3)
+
+#### 1. Goal
+Make `tgk` a **sentient core** that:
+- **predicts** issues (Cloudflare, D1, customer signals)
+- **proposes** remediations with confidence scores
+- **orchestrates** policy-gated fixes **from chat** (button or `/lgtm`)
+- **explains** every AI decision in the audit trail
+
+#### 2. One-Line Install (extends §18.8)
+```bash
+pipx install --upgrade git+https://github.com/alchemist/tgk@v3
+tgk --version   # 3.0.0+ (ships predictive plug-in)
+```
+
+#### 3. New Command Tree
+```
+tgk predict               # Predictive anomaly detection
+  ├─ issue detect --source cf-logs,d1-metrics
+  └─ recommend action     # Proposes tgk commands w/ confidence
+
+tgk orchestrate           # Autonomous, policy-gated workflows
+  ├─ incident auto-resolve <ticket>
+  └─ change request <rfc-id>  # e.g., scale-up event
+
+tgk chat                  # Conversational AI
+  ├─ analyze              # Summarise thread, extract actions
+  ├─ respond --ai-draft   # Draft customer reply
+  └─ digest               # Daily/weekly event digest
+
+tgk community             # AI-assisted open-source engagement
+  ├─ good-first-issue     # Suggests easy issues
+  └─ mentor suggest       # Recommends mentors
+```
+
+#### 4. Minimal Predictive Pipeline Script
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# Runs every 5 min via CI cron
+ISSUE=$(tgk predict issue detect --source cf-logs,d1-metrics -o json)
+if <<<"$ISSUE" jq -e '.confidence > 0.8 and .severity == "critical"'; then
+  REC=$(jq -r '.recommended_action' <<<"$ISSUE")
+  # Human-in-the-loop approval (button in Telegram)
+  tgk orchestrate incident auto-resolve \
+    --action "$REC" \
+    --impacted "$(jq -c '.impacted_customers' <<<"$ISSUE")"
+fi
+```
+Stored in `infra/telegram/auto-remediate.sh` → scheduled via **GitHub cron**.
+
+#### 5. Security & Compliance
+- **Policy-gated actions**: OPA rule → only `@alice.smith` or `@brendadeeznuts1111` can approve **prod** orchestrations
+- **AI explainability**: every prediction → Loki (input, model, confidence, rationale)
+- **Token budget**: `tgk.yaml` caps AI calls; alerts at 80 %
+- **Human-in-the-loop**: critical actions require **inline button** or `/lgtm` in council chat
+
+#### 6. Observability & AI Metrics
+- **Prometheus** (auto-pushed):
+  - `tgk_ai_predictions_total{outcome="action|no_action"}`
+  - `tgk_orchestration_actions_total{status="success|failure"}`
+- **Grafana** dashboard: **"Alchemist AI Ops Insights"**
+  - prediction confidence trend
+  - human vs AI approval ratio
+
+#### 7. CI Template (GitHub Actions)
+```yaml
+- name: AI-Driven Incident Response
+  if: ${{ github.event.type == 'cloudflare_alert' }}
+  run: |
+    ISSUE=$(tgk predict issue detect --source-event '${{ github.event.payload }}' -o json)
+    echo "RECOMMENDED_ACTION=$(jq -r '.recommended_action' <<<"$ISSUE")" >> $GITHUB_OUTPUT
+- uses: alchemist/telegram-notifier@v4
+  with:
+    action: card_post_interactive
+    chat_id: ${{ vars.TG_INCIDENT_GROUP_ID }}
+    template_vars: |
+      prediction: ${{ steps.ai.outputs.RECOMMENDED_ACTION }}
+    buttons: |
+      - text: "✅ Approve & Orchestrate"
+        callback_data: "/tgk orchestrate incident auto-resolve ${{ github.run_id }} --confirm"
+```
+**Gate**: button click → OIDC claim `team=sre` **+** OPA policy **+** `/lgtm` logged.
+
+#### 8. Enhanced Done Criteria
+- [ ] `tgk@v3` installed
+- [ ] `tgk predict` pipeline runs (scheduled/event)
+- [ ] `tgk orchestrate` **policy-gated** and **human-approved** via Telegram
+- [ ] AI explainability logs in **Loki**
+- [ ] New **AI Ops Insights** dashboard live
+- [ ] roll-back tested: `tgk@v2.1` ≤ 5 min
+
+#### 9. Roll-Forward / Roll-Back
+- **Forward**: merge `tgk@v3`, enable `TGK_AI_ENABLE=1` **gradually** (pilot team first)
+- **Backward**: `pipx uninstall tgk && pipx install tgk@v2.1` (no AI core) ≤ 5 min
+
+**Once §18.9 is merged, a single Telegram message can trigger an AI-detected, policy-approved, human-in-the-loop remediation that spans Cloudflare → Alchemist → customer DB—true sentient zero-friction operations.**
+
+---
+
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
 | Who | What | Where | When | Link |
