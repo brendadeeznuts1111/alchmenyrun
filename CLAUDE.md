@@ -2,6 +2,49 @@
 
 This document contains configuration and context for Claude AI assistants working with this Alchemy project.
 
+## 🏢 Organizational Structure
+
+### 👥 Team Hierarchy
+
+#### **Engineering Leadership**
+- **Team Lead**: @brendadeeznuts1111 
+  - Role: Principal Engineer & Project Lead
+  - Responsibilities: Architecture decisions, merge approvals, strategic direction
+  - Department: Engineering Leadership
+
+#### **Core Departments**
+
+**🚀 Infrastructure Team**
+- **Lead**: @brendadeeznuts1111
+- **Focus**: CI/CD, deployment, resource providers, core framework
+- **Components**: Queue, Tunnel, Worker, CLI tools
+
+**⚡ Resource Provider Team**  
+- **Lead**: @brendadeeznuts1111 (interim)
+- **Focus**: Implementing cloud service providers
+- **Components**: All resource implementations
+
+**🧪 Quality & Testing Team**
+- **Lead**: TBD
+- **Focus**: Test frameworks, CI validation, quality assurance
+
+**📚 Documentation Team**
+- **Lead**: TBD
+- **Focus**: Guides, examples, API documentation
+
+### 🏷️ Department Labels
+- `dept/leadership` 👔 - Leadership team decisions
+- `dept/infrastructure` 🏗️ - Infrastructure and deployment
+- `dept/providers` 🔌 - Resource provider implementations
+- `dept/quality` 🧪 - Testing and quality assurance
+- `dept/documentation` 📚 - Documentation and guides
+
+### 📋 Assignment Rules
+- Infrastructure components → @brendadeeznuts1111
+- Provider implementations → Department leads
+- Documentation → Documentation team
+- Testing → Quality team
+
 ## Branching Strategy & CI/CD
 
 **IMPORTANT**: Always create dedicated feature branches for specific work following the pattern:
