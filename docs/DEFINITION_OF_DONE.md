@@ -430,13 +430,13 @@ Turn the basic "curl notify" into a **zero-maintenance, self-reporting, interact
 - posts **graphs & logs** without spam
 
 #### 2. New Artefacts to Create (once per org)
-| Entity | Telegram UI | Purpose | Rights needed |
-|---|---|---|---|
-| `@alchemist_core_bot` | BotFather → `/newbot` | Orchestration & commands | Pin, Delete, Manage Topics |
-| `@alchemist_releases` | Channel | Public broadcast | Post only |
-| `@alchemist_ci_status` | Channel | High-volume CI logs | Post only |
-| `@alchemist_infra_team` | Super-Group (Forum) | Ops alerts | Pin + Topics |
-| `@alchemist_council` | Super-Group (Forum) | Council votes | Pin + Topics |
+| Entity | Telegram UI | Purpose | Rights needed | Link |
+|---|---|---|---|---|
+| `@alchemist_core_bot` | BotFather → `/newbot` | Orchestration & commands | Pin, Delete, Manage Topics | - |
+| `@alchemist_releases` | Channel | Public broadcast | Post only | https://t.me/+zA-Rw8weDJUwMjg5 |
+| `@alchemist_ci_status` | Channel | High-volume CI logs | Post only | https://t.me/+S7yXUYv8nvs1NGFh |
+| `@alchemist_infra_team` | Super-Group (Forum) | Ops alerts | Pin + Topics | https://t.me/+nieD7pJAJ4NmYWQx |
+| `@alchemist_council` | Super-Group (Forum) | Council votes | Pin + Topics | - |
 
 #### 3. Secrets to Inject into CI
 ```bash
@@ -521,13 +521,13 @@ if (msg.text === '/lgtm' && chatId === COUNCIL_ID) {
 
 ## 📡 **Enterprise Telegram Stack – Next Actions**
 
-| Who | What | Where | When |
-|---|---|---|---|
-| `@alice.smith` | Create `@alchemist_core_bot` & grab token | BotFather | **Today** |
-| `@alice.smith` | Convert Council group → **Forum** | Group Settings | **Today** |
-| `@diana.prince` | Publish `alchemist/telegram-notifier@v3` | GitHub Marketplace | **This sprint** |
-| `@brendadeeznuts1111` | Add secrets (`TELEGRAM_BOT_TOKEN`, `TG_*_ID`) | GitHub Org | **This sprint** |
-| **All** | First dry-run on **this RFC** | `#infra_team` | **Before prod** |
+| Who | What | Where | When | Link |
+|---|---|---|---|---|
+| `@alice.smith` | Create `@alchemist_core_bot` & grab token | BotFather | **Today** | - |
+| `@alice.smith` | Convert Council group → **Forum** | Group Settings | **Today** | - |
+| `@diana.prince` | Publish `alchemist/telegram-notifier@v3` | GitHub Marketplace | **This sprint** | - |
+| `@brendadeeznuts1111` | Add secrets (`TELEGRAM_BOT_TOKEN`, `TG_*_ID`) | GitHub Org | **This sprint** | - |
+| **All** | First dry-run on **this RFC** | `#infra_team` | **Before prod** | https://t.me/+nieD7pJAJ4NmYWQx |
 
 **Roll-forward**: merge action → tag `v3` → update call-sites  
 **Roll-back**: revert to `v2` bash curl (≤ 5 min)
