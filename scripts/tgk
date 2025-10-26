@@ -580,6 +580,79 @@ cmd_stream_archive() {
     echo "   ✅ Stream archived successfully"
 }
 
+# Stream emoji command
+cmd_stream_emoji() {
+    local stream_type="$1"
+    
+    case "$stream_type" in
+        "security"|"sec")
+            echo "🛡️"
+            ;;
+        "sre")
+            echo "⚙️"
+            ;;
+        "data")
+            echo "📊"
+            ;;
+        "product"|"prod")
+            echo "✨"
+            ;;
+        "performance"|"perf")
+            echo "🚀"
+            ;;
+        "compliance"|"comp")
+            echo "📜"
+            ;;
+        *)
+            echo "🏷️"  # Default emoji for unknown types
+            ;;
+    esac
+}
+
+# Stream short command
+cmd_stream_short() {
+    local stream_type="$1"
+    
+    case "$stream_type" in
+        "security")
+            echo "sec"
+            ;;
+        "sre")
+            echo "sre"
+            ;;
+        "data")
+            echo "data"
+            ;;
+        "product")
+            echo "prod"
+            ;;
+        "performance")
+            echo "perf"
+            ;;
+        "compliance")
+            echo "comp"
+            ;;
+        *)
+            echo "misc"
+            ;;
+    esac
+}
+
+# Stream rename command
+cmd_stream_rename() {
+    local stream_name="$1"
+    local new_name="$2"
+    
+    if [ -z "$stream_name" ] || [ -z "$new_name" ]; then
+        echo "❌ Usage: tgk stream rename <current_name> <new_name>"
+        exit 1
+    fi
+    
+    echo "🔄 Renaming stream: $stream_name → $new_name"
+    echo "   📝 This is a placeholder - actual rename would require API calls"
+    echo "   ✅ Stream rename initiated"
+}
+
 # Template publish command
 cmd_template_publish() {
     local message_id="$1"
@@ -810,9 +883,21 @@ main() {
                     done
                     cmd_stream_archive "$name" "$reason"
                     ;;
+                "emoji")
+                    shift
+                    cmd_stream_emoji "$@"
+                    ;;
+                "short")
+                    shift
+                    cmd_stream_short "$@"
+                    ;;
+                "rename")
+                    shift
+                    cmd_stream_rename "$@"
+                    ;;
                 *)
                     echo "❌ Unknown stream command: $subcmd"
-                    echo "💡 Available: create, metrics, archive"
+                    echo "💡 Available: create, metrics, archive, emoji, short, rename"
                     exit 1
                     ;;
             esac
@@ -974,6 +1059,9 @@ Commands:
     stream                        Stream lifecycle management
       ├─ create <name> --type {sec|sre|data|product} --owner @handle
       ├─ archive <name> --reason Archive stream (read-only)
+      ├─ emoji <type>             Get emoji for stream type
+      ├─ short <type>             Get short name for stream type
+      ├─ rename <old> <new>       Rename stream topic
       └─ metrics <name>         Show stream metrics
 
     rfc                          Enhanced RFC operations

@@ -153,9 +153,18 @@ else
     GRAFANA_FOLDER_ID=""
 fi
 
-# 5. Telegram forum topic creation with initial message and pinning
-echo "💬 Creating Telegram forum topic with welcome message..."
-TOPIC_NAME="RFC Stream: $STREAM"
+# 5. Telegram forum topic creation with emoji naming convention
+echo "💬 Creating Telegram forum topic with emoji naming..."
+
+# Get emoji and short name for stream type
+EMOJI=$(tgk stream emoji "$TYPE" 2>/dev/null || echo "🏷️")
+SHORT=$(tgk stream short "$TYPE" 2>/dev/null || echo "misc")
+
+# Create emoji-based topic name
+OWNER_CLEAN="${OWNER#@}"  # Remove @ if present
+TOPIC_NAME="$EMOJI $SHORT /$STREAM – $OWNER_CLEAN"
+
+echo "   📝 Topic name: $TOPIC_NAME"
 
 # Create initial message based on stream type
 case "$TYPE" in
