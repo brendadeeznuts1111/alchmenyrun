@@ -6,7 +6,9 @@
 - **Author:** Governance Committee
 - **Date:** 2025-10-27
 - **Status:** Draft
-- **Related:** ALC-RFC-001, ALC-RFC-002, ALC-RFC-003
+- **Related Documents**
+  - **Technical Feasibility Assessment:** `docs/ALC-RFC-004-technical-feasibility.md`
+  - **Previous RFCs:** ALC-RFC-001, ALC-RFC-002, ALC-RFC-003
 
 ## Summary
 
@@ -386,10 +388,10 @@ The external AI categorization service must comply with:
 
 ## Decision
 
-**Status:** Draft - Ready for governance committee review
+**Status:** Draft - Technical feasibility assessment completed
 
 **Next Steps:**
-1. Technical feasibility assessment
+1. ✅ Technical feasibility assessment (completed)
 2. Pilot implementation on Data stream
 3. User acceptance testing
 4. Full rollout planning
