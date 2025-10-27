@@ -16,6 +16,7 @@ Manage 21+ topics across 6 streams with automated capacity limits, lifecycle pol
 AI-driven, policy-gated release management with automated security checks and deployment verification.
 
 **Quick Links:**
+- [Semver Release Guide](./semver-release-guide.md) - Bun-native semver validation & bumps
 - [Orchestration Guide](./orchestration.md) - Complete release automation
 - [Security Policies](./security.md) - Automated security scanning
 - [CI/CD Integration](./cicd.md) - GitHub Actions workflows
@@ -105,6 +106,7 @@ tgk orchestrate release-announcement
 - **[API Reference](./api.md)** - REST API documentation
 
 ### Advanced Guides
+- **[Semver Release](./semver-release-guide.md)** - Version management with Bun
 - **[Orchestration](./orchestration.md)** - Release automation
 - **[Security](./security.md)** - Security policies
 - **[CI/CD Integration](./cicd.md)** - Workflow automation
