@@ -1,0 +1,32 @@
+{
+  "name": "tgk-cli",
+  "version": "5.0.0",
+  "description": "tgk - AI-Driven Customer & Release Orchestration CLI",
+  "main": "index.js",
+  "bin": {
+    "tgk": "./bin/tgk.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "start": "node bin/tgk.js"
+  },
+  "dependencies": {
+    "nunjucks": "^3.2.4",
+    "commander": "^11.0.0",
+    "node-fetch": "^3.3.2",
+    "@octokit/rest": "^20.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "cli",
+    "telegram",
+    "rfc",
+    "approval",
+    "ai",
+    "orchestration"
+  ],
+  "author": "Alchemist Core Council",
+  "license": "MIT"
+}

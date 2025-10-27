@@ -1,0 +1,35 @@
+name: phase-6-email-orchestration
+main: .github/rfc006/worker.js
+compatibility_date: 2025-11-01
+
+# Secrets must exist in CF dashboard (bootstrap script creates them)
+vars:
+  ENV: production
+  TGK_INTERNAL_API: https://tgk.alchemy.run/internal
+
+d1_databases:
+  - binding: DB
+    database_name: tgk_email_metadata
+    database_id: tgk_email_metadata # replaced by bootstrap script
+
+r2_buckets:
+  - binding: ATTACHMENTS
+    bucket_name: tgk-email-attachments
+
+# Observability
+logpush: true
+metrics:
+  - name: tgk_email_routing_total
+    type: counter
+    help: "Total emails routed"
+    labels: [status, domain, scope, type, meta]
+
+# OPA bundle (cached in R2)
+opa:
+  bundle_url: r2://tgk-email-attachments/bundles/phase6.tar.gz
+  poll: 60s
+
+# Grafana dashboard (embedded)
+grafana_dashboard:
+  path: .github/rfc006/dashboard.json
+  folder: Alchemist / Email-Orchestration

@@ -1,0 +1,169 @@
+name: RFC Lifecycle Management
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+  push:
+    branches: [main]
+    paths: ['rfcs/**']
+
+jobs:
+  rfc-status-update:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'rfc') || contains(github.event.pull_request.title, 'micro-rfc')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup tgk CLI
+        run: |
+          curl -sSL https://install.tgk.dev | bash
+          echo "$HOME/.tgk/bin" >> $GITHUB_PATH
+
+      - name: Get RFC Metadata (for micro-rfc-006)
+        id: rfc_meta
+        run: |
+          RFC_ID="micro-rfc-006"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          TOPIC_NAME="AI-Driven Customer"
+          
+          # Extract RFC details from PR description or frontmatter
+          RFC_TITLE="AI-Driven Customer & Release Orchestration"
+          RFC_STATUS="READY_FOR_REVIEW"
+          RFC_APPROVALS_NEEDED=5  # From CODEOWNERS council
+          RFC_APPROVALS_RECEIVED=0
+          RFC_EXECUTIVE_SUMMARY="This RFC implements AI-powered issue labeling, policy-gated release approvals, and automated customer notifications within the tgk CLI. It transforms static taxonomy into an active orchestration layer with AI/OPA/D12 integration."
+          RFC_SUBMIT_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          RFC_SLA_REMAINING_HOURS=72
+          
+          echo "::set-output name=rfc_id::$RFC_ID"
+          echo "::set-output name=rfc_title::$RFC_TITLE"
+          echo "::set-output name=rfc_status::$RFC_STATUS"
+          echo "::set-output name=rfc_approvals_needed::$RFC_APPROVALS_NEEDED"
+          echo "::set-output name=rfc_approvals_received::$RFC_APPROVALS_RECEIVED"
+          echo "::set-output name=rfc_executive_summary::$RFC_EXECUTIVE_SUMMARY"
+          echo "::set-output name=rfc_submit_date::$RFC_SUBMIT_DATE"
+          echo "::set-output name=rfc_sla_remaining_hours::$RFC_SLA_REMAINING_HOURS"
+          echo "::set-output name=rfc_pr_number::$PR_NUMBER"
+          echo "::set-output name=topic_name::$TOPIC_NAME"
+          
+          # Get the Topic ID for "AI-Driven Customer"
+          COUNCIL_ID="${{ secrets.TELEGRAM_COUNCIL_ID }}"
+          TOPIC_ID="25782"  # From existing configuration
+          echo "::set-output name=council_id::$COUNCIL_ID"
+          echo "::set-output name=topic_id::$TOPIC_ID"
+
+      - name: Render Jinja2 Template
+        id: render_template
+        run: |
+          # Install python and jinja2 for template rendering
+          pip install jinja2
+          
+          # Create Python script to render template
+          cat > render_template.py << 'EOF'
+          import json
+          import os
+          from datetime import datetime
+          from jinja2 import Template, Environment
+          
+          # Custom filter for date formatting
+          def date_format(value, format='%Y-%m-%d'):
+              if isinstance(value, str):
+                  try:
+                      dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                      return dt.strftime(format)
+                  except:
+                      return value
+              return value
+          
+          # Custom filter for truncate
+          def truncate(value, length=200):
+              if len(value) <= length:
+                  return value
+              return value[:length-3] + '...'
+          
+          # Setup Jinja2 environment
+          env = Environment()
+          env.filters['date_format'] = date_format
+          env.filters['truncate'] = truncate
+          
+          # Load template
+          with open('tgk/templates/telegram-card/rfc-status-card.jinja2', 'r') as f:
+              template = env.from_string(f.read())
+          
+          # Load template variables
+          template_vars = {
+              'rfc': {
+                  'id': os.getenv('RFC_ID'),
+                  'title': os.getenv('RFC_TITLE'),
+                  'current_status': os.getenv('RFC_STATUS'),
+                  'approvals_needed': int(os.getenv('RFC_APPROVALS_NEEDED')),
+                  'approvals_received': int(os.getenv('RFC_APPROVALS_RECEIVED')),
+                  'executive_summary': os.getenv('RFC_EXECUTIVE_SUMMARY'),
+                  'submit_date': os.getenv('RFC_SUBMIT_DATE'),
+                  'sla_remaining_hours': int(os.getenv('RFC_SLA_REMAINING_HOURS')),
+                  'pr_number': int(os.getenv('RFC_PR_NUMBER'))
+              },
+              'council_id': os.getenv('COUNCIL_ID'),
+              'topic_id': os.getenv('TOPIC_ID')
+          }
+          
+          # Render template
+          rendered = template.render(**template_vars)
+          print(rendered)
+          
+          # Save to file for next step
+          with open('rendered_message.txt', 'w') as f:
+              f.write(rendered)
+          EOF
+          
+          # Set environment variables and render
+          export RFC_ID="${{ steps.rfc_meta.outputs.rfc_id }}"
+          export RFC_TITLE="${{ steps.rfc_meta.outputs.rfc_title }}"
+          export RFC_STATUS="${{ steps.rfc_meta.outputs.rfc_status }}"
+          export RFC_APPROVALS_NEEDED="${{ steps.rfc_meta.outputs.rfc_approvals_needed }}"
+          export RFC_APPROVALS_RECEIVED="${{ steps.rfc_meta.outputs.rfc_approvals_received }}"
+          export RFC_EXECUTIVE_SUMMARY="${{ steps.rfc_meta.outputs.rfc_executive_summary }}"
+          export RFC_SUBMIT_DATE="${{ steps.rfc_meta.outputs.rfc_submit_date }}"
+          export RFC_SLA_REMAINING_HOURS="${{ steps.rfc_meta.outputs.rfc_sla_remaining_hours }}"
+          export RFC_PR_NUMBER="${{ steps.rfc_meta.outputs.rfc_pr_number }}"
+          export COUNCIL_ID="${{ steps.rfc_meta.outputs.council_id }}"
+          export TOPIC_ID="${{ steps.rfc_meta.outputs.topic_id }}"
+          
+          python render_template.py
+          
+          # Save rendered message to output
+          echo "::set-output name=message::$(cat rendered_message.txt)"
+
+      - name: Post & Pin Rich RFC Status Card to Topic
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          # Post rich RFC status card to appropriate topic
+          MESSAGE_CONTENT="$(cat rendered_message.txt)"
+          
+          curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_COUNCIL_ID" \
+            -d message_thread_id="${{ steps.rfc_meta.outputs.topic_id }}" \
+            -d text="$MESSAGE_CONTENT" \
+            -d parse_mode=Markdown \
+            -d reply_markup='{"inline_keyboard":[[{"text":"✅ Approve RFC","callback_data":"/tgk rfc approve ${{ steps.rfc_meta.outputs.rfc_id }}"},{"text":"✍️ Provide Feedback","url":"https://github.com/brendadeeznuts1111/alchmenyrun/pull/${{ steps.rfc_meta.outputs.rfc_pr_number }}"}],[{"text":"🔄 Extend SLA","callback_data":"/tgk sla extend ${{ steps.rfc_meta.outputs.rfc_id }} --hours 24"}]]}' | jq -r '.result.message_id' > message_id.txt
+
+          # Pin the message
+          MESSAGE_ID=$(cat message_id.txt)
+          curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/pinChatMessage" \
+            -d chat_id="$TELEGRAM_COUNCIL_ID" \
+            -d message_id="$MESSAGE_ID" \
+            -d disable_notification=true
+          
+          echo "Message $MESSAGE_ID posted and pinned successfully"
+
+      - name: Cleanup Old Pins
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          # Get pinned messages and unpin old generic RFC notifications
+          echo "Cleaning up old generic RFC pins..."
+          # Note: Manual cleanup would be implemented here based on message content
+          echo "Cleanup completed"

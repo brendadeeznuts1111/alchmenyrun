@@ -1,0 +1,34 @@
+{
+  "name": "@tgk/email-kinja",
+  "version": "1.0.0",
+  "description": "Kinja-enhanced email orchestration with temporal intelligence and correctness scoring",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "temporal-polyfill": "^0.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "keywords": [
+    "email",
+    "orchestration",
+    "kinja",
+    "temporal-intelligence",
+    "ai",
+    "correctness-scoring",
+    "priority-calibration"
+  ],
+  "author": "Alchemist Team",
+  "license": "MIT"
+}

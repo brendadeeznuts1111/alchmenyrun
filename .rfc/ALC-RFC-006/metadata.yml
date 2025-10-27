@@ -1,0 +1,9 @@
+id: ALC-RFC-006
+status: PROPOSED
+bootstrap-ts: 2025-10-27T09:45:00Z
+worker-id: tgk-email-orchestrator
+d1-id: tgk_email_metadata
+r2-bucket: tgk-email-attachments
+phase6-deployment: .github/rfc006/phase-6-deployment.yml
+email-routing-rule: Catch-all *@cloudflare.com → tgk-email-orchestrator active
+rollback: wrangler delete tgk-email-orchestrator && wrangler d1 delete tgk_email_metadata -y

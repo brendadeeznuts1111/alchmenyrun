@@ -1,0 +1,54 @@
+{
+  "dashboard": {
+    "title": "Phase-6 Email Orchestration",
+    "tags": ["alchemist", "email", "phase6"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "Email Routing Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(tgk_email_routing_total[5m])",
+            "legendFormat": "Emails/sec"
+          }
+        ]
+      },
+      {
+        "title": "Routing by Domain",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (domain) (tgk_email_routing_total)",
+            "legendFormat": "{{domain}}"
+          }
+        ]
+      },
+      {
+        "title": "Routing by Priority",
+        "type": "barchart",
+        "targets": [
+          {
+            "expr": "sum by (hierarchy) (tgk_email_routing_total)",
+            "legendFormat": "{{hierarchy}}"
+          }
+        ]
+      },
+      {
+        "title": "AI Analysis Coverage",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(ai_analysis_total) / count(email_routing_total) * 100",
+            "legendFormat": "AI Coverage %"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

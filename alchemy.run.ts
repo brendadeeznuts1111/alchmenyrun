@@ -156,7 +156,8 @@ export const website = await Worker("website", {
 
     // Storage bindings
     STORAGE: resources.storage,
-    CACHE: resources.cache,
+    // Temporarily disable KV bindings to allow cleanup during deployment
+    // CACHE: resources.cache,
 
     // Compute bindings
     JOBS: resources.jobs,
@@ -230,10 +231,10 @@ const workflowNamespace = await AlchemyWorkflow("onboarding", {
 //     DB: db,
 //     STORAGE: storage,
 //     JOBS: jobs,
-//     CACHE: cache,
+//     // CACHE: cache,
 //     CHAT: ChatDurableObject,
 //     WORKFLOW: OnboardingWorkflow,
-//     MCP_KV: mcpKv,
+//     // MCP_KV: mcpKv,
 //     // MCP Secrets
 //     MCP_SHARED_SECRET: alchemy.secret(process.env.MCP_SHARED_SECRET || ""),
 //     MCP_JWT_SECRET: alchemy.secret(process.env.MCP_JWT_SECRET || ""),
@@ -285,6 +286,23 @@ await Worker("github-webhook", {
     COUNCIL_ID: process.env.TELEGRAM_COUNCIL_ID || "",
     TOPIC_MOBILE: process.env.TELEGRAM_TOPIC_MOBILE || "",
     TOPIC_FORUM: process.env.TELEGRAM_TOPIC_FORUM || "",
+  },
+  profile: "ci",
+});
+
+// TGK Orchestrator - AI-Driven Customer & Release Orchestration
+await Worker("tgk-orchestrator", {
+  entrypoint: "./workers/tgk-orchestrator/index.ts",
+  bindings: {
+    AI: ai, // Cloudflare AI gateway
+    OPA: process.env.OPA_ENDPOINT || "https://opa.alchemy.run",
+    D12: process.env.D12_ENDPOINT || "https://d12.alchemy.run",
+  },
+  secrets: {
+    OPENAI_API_KEY: alchemy.secret(process.env.OPENAI_API_KEY || ""),
+    D12_TOKEN: alchemy.secret(process.env.D12_TOKEN || ""),
+    TELEGRAM_BOT_TOKEN: alchemy.secret(process.env.TELEGRAM_BOT_TOKEN || ""),
+    TELEGRAM_COUNCIL_ID: alchemy.secret(process.env.TELEGRAM_COUNCIL_ID || ""),
   },
   profile: "ci",
 });

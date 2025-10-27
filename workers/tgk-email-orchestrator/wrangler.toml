@@ -1,0 +1,33 @@
+name = "tgk-email-orchestrator"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+# Email routing handled via API in bootstrap script
+
+# Environment variables (production defaults)
+[vars]
+TGK_INTERNAL_API_URL = "https://tgk.alchemy.run/internal"
+TELEGRAM_DEFAULT_CHAT_ID = "@general"
+TELEGRAM_ONCALL_CHAT_ID = "@oncall_team"
+TELEGRAM_SRE_CHAT_ID = "@sre_team"
+TELEGRAM_SUPPORT_CHAT_ID = "@support_team"
+
+# KV namespace for email caching (disabled for now)
+# [[kv_namespaces]]
+# binding = "EMAIL_CACHE"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
+
+# D1 database for audit logs
+[[d1_databases]]
+binding = "DB"
+database_name = "tgk_email_metadata"
+database_id = "c4c5dfd2-3d00-4083-b644-5cacb372d007"
+
+# Observability
+[observability]
+enabled = true
+
+# Limits
+[limits]
+cpu_ms = 50000

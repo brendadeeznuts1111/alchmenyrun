@@ -1,0 +1,91 @@
+{
+  "test_environments": {
+    "test-do-006": {
+      "stage": "test-do-006",
+      "profile": "ci",
+      "description": "Test environment for micro-rfc-006 DO integration",
+      "telegram_bot_token": "${TELEGRAM_BOT_TOKEN}",
+      "council_id": "${TELEGRAM_COUNCIL_ID}",
+      "webhook_base_url": "github-webhook.alchmenyrun.workers.dev",
+      "cloudflare_api_token": "${CLOUDFLARE_API_TOKEN}"
+    }
+  },
+  "test_scenarios": {
+    "do_thread_safety": {
+      "name": "DO Thread Safety & State Persistence",
+      "script": "run-do-tests.sh",
+      "timeout_seconds": 300,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID"]
+    },
+    "rfc_lifecycle": {
+      "name": "RFC Lifecycle & Templating",
+      "script": "run-rfc-lifecycle-tests.sh",
+      "timeout_seconds": 600,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID", "GITHUB_TOKEN"]
+    },
+    "notifications": {
+      "name": "Notifications & Rate Limiting",
+      "script": "run-notification-tests.sh",
+      "timeout_seconds": 900,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID"]
+    },
+    "cleanup": {
+      "name": "Garbage Collection & Cleanup",
+      "script": "run-cleanup-tests.sh",
+      "timeout_seconds": 300,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID"]
+    },
+    "observability": {
+      "name": "Observability & Auditing",
+      "script": "run-observability-tests.sh",
+      "timeout_seconds": 450,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID", "LOKI_URL"]
+    },
+    "resources": {
+      "name": "Resource Usage & Cost Attribution",
+      "script": "run-resource-tests.sh",
+      "timeout_seconds": 600,
+      "required_env_vars": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_COUNCIL_ID", "CLOUDFLARE_API_TOKEN"]
+    }
+  },
+  "test_data": {
+    "test_streams": [
+      "do-test-concurrency",
+      "do-test-rfc", 
+      "do-test-cleanup",
+      "resource-test-stream",
+      "audit-test-stream"
+    ],
+    "test_users": [
+      "@alice.smith",
+      "@brendadeeznuts1111", 
+      "@diana.prince",
+      "@test.user1",
+      "@test.user2"
+    ],
+    "sample_rfc_data": {
+      "title": "DO Integration Test",
+      "template": "product",
+      "executive_summary": "Test RFC for DO integration validation",
+      "approvals_needed": 5
+    }
+  },
+  "thresholds": {
+    "max_concurrent_webhooks": 2,
+    "max_pinned_messages": 1,
+    "max_nudges_per_15min": 3,
+    "max_do_latency_ms": 1000,
+    "max_monthly_cost_usd": 1.0,
+    "min_audit_entries": {
+      "rfc_approve": 5,
+      "stream_create": 1,
+      "rfc_submit": 1
+    }
+  },
+  "cleanup": {
+    "auto_cleanup": true,
+    "cleanup_after_tests": true,
+    "retention_days": 1,
+    "cleanup_script": "cleanup-test-environment.sh"
+  }
+}

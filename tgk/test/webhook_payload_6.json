@@ -1,0 +1,18 @@
+{
+  "action": "opened",
+  "pull_request": {
+    "number": 1006,
+    "title": "Resource Test PR 6",
+    "body": "Test PR for resource usage testing",
+    "head": {
+      "ref": "test-branch-6"
+    },
+    "base": {
+      "ref": "main"
+    }
+  },
+  "repository": {
+    "name": "alchmenyrun",
+    "full_name": "brendadeeznuts1111/alchmenyrun"
+  }
+}

@@ -1,0 +1,54 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    if: github.event.repository.full_name == 'brendadeeznuts1111/alchmenyrun'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          bun install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          bun link
+
+      - name: Record tagging start time
+        run: |
+          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ): Issue #${{ github.event.issue.number }} triage started" >> metrics/tagging-times.log
+
+      - name: AI-powered issue triage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          echo "Triaging issue #$ISSUE_NUMBER..."
+
+          # Run AI triage with error handling
+          if tgk issue triage $ISSUE_NUMBER; then
+            echo "$(date -u +%Y-%m-%dT%H:%M:%SZ): Issue #${ISSUE_NUMBER} successfully tagged" >> metrics/tagging-times.log
+          else
+            echo "⚠️ AI triage failed, applying fallback labels"
+            # Apply basic fallback labels
+            gh issue edit $ISSUE_NUMBER --add-label "status/needs-review,priority/medium"
+            echo "$(date -u +%Y-%m-%dT%H:%M:%SZ): Issue #${ISSUE_NUMBER} fallback tagged" >> metrics/tagging-times.log
+          fi
+
+          echo "✅ Issue triage completed"

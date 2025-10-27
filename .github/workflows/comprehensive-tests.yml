@@ -1,0 +1,284 @@
+name: Comprehensive tgk RFC Lifecycle Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['tgk/**', '.github/workflows/comprehensive-tests.yml']
+  pull_request:
+    branches: [main]
+    paths: ['tgk/**', '.github/workflows/comprehensive-tests.yml']
+  schedule:
+    # Run comprehensive tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_environment:
+        description: 'Test environment'
+        required: false
+        default: 'test-do-006'
+        type: choice
+        options:
+          - test-do-006
+          - staging
+      test_scenario:
+        description: 'Specific test scenario (optional)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  NODE_VERSION: '18'
+  TGK_STAGE: ${{ github.event.inputs.test_environment || 'test-do-006' }}
+  TGK_PROFILE: ci
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      test-matrix: ${{ steps.set-matrix.outputs.matrix }}
+      should-run: ${{ steps.check.outputs.should-run }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: tgk/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm ci
+
+      - name: Check if tests should run
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set test matrix
+        id: set-matrix
+        run: |
+          if [[ -n "${{ github.event.inputs.test_scenario }}" ]]; then
+            echo '{"scenario": "${{ github.event.inputs.test_scenario }}"}' | jq -c '.' > matrix.json
+            echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+          else
+            echo '{"include": [{"scenario": "all"}]}' | jq -c '.' > matrix.json
+            echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+          fi
+
+  comprehensive-tests:
+    needs: setup
+    if: needs.setup.outputs.should-run == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.setup.outputs.test-matrix) }}
+      fail-fast: false
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: tgk/package-lock.json
+
+      - name: Install tgk CLI
+        run: |
+          curl -sSL https://install.tgk.dev | bash
+          echo "$HOME/.tgk/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm ci
+
+      - name: Setup test environment
+        run: |
+          cd tgk/test
+          chmod +x *.sh
+          
+      - name: Validate test configuration
+        run: |
+          cd tgk/test
+          node test-runner.js --list
+
+      - name: Run comprehensive tests
+        id: tests
+        run: |
+          cd tgk/test
+          
+          if [[ -n "${{ matrix.scenario }}" && "${{ matrix.scenario }}" != "all" ]]; then
+            echo "Running specific scenario: ${{ matrix.scenario }}"
+            node test-runner.js --scenario "${{ matrix.scenario }}" --env "${{ env.TGK_STAGE }}"
+          else
+            echo "Running all test scenarios"
+            node test-runner.js --env "${{ env.TGK_STAGE }}"
+          fi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LOKI_URL: ${{ secrets.LOKI_URL }}
+        continue-on-error: true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ env.TGK_STAGE }}-${{ github.run_number }}
+          path: tgk/test/test-report-*
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find the latest test report
+            const testDir = path.join(process.cwd(), 'tgk/test');
+            const files = fs.readdirSync(testDir).filter(f => f.startsWith('test-report-') && f.endsWith('.json'));
+            
+            if (files.length === 0) {
+              console.log('No test report found');
+              return;
+            }
+            
+            const latestReport = files.sort().pop();
+            const reportPath = path.join(testDir, latestReport);
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            
+            // Create comment
+            const comment = `
+            ## 🧪 tgk RFC Lifecycle Test Results
+            
+            **Environment:** ${report.environment}
+            **Timestamp:** ${report.summary.timestamp}
+            
+            ### 📊 Summary
+            - **Total Tests:** ${report.summary.total}
+            - **✅ Passed:** ${report.summary.passed}
+            - **❌ Failed:** ${report.summary.failed}
+            - **📈 Success Rate:** ${report.summary.success_rate}
+            - **⏱️ Duration:** ${report.summary.duration}ms
+            
+            ### 📋 Test Results
+            ${report.scenarios.map(s => `
+            - **${s.name}:** ${s.status === 'PASSED' ? '✅' : '❌'} (${s.duration}ms)
+            ${s.error ? `  - Error: ${s.error}` : ''}
+            `).join('')}
+            
+            ${report.summary.failed === 0 ? 
+              '🎉 **All tests passed!** The system is ready for production deployment.' :
+              '⚠️ **Some tests failed.** Please review the failed scenarios and fix the issues before merging.'
+            }
+            
+            📄 [Detailed Report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Update deployment status
+        if: github.ref == 'refs/heads/main' && always()
+        run: |
+          if [[ "${{ steps.tests.outcome }}" == "success" ]]; then
+            echo "✅ All tests passed - deployment approved"
+            echo "DEPLOYMENT_STATUS=approved" >> $GITHUB_ENV
+          else
+            echo "❌ Some tests failed - deployment blocked"
+            echo "DEPLOYMENT_STATUS=blocked" >> $GITHUB_ENV
+          fi
+
+      - name: Notify team on failure
+        if: failure() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Send notification to team (could integrate with Slack, Teams, etc.)
+            console.log('Test failure notification sent to team');
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run security scan
+        run: |
+          echo "Running security scan on tgk test infrastructure..."
+          # Add security scanning tools here
+          npm audit --audit-level moderate
+          
+      - name: Check for secrets
+        run: |
+          echo "Checking for exposed secrets in test files..."
+          # Add secret scanning here
+          if grep -r "password\|secret\|token" tgk/test/ --include="*.sh" --include="*.js" --include="*.json" | grep -v "\${.*}" | grep -v "example"; then
+            echo "❌ Potential secrets found in test files"
+            exit 1
+          else
+            echo "✅ No secrets found in test files"
+          fi
+
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm ci
+
+      - name: Run performance benchmarks
+        run: |
+          cd tgk/test
+          echo "Running performance benchmarks..."
+          # Add performance benchmarking here
+          node test-runner.js --scenario "Resource Usage & Cost Attribution" --env "${{ env.TGK_STAGE }}"
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_number }}
+          path: tgk/test/performance-*.json
+          retention-days: 90

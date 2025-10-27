@@ -1,0 +1,56 @@
+[service]
+name = "tgk-orchestrator"
+version = "1.0.0"
+health_check_path = "/health"
+metrics_path = "/metrics"
+
+[health]
+timeout = 5000
+checks = ["ai", "telegram", "database", "opa"]
+
+[metrics]
+enabled = true
+endpoint = "/metrics"
+
+[endpoints]
+[endpoints.health]
+path = "/health"
+method = "GET"
+description = "Service health check with component status"
+
+[endpoints.metrics]
+path = "/metrics"
+method = "GET"
+description = "Prometheus-compatible metrics endpoint"
+
+[endpoints.policy_check]
+path = "/api/v1/policy/check"
+method = "POST"
+description = "OPA policy evaluation endpoint"
+
+[endpoints.customer_notify]
+path = "/api/v1/customer/notify"
+method = "POST"
+description = "Customer notification dispatch"
+
+[endpoints.ai_label]
+path = "/api/v1/ai/label"
+method = "POST"
+description = "AI-powered GitHub issue labeling"
+
+[monitoring]
+[monitoring.alerts]
+[monitoring.alerts.service_unhealthy]
+threshold = 1
+duration = "30s"
+message = "TGK Orchestrator service is unhealthy"
+
+[monitoring.alerts.high_error_rate]
+threshold = 0.1
+duration = "5m"
+message = "High error rate detected in TGK Orchestrator"
+
+[monitoring.alerts.slow_requests]
+threshold = 2.0
+duration = "5m"
+message = "Slow requests detected in TGK Orchestrator"
