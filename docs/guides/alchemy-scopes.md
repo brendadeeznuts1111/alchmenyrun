@@ -52,7 +52,7 @@ await alchemy("my-app", {
 
 ### Remaining Work
 
-See [Issue #38](https://github.com/brendadeeznuts1111/alchmenyrun/issues/38) for tracking:
+See [Issue #44](https://github.com/brendadeeznuts1111/alchmenyrun/issues/44) for tracking:
 
 1. **State-file locking** – prevent concurrent CI jobs on same stage.  
 2. **Granular finalize** – `scope.finalizeNested()` to clean one nested block.  

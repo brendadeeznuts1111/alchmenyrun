@@ -56,7 +56,7 @@ a PR stage may be **deployed** with the `ci` profile and **read** by the `prod` 
 No configuration is required on first clone.
 
 ### Planned Enhancements
-See [Issue #37](https://github.com/brendadeeznuts1111/alchmenyrun/issues/37) for tracking:
+See [Issue #43](https://github.com/brendadeeznuts1111/alchmenyrun/issues/43) for tracking:
 1. Auto-refresh in `deploy` when `expires_at < now()`.
 2. `alchemy profile rotate` – re-key without logout.
 3. Per-provider credential plugins (AWS SSO, GCP ADC).
