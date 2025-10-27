@@ -502,7 +502,52 @@ export TELEGRAM_BOT_TOKEN='your_token'
 
 ---
 
-## 10. Acknowledgments
+## 10. Version Management with Bun Semver
+
+`tgk` versions are now managed by **Bun's semver API** (20x faster than node-semver):
+
+- **Standard Releases:** `bun run version:patch|minor|major`
+- **Canary Releases:** `bun run version:canary` → `4.4.1-canary.0`
+- **Source of Truth:** `.tgk/VERSION` + `package.json`
+
+### Roll-Forward (Upgrade)
+
+```bash
+# Standard release
+bun run version:patch  # 4.4.0 → 4.4.1
+bun run version:release  # Commit, tag, push
+
+# Canary release
+git checkout -b release/canary-v4.4.1
+bun run version:canary  # 4.4.0 → 4.4.1-canary.0
+git add . && git commit -m "chore(canary): v4.4.1-canary.0"
+git push origin release/canary-v4.4.1
+```
+
+**Time:** ≤ 30 seconds
+
+### Roll-Back (Downgrade)
+
+```bash
+# To previous version
+git checkout v4.4.0
+cp ~/.local/bin/tgk-backup-v4.4.0 ~/.local/bin/tgk
+
+# Or reinstall specific version
+curl -Ls https://raw.githubusercontent.com/brendadeeznuts1111/alchmenyrun/v4.4.0/scripts/install-tgk.sh | bash
+```
+
+**Time:** ≤ 1 minute
+
+### Version Scripts
+
+- `scripts/version-bump.ts` - Bump versions using Bun semver
+- `scripts/version-release.ts` - Full release automation
+- `.github/workflows/release.yml` - CI/CD release pipeline
+
+---
+
+## 11. Acknowledgments
 
 **Built by:** Cascade AI  
 **Sponsored by:** @brendadeeznuts1111 (Naming Czar)  

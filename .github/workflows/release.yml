@@ -1,0 +1,174 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.tgk/VERSION'
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - canary
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Get bump type
+        id: bump_type
+        run: |
+          if [ "${{ github.event.inputs.bump_type }}" ]; then
+            echo "bump_type=${{ github.event.inputs.bump_type }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-detect based on commit message
+            COMMIT_MSG=$(git log --oneline -1)
+            if echo "$COMMIT_MSG" | grep -q "BREAKING\|BREAKING CHANGE"; then
+              echo "bump_type=major" >> $GITHUB_OUTPUT
+            elif echo "$COMMIT_MSG" | grep -q "feat:"; then
+              echo "bump_type=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump_type=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          BUMP_TYPE="${{ steps.bump_type.outputs.bump_type }}"
+          echo "Bumping version with type: $BUMP_TYPE"
+
+          # Run version bump script
+          bun run scripts/version-bump.ts "$BUMP_TYPE"
+
+          # Get new version
+          NEW_VERSION=$(cat .tgk/VERSION)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "::set-output name=new_version::$NEW_VERSION"
+
+      - name: Commit version changes
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .tgk/VERSION package.json
+          git commit -m "chore(release): bump version to v${NEW_VERSION}" || echo "No changes to commit"
+
+      - name: Create release tag
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          TAG_NAME="v${NEW_VERSION}"
+
+          # Create annotated tag
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+
+          # Push commits and tag
+          git push origin main
+          git push origin "$TAG_NAME"
+
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump_version.outputs.new_version }}
+          release_name: Release v${{ steps.bump_version.outputs.new_version }}
+          body: |
+            ## Changes
+
+            Automated release triggered by commit to main branch.
+
+            ### Version Details
+            - **Previous version:** ${{ github.event.before }}
+            - **New version:** v${{ steps.bump_version.outputs.new_version }}
+            - **Bump type:** ${{ steps.bump_type.outputs.bump_type }}
+
+            ### Files Changed
+            - `.tgk/VERSION`
+            - `package.json`
+
+            ---
+            **Forum Polish Status:** Boring plumbing ✅
+          draft: false
+          prerelease: ${{ contains(steps.bump_version.outputs.new_version, 'canary') }}
+
+  canary-release:
+    if: contains(github.event.inputs.bump_type || '', 'canary') || contains(github.ref, 'canary')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Bump canary version
+        run: |
+          bun run scripts/version-bump.ts canary
+
+      - name: Create canary branch
+        run: |
+          NEW_VERSION=$(cat .tgk/VERSION)
+          BRANCH_NAME="release/canary-v${NEW_VERSION}"
+
+          git checkout -b "$BRANCH_NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .tgk/VERSION package.json
+          git commit -m "chore(canary): bump to v${NEW_VERSION}"
+          git push origin "$BRANCH_NAME"
+
+      - name: Create canary tag
+        run: |
+          NEW_VERSION=$(cat .tgk/VERSION)
+          TAG_NAME="v${NEW_VERSION}"
+
+          git tag -a "$TAG_NAME" -m "Canary release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+      - name: Create canary release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump_version.outputs.new_version }}
+          release_name: Canary v${{ steps.bump_version.outputs.new_version }}
+          body: |
+            ## Canary Release
+
+            Pre-release version for testing ongoing development.
+
+            ### Version Details
+            - **Version:** v${{ steps.bump_version.outputs.new_version }}
+            - **Branch:** release/canary-v${{ steps.bump_version.outputs.new_version }}
+
+            ### Installation
+            ```bash
+            # Install canary version
+            curl -Ls https://raw.githubusercontent.com/brendadeeznuts1111/alchmenyrun/canary-v${{ steps.bump_version.outputs.new_version }}/scripts/install-tgk.sh | bash
+            ```
+
+            ---
+            **⚠️ This is a pre-release. Use at your own risk.**
+          draft: false
+          prerelease: true

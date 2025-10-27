@@ -1,6 +1,6 @@
 {
   "name": "alchmenyrun",
-  "version": "0.1.0",
+  "version": "4.4.0",
   "description": "Modern Cloudflare Infrastructure with Alchemy",
   "type": "module",
   "scripts": {
@@ -33,7 +33,6 @@
     "kit:build": "bun build packages/@alch/bun-runtime/src/index.ts --outdir dist/bun-runtime --target bun && bun build packages/@alch/mcp-server/src/index.ts --outdir dist/mcp-server --target bun",
     "kit:dev": "bun run mcp:claude & alchemy dev",
     "kit:new": "bun run packages/@alch/cli/bin/alchemy-kit.js generate",
-    "kit:release": "npm version prerelease && git push --tags",
     "app:new": "./scripts/create-app.sh",
     "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom",
     "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts",
@@ -47,7 +46,12 @@
     "telegram:ecosystem:cloudflare": "./scripts/tgk-cf",
     "telegram:ecosystem:customer": "./scripts/tgk-customer",
     "telegram:ecosystem:webapp": "./scripts/tgk-webapp",
-    "telegram:ai:remediate": "./infra/telegram/auto-remediate.sh"
+    "telegram:ai:remediate": "./infra/telegram/auto-remediate.sh",
+    "version:patch": "bun run scripts/version-bump.ts patch",
+    "version:minor": "bun run scripts/version-bump.ts minor",
+    "version:major": "bun run scripts/version-bump.ts major",
+    "version:canary": "bun run scripts/version-bump.ts canary",
+    "version:release": "bun run scripts/version-release.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
@@ -67,6 +71,7 @@
     "miniflare": "4.20251011.1",
     "oxfmt": "^0.5.0",
     "postcss": "8.5.6",
+    "semver": "7.7.3",
     "tailwindcss": "3",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"

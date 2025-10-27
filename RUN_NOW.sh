@@ -90,18 +90,44 @@ POLISHED_AFTER=$(jq -r '.polished_topics' /tmp/audit-after.json)
 echo "   ✅ Polished: $POLISHED_AFTER/$TOTAL topics"
 echo ""
 
-# 6. Done
+# 6. Version bump
+echo "6️⃣ Version bump..."
+CURRENT_VERSION=$(cat .tgk/VERSION)
+echo "   Current version: $CURRENT_VERSION"
+
+read -p "Bump version? (patch/minor/major/canary): " BUMP_TYPE
+if [[ "$BUMP_TYPE" =~ ^(patch|minor|major|canary)$ ]]; then
+    bun run scripts/version-bump.ts "$BUMP_TYPE"
+    NEW_VERSION=$(cat .tgk/VERSION)
+    echo "   ✅ Version bumped: $CURRENT_VERSION → $NEW_VERSION"
+else
+    echo "   ⚠️  Skipping version bump"
+    NEW_VERSION=$CURRENT_VERSION
+fi
+echo ""
+
+# 7. Commit & tag
+echo "7️⃣ Committing changes..."
+git add .tgk/meta/forum-polish.jsonl .tgk/VERSION package.json
+git commit -m "feat: forum polish applied - $NEW_VERSION"
+echo "   ✅ Changes committed"
+
+echo ""
+echo "   🏷️  Creating release tag..."
+git tag -a "v$NEW_VERSION" -m "Forum Polish v$NEW_VERSION - Shipped & Retired"
+git push origin main
+git push origin "v$NEW_VERSION"
+echo "   ✅ Tag v$NEW_VERSION pushed"
+echo ""
+
+# 8. Done
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🎉 SHIPPED & RETIRED!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Next steps:"
 echo "  1. Verify in Telegram app (visual check)"
-echo "  2. Commit audit ledger:"
-echo "     git add .tgk/meta/forum-polish.jsonl"
-echo "     git commit -m 'chore: forum polish ship - $(date +%F)'"
-echo "  3. Create release tag:"
-echo "     git tag -a v4.4.0-discovery -m 'Forum Polish DONE'"
-echo "     git push origin v4.4.0-discovery"
+echo "  2. Monitor quarterly automation (Jan 1, 2026)"
+echo "  3. Watch for GitHub Actions sign-off ceremony"
 echo ""
 echo "The forum is now boring-beautiful! 🎨"
