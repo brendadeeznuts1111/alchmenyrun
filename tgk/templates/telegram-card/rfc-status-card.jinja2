@@ -1,0 +1,18 @@
+🤖 **RFC: {{ rfc.id }} - {{ rfc.title }}**
+━━━━━━━━━━━━━━━━━━━━
+✨ **Status:** {{ rfc.current_status | upper }}
+{% if rfc.approvals_needed and rfc.approvals_needed > 0 %}
+👥 **Approvals Needed:** {{ rfc.approvals_needed - rfc.approvals_received }} / {{ rfc.approvals_needed }}
+{% endif %}
+**Summary:** {{ rfc.executive_summary | truncate(200) }}
+━━━━━━━━━━━━━━━━━━━━
+🗓️ **Submitted:** {{ rfc.submit_date | date_format('%Y-%m-%d') }}
+⏱️ **SLA Remaining:** {{ rfc.sla_remaining_hours }} hours
+🔗 **Full Spec:** [View RFC on GitHub](https://github.com/brendadeeznuts1111/alchmenyrun/blob/main/rfcs/{{ rfc.id }}.md)
+🚀 **PR:** [View PR #{{ rfc.pr_number }}](https://github.com/brendadeeznuts1111/alchmenyrun/pull/{{ rfc.pr_number }})
+
+{% if rfc.current_status == 'APPROVED' %}
+🎉 **This RFC is APPROVED and ready for merge!**
+{% else %}
+📋 **Council Review Required** - Please review and approve
+{% endif %}

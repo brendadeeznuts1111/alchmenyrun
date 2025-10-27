@@ -45,7 +45,17 @@
     "telegram:rollback": "./scripts/telegram-rollback.sh",
     "telegram:replace-card": "./scripts/replace-card.sh",
     "telegram:unpin": "./scripts/unpin.sh",
-    "telegram:cli": "./scripts/tgk"
+    "telegram:cli": "./scripts/tgk",
+    "scope:list": "bun run src/scope/scope-cli.ts list",
+    "scope:inspect": "bun run src/scope/scope-cli.ts inspect",
+    "scope:state": "bun run src/scope/scope-cli.ts state",
+    "scope:stats": "bun run src/scope/scope-cli.ts stats",
+    "scope:deploy:staging": "ALCHEMY_PROFILE=staging bun run deploy --stage staging",
+    "scope:test:staging": "ALCHEMY_PROFILE=staging bun run scope:test --stage staging",
+    "scope:cleanup:staging": "bun run src/commands/finalize.ts --app cloudflare-demo --stage staging --dry-run",
+    "scope:monitor": "bun run scripts/scope-monitor.ts",
+    "scope:training": "bun run scripts/scope-training.ts",
+    "scope:comprehensive:test": "bun run scripts/staging-scope-test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

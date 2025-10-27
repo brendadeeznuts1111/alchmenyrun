@@ -1,3 +1,7 @@
+# RFC Process (Alchemist Core Council) - Lead: @brendadeeznuts1111
+rfcs/* @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
+micro-rfc-* @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
+
 # Project Alchemist - CODEOWNERS Configuration
 # This file automatically requests reviews from the appropriate teams based on file paths
 
@@ -66,6 +70,12 @@ postcss.config.js @alice.smith @infra_dev2
 alchemy.run.ts @alice.smith @infra_dev2
 alchemy.run.js @alice.smith @infra_dev2
 src/* @alice.smith @infra_dev2
+
+# Scope System (New Feature) - Infrastructure Team ownership
+src/scope/* @alice.smith @infra_dev2
+scripts/scope-*.ts @alice.smith @infra_dev2
+SCOPE_DEPLOYMENT_CHECKLIST.md @alice.smith @infra_dev2 @frank.taylor
+.github/workflows/scope-cleanup.yml @alice.smith @infra_dev1 @diana.prince
 
 # Cross-functional files (require multiple team approvals)
 CLAUDE.md @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor

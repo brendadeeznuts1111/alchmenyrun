@@ -252,9 +252,17 @@ PHASE=destroy bun run deploy --stage prod
 
 This demo follows Alchemy's architecture principles and recommended setup:
 
-### Scope Hierarchy
+### Alchemy Scope System
 
-This project implements Alchemy's hierarchical scope structure for optimal organization:
+This project implements Alchemy's hierarchical scope system for optimal resource organization, isolation, and cleanup. The scope system provides:
+
+- **Hierarchical Isolation**: Application → Stage → Nested → Resource scopes
+- **Automatic Cleanup**: Garbage collection of orphaned resources
+- **Distributed Locking**: Safe concurrent CI/CD deployments
+- **State Management**: Conflict-resistant state files with versioning
+- **Test Isolation**: Automatic cleanup for testing environments
+
+#### Scope Hierarchy
 
 ```
 cloudflare-demo (Application Scope)
@@ -272,6 +280,16 @@ cloudflare-demo (Application Scope)
 └── prod/ (Stage Scope - production)
     └── [same structure as above]
 ```
+
+#### Key Features
+
+- **Resource Isolation**: Each scope maintains separate state and resources
+- **Automatic Finalization**: `await app.finalize()` cleans up orphaned resources
+- **Concurrent Safety**: Distributed locking prevents CI job conflicts
+- **State Backup**: Automatic versioning of state files
+- **Test Support**: `alchemy.test()` provides isolated test environments
+
+📖 **[Complete Scope System Documentation](./docs/guides/ALCHEMY_SCOPES.md)**
 
 ### Apps & Stages
 

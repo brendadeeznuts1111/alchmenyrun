@@ -50,15 +50,29 @@ esac
 FORMATTED_MSG="$EMOJI **$PHASE** - $STATUS
 $MSG"
 
-# Send message via Telegram Bot API
-curl -X POST \
+# Send message via Telegram Bot API with topic and pinning support
+MESSAGE_ID=$(curl -X POST \
   "https://api.telegram.org/bot${TOKEN}/sendMessage" \
   -d chat_id="${CHAT}" \
   -d text="${FORMATTED_MSG}" \
   -d parse_mode=Markdown \
   -d disable_web_page_preview=true \
+  -d message_thread_id="${TELEGRAM_TOPIC_FORUM:-}" \
   --silent \
   --show-error \
-  --fail
+  --fail | jq -r '.result.message_id')
 
-echo "Message sent to Telegram chat $CHAT"
+echo "Message sent to Telegram chat $CHAT, message ID: $MESSAGE_ID"
+
+# Pin message if it's a status update or RFC review
+if [[ "$PHASE" == "RFC Review" || "$PHASE" == "Forum Polish" ]]; then
+  curl -X POST \
+    "https://api.telegram.org/bot${TOKEN}/pinChatMessage" \
+    -d chat_id="${CHAT}" \
+    -d message_id="${MESSAGE_ID}" \
+    -d disable_notification=true \
+    --silent \
+    --show-error \
+    --fail
+  echo "Message pinned in forum topic $TELEGRAM_TOPIC_FORUM"
+fi

@@ -290,5 +290,22 @@ await Worker("github-webhook", {
   profile: "ci",
 });
 
+// TGK Orchestrator - AI-Driven Customer & Release Orchestration
+await Worker("tgk-orchestrator", {
+  entrypoint: "./workers/tgk-orchestrator/index.ts",
+  bindings: {
+    AI: ai, // Cloudflare AI gateway
+    OPA: process.env.OPA_ENDPOINT || "https://opa.alchemy.run",
+    D12: process.env.D12_ENDPOINT || "https://d12.alchemy.run",
+  },
+  secrets: {
+    OPENAI_API_KEY: alchemy.secret(process.env.OPENAI_API_KEY || ""),
+    D12_TOKEN: alchemy.secret(process.env.D12_TOKEN || ""),
+    TELEGRAM_BOT_TOKEN: alchemy.secret(process.env.TELEGRAM_BOT_TOKEN || ""),
+    TELEGRAM_COUNCIL_ID: alchemy.secret(process.env.TELEGRAM_COUNCIL_ID || ""),
+  },
+  profile: "ci",
+});
+
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();

@@ -1,0 +1,79 @@
+# bunfig.toml - Enhanced configuration for Bun's latest testing features
+[install]
+# Install configuration
+registry = "https://registry.npmjs.org"
+saveTextLockfile = false
+
+[test]
+# Test configuration for latest features
+preload = ["./test-setup.ts"]
+timeout = 30000
+
+# Enable concurrent testing with maximum concurrency
+concurrent = true
+maxConcurrency = 25
+
+# Randomize test order to detect dependencies
+randomize = true
+# seed = "consistent-order-12345" # Uncomment for reproducible randomization
+
+# Allow tests to pass when no tests are found
+passWithNoTests = true
+
+# Show only failures for cleaner output
+onlyFailures = false # Set to true in CI for cleaner logs
+
+# Coverage configuration
+coverage = true
+coverageThreshold = 0.8
+coveragePathIgnorePatterns = [
+  "node_modules/",
+  "test/fixtures/",
+  "*.test.ts",
+  "*.spec.ts"
+]
+
+# Test file patterns
+include = ["**/*.test.ts", "**/*.spec.ts"]
+exclude = ["node_modules/**", "dist/**"]
+
+# Snapshot configuration
+updateSnapshots = false # Set to true when updating snapshots
+
+# Environment variables for testing
+[env]
+NODE_ENV = "test"
+TGK_STAGE = "test-do-006"
+TGK_PROFILE = "ci"
+BUN_TEST_CONCURRENT = "true"
+
+# CI environment settings
+[test.ci]
+# Stricter settings for CI environments
+passWithNoTests = true
+onlyFailures = true
+randomize = true
+updateSnapshots = false
+
+# Fail on test.only() in CI
+failOnTestOnly = true
+# Fail on new snapshots without --update-snapshots in CI  
+failOnNewSnapshots = true
+
+# Coverage configuration (if needed)
+[coverage]
+enabled = true
+reporter = "text"
+include = ["src/**/*.ts"]
+exclude = ["**/*.test.ts", "**/*.spec.ts", "node_modules/**"]
+
+# Linting (if using Bun's built-in linter)
+[lint]
+enabled = false
+
+# Bundling (for production builds)
+[build]
+entrypoints = ["./src/index.ts"]
+outdir = "./dist"
+minify = true
+sourcemap = "linked"

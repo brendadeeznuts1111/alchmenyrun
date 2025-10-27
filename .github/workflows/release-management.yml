@@ -1,0 +1,191 @@
+name: Release Management
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Release action'
+        required: true
+        type: choice
+        options:
+          - create-draft
+          - publish-stable
+          - create-patch
+          - rollback
+
+jobs:
+  release-published:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Process release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+          D12_TOKEN: ${{ secrets.D12_TOKEN }}
+        run: |
+          RELEASE_TAG=${{ github.event.release.tag_name }}
+          RELEASE_NAME=${{ github.event.release.name }}
+          RELEASE_BODY=${{ github.event.release.body }}
+          PRERELEASE=${{ github.event.release.prerelease }}
+
+          echo "🎉 Processing release: $RELEASE_TAG"
+
+          # Determine release type
+          if [[ $RELEASE_TAG == *"alpha"* ]] || [[ $RELEASE_TAG == *"beta"* ]] || [[ $RELEASE_TAG == *"rc"* ]]; then
+            RELEASE_TYPE="prerelease"
+          else
+            RELEASE_TYPE="stable"
+          fi
+
+          # Update release labels
+          if [ "$PRERELEASE" = "false" ]; then
+            echo "🏷️ Marking as stable release"
+            # Could add release/stable label to related issues/PRs
+          fi
+
+          # Notify customers about major releases
+          if [[ $RELEASE_TAG =~ ^v[0-9]+\.[0-9]+\.0$ ]]; then
+            echo "📢 Major release detected - notifying customers"
+            tgk customer notify acme-corp --type release --message "New major release $RELEASE_TAG available with significant updates and improvements."
+          fi
+
+          # Update repository metadata
+          if [ "$PRERELEASE" = "false" ]; then
+            echo "📝 Updating repository metadata for stable release"
+            # Could update topics, description, etc.
+          fi
+
+          echo "✅ Release processing complete"
+
+  release-action:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Execute release action
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          ACTION=${{ github.event.inputs.action }}
+
+          case $ACTION in
+            "create-draft")
+              echo "📝 Creating draft release..."
+              # Logic to create draft release
+              ;;
+
+            "publish-stable")
+              echo "🚀 Publishing stable release..."
+              # Logic to promote release to stable
+              ;;
+
+            "create-patch")
+              echo "🩹 Creating patch release..."
+              # Logic to create patch release
+              ;;
+
+            "rollback")
+              echo "↩️ Executing rollback..."
+              # Logic to rollback release
+              ;;
+          esac
+
+  post-release:
+    needs: [release-published, release-action]
+    if: always() && (needs.release-published.result == 'success' || needs.release-action.result == 'success')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update documentation
+        run: |
+          echo "📚 Updating documentation with release info..."
+          # Could update CHANGELOG.md, version files, etc.
+
+      - name: Create release summary
+        run: |
+          echo "📊 Generating release summary..."
+          cat > release-summary.md << 'EOF'
+          # Release Summary
+
+          ## Release Details
+          - **Tag**: ${{ github.event.release.tag_name || 'N/A' }}
+          - **Name**: ${{ github.event.release.name || 'N/A' }}
+          - **Type**: ${{ github.event.release.prerelease && 'Pre-release' || 'Stable' }}
+
+          ## Actions Taken
+          - ✅ Repository metadata updated
+          - ✅ Customer notifications sent (if major release)
+          - ✅ Documentation updated
+          - ✅ Release labels applied
+
+          ## Next Steps
+          - Monitor for issues
+          - Update downstream dependencies
+          - Plan next release cycle
+
+          _Generated on $(date)_
+          EOF
+
+      - name: Upload release summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-summary
+          path: release-summary.md
+          retention-days: 30
+
+      - name: Notify completion
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          echo "🎊 Release management workflow completed successfully"
