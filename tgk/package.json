@@ -1,0 +1,24 @@
+{
+  "name": "tgk-triage",
+  "version": "0.1.0",
+  "description": "TGK - AI-powered issue triage and orchestration CLI",
+  "main": "cli.ts",
+  "type": "module",
+  "bin": {
+    "tgk-triage": "./cli.ts"
+  },
+  "scripts": {
+    "start": "node cli.ts",
+    "test": "jest",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0"
+  }
+}
