@@ -160,10 +160,19 @@ echo "💬 Creating Telegram forum topic with emoji naming..."
 EMOJI=$(tgk stream emoji "$TYPE" 2>/dev/null || echo "🏷️")
 SHORT=$(tgk stream short "$TYPE" 2>/dev/null || echo "misc")
 
-# Create Telegram best-practice topic name (no slashes, kebab-case, owner at end)
+# Polish: ASCII-safe, no redundant slashes, en-dash, 24-char total limit
 OWNER_CLEAN="${OWNER#@}"  # Remove @ if present
-STREAM_KEBAB=$(echo "$STREAM" | tr ' ' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]')
-TOPIC_NAME="$EMOJI $SHORT-$STREAM_KEBAB–$OWNER_CLEAN"
+
+# Calculate max stream name length to fit 24-char total limit
+# emoji(1) + space(1) + short(3-4) + -(1) + name(X) + –(1) + owner(≤6) ≤ 24
+MAX_NAME_LEN=$((24 - 1 - 1 - ${#SHORT} - 1 - 1 - ${#OWNER_CLEAN}))
+if [ ${#STREAM} -gt $MAX_NAME_LEN ]; then
+    STREAM_TRIMMED="${STREAM:0:$MAX_NAME_LEN}"
+else
+    STREAM_TRIMMED="$STREAM"
+fi
+
+TOPIC_NAME="$EMOJI $SHORT-$STREAM_TRIMMED–$OWNER_CLEAN"
 
 echo "   📝 Topic name: $TOPIC_NAME"
 
@@ -287,6 +296,27 @@ Ready to innovate! 🎯" \
             -d parse_mode=Markdown > /dev/null
         
         echo "✅ Posted welcome message to topic"
+        
+        # Polish: Post search aliases as first additional message
+        SEARCH_TAGS="#$SHORT #$STREAM_TRIMMED"
+        ALIAS_MESSAGE="🔍 **Search Tags for this Stream**
+
+$SEARCH_TAGS
+
+💡 **Tip**: Use these tags to quickly find this stream in search!"
+        
+        # Get topic ID from the forum topics API
+        TOPIC_ID=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN:-}/getForumTopics?chat_id=${COUNCIL_ID:-}" | jq -r ".result[] | select(.name == \"$TOPIC_NAME\") | .message_thread_id" 2>/dev/null || echo "")
+        
+        if [ -n "$TOPIC_ID" ]; then
+            curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN:-}/sendMessage" \
+                -d chat_id="${COUNCIL_ID:-}" \
+                -d message_thread_id="$TOPIC_ID" \
+                -d text="$ALIAS_MESSAGE" \
+                -d parse_mode=Markdown > /dev/null
+            
+            echo "🔍 Posted search tags: $SEARCH_TAGS"
+        fi
     else
         echo "❌ Failed to create forum topic"
         TOPIC_ID=""
