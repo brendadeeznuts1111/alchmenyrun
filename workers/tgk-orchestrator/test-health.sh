@@ -4,7 +4,7 @@ echo "🧪 Micro-PR 1: Health Infrastructure Test"
 echo "=========================================="
 
 # Configuration
-ORCHESTRATOR_URL="https://tgk-orchestrator.workers.dev"
+ORCHESTRATOR_URL="https://tgk-orchestrator.utahj4754.workers.dev"
 LOCAL_URL="http://localhost:8787"
 
 # Function to test endpoint
@@ -17,7 +17,7 @@ test_endpoint() {
     
     response=$(curl -s -w "\n%{http_code}" "$url$endpoint")
     status_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$status_code" = "$expected_status" ]; then
         echo "✅ $endpoint - Status: $status_code"

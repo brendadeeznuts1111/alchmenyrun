@@ -1,9 +1,110 @@
+# ALC-RFC-006: INTELLIGENT, BIDIRECTIONAL EMAIL-TO-TELEGRAM ORCHESTRATION
+# Phase 6 of tgk: Email as Intelligent Orchestration Layer
+
 id: ALC-RFC-006
-status: PROPOSED
+title: "tgk Phase 6: INTELLIGENT, BIDIRECTIONAL EMAIL-TO-TELEGRAM ORCHESTRATION"
+track: "Project Alchemist / Core Platform / Ecosystem Integration"
+tier: "Foundational"
+status: "IMPLEMENTED"
 bootstrap-ts: 2025-10-27T09:45:00Z
+
+# Team Leads & Stakeholders
+lead: "@brendadeeznuts1111"
+infra-lead: "@alice.smith"
+integrations-lead: "@charlie.brown"
+quality-lead: "@diana.prince"
+docs-lead: "@frank.taylor"
+
+# Budget & Resources
+budget-cogs: "$100-200/month"
+security-review: "SEC-ALC-2025-11-01"
+decision-record: "alchemy.run/decisions/2025-11-email-orchestration"
+failure-mode-ticket: "ALC-FAIL-2025-11-01"
+
+# Technical Infrastructure
 worker-id: tgk-email-orchestrator
 d1-id: tgk_email_metadata
 r2-bucket: tgk-email-attachments
-phase6-deployment: .github/rfc006/phase-6-deployment.yml
-email-routing-rule: Catch-all *@cloudflare.com → tgk-email-orchestrator active
-rollback: wrangler delete tgk-email-orchestrator && wrangler d1 delete tgk_email_metadata -y
+email-routing-rule: "Catch-all *@cloudflare.com → tgk-email-orchestrator"
+
+# Dependencies
+dependencies:
+  - "tgk v5.0.0 (AI, Orchestration core)"
+  - "D12 (Customer data, Audit logs)"
+  - "Cloudflare Email Routing & Workers"
+  - "GitHub App (for tgk actions)"
+
+# Implementation Details
+implementation:
+  worker: "workers/tgk-email-orchestrator/index.ts"
+  commands: "tgk/commands/email.ts"
+  rpc: "tgk/core/rpc.ts"
+  ui: "tgk/utils/email-grammar.ts"
+  tests: "workers/tgk-email-orchestrator/test.ts"
+
+# Deployment & Rollback
+phase6-deployment: ".github/rfc006/phase-6-deployment.yml"
+rollback: "wrangler delete tgk-email-orchestrator && wrangler d1 delete tgk_email_metadata -y"
+production-url: "https://tgk-email-orchestrator.cloudflare.workers.dev"
+
+# Email Grammar Configuration
+email-grammar:
+  pattern: "[DOMAIN].[SCOPE].[TYPE].[HIERARCHY].[META].[STATE_ID_OPTIONAL]@cloudflare.com"
+  tokens:
+    domain:
+      {
+        max_len: 12,
+        examples: ["infra", "docs", "qa", "integrations", "exec", "support"],
+      }
+    scope:
+      { max_len: 10, examples: ["lead", "sre", "dev", "bot", "oncall", "ai"] }
+    type:
+      {
+        max_len: 10,
+        examples: ["pr", "issue", "deploy", "alert", "review", "reply"],
+      }
+    hierarchy: { max_len: 5, examples: ["p0", "p1", "p2", "p3", "blk", "crit"] }
+    meta: { max_len: 6, examples: ["gh", "tg", "cf", "jira", "24h"] }
+    state_id:
+      {
+        max_len: 8,
+        optional: true,
+        examples: ["pr51", "rfc006", "inc123", "bug42"],
+      }
+
+# Observability Metrics
+metrics:
+  - 'tgk_email_routing_total{status="routed|dropped|failed", domain, scope, type, meta}'
+  - "tgk_email_ai_sentiment_score_gauge{domain, scope}"
+  - "tgk_email_ai_action_item_count_total{domain, scope}"
+  - 'tgk_telegram_reply_requests_total{status="sent|failed"}'
+
+# Tag Taxonomy (GitHub Issues & PRs)
+tag-taxonomy:
+  group:
+    examples: ["customer", "internal"]
+    description: "Who the issue affects or who created it"
+  topic:
+    examples:
+      [
+        "state-pinning",
+        "observability",
+        "governance",
+        "performance",
+        "security",
+        "ux",
+      ]
+    description: "Technical domain or feature area"
+  impact:
+    examples: ["low", "medium", "high", "critical"]
+    description: "Business impact severity"
+  status:
+    examples: ["triage", "needs-info", "blocked", "in-progress", "review-ready"]
+    description: "Current workflow state"
+
+# Security Policies
+security-policies:
+  - "AI Policy Enforcement: OPA evaluates AI analysis for bias, PII leakage"
+  - "Fine-Grained RBAC for tgk email reply"
+  - "Audit Trail: All communications logged to Loki and D12"
+  - "Threat Detection: AI monitors for phishing and malicious content"

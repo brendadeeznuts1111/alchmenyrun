@@ -7,7 +7,8 @@
 
 import { GitHubManager } from '../utils/github.js';
 import { TelegramBot } from '../utils/telegram.js';
-import { analyzeEmailContent, suggestEmailRouting, draftEmailReply } from './ai.ts';
+import { analyzeEmailContent, suggestEmailRouting, draftEmailReply } from './ai.js';
+import { sendPRToTelegram, handlePRCallback, answerPRQuestion } from './pr-telegram.js';
 
 // Initialize clients
 const gh = new GitHubManager();
@@ -99,6 +100,15 @@ interface RouteDiagnosticsReport {
     recommendations: string[];
   };
   checkedAt: string;
+}
+
+interface PRTelegramReport {
+  prId: string;
+  action: string;
+  message: string;
+  processedAt: string;
+  telegramPosted: boolean;
+  githubUpdated: boolean;
 }
 
 export async function autoTriage(issueId: string): Promise<TriageReport> {
@@ -838,6 +848,116 @@ async function validateRollbackPolicy(component: string, version: string, stage:
     allowed: true,
     reason: 'Policy check passed'
   };
+}
+
+/**
+ * PR Telegram orchestration - sends PRs to Telegram for review and handles callbacks
+ */
+export async function orchestratePRForTelegram(prId: string, options: { 
+  chatId?: string,
+  autoApprove?: boolean,
+  requireReview?: boolean 
+} = {}): Promise<PRTelegramReport> {
+  console.log(`📱 Orchestrating PR #${prId} for Telegram review...`);
+
+  try {
+    // Check if we're in test mode
+    if (!process.env.GITHUB_TOKEN) {
+      console.log('🧪 Running in test mode (no GITHUB_TOKEN set)');
+      const mockReport: PRTelegramReport = {
+        prId,
+        action: 'sent_to_telegram',
+        message: 'PR sent to Telegram for review',
+        processedAt: new Date().toISOString(),
+        telegramPosted: false,
+        githubUpdated: false
+      };
+      
+      console.log(`✅ Would send PR #${prId} to Telegram`);
+      console.log(`📱 Chat ID: ${options.chatId || 'default'}`);
+      console.log(`⚙️ Auto-approve: ${options.autoApprove || false}`);
+      console.log(`🔍 Require review: ${options.requireReview || true}`);
+      
+      return mockReport;
+    }
+
+    // Get PR details to validate it's ready for review
+    const pr = await gh.getPullRequest(parseInt(prId));
+    const status = await gh.getPRStatus(parseInt(prId));
+
+    // Validate PR is ready for Telegram review
+    if (pr.state !== 'open') {
+      throw new Error('PR must be open to send to Telegram');
+    }
+
+    if (status.checks.passing !== status.checks.total) {
+      console.log(`⚠️ Warning: PR #${prId} has failing checks (${status.checks.passing}/${status.checks.total})`);
+    }
+
+    // Send PR to Telegram
+    await sendPRToTelegram(prId, options.chatId);
+
+    const report: PRTelegramReport = {
+      prId,
+      action: 'sent_to_telegram',
+      message: `PR #${prId} sent to Telegram for review`,
+      processedAt: new Date().toISOString(),
+      telegramPosted: true,
+      githubUpdated: false
+    };
+
+    // Auto-approve if requested and conditions are met
+    if (options.autoApprove && 
+        status.checks.passing === status.checks.total && 
+        status.mergeable) {
+      await gh.approvePullRequest(parseInt(prId), 'Auto-approved via TGK orchestration');
+      report.githubUpdated = true;
+      report.action = 'auto_approved';
+      report.message = 'PR auto-approved and sent to Telegram';
+    }
+
+    console.log(`✅ PR #${prId} orchestrated for Telegram review`);
+    console.log(`📱 Telegram: ${report.telegramPosted ? '✅ Sent' : '❌ Failed'}`);
+    console.log(`🤖 GitHub: ${report.githubUpdated ? '✅ Updated' : '❌ No changes'}`);
+
+    return report;
+
+  } catch (error) {
+    console.error(`❌ Failed to orchestrate PR #${prId}:`, error.message);
+    throw error;
+  }
+}
+
+export async function handlePRTelegramCallback(callbackData: string): Promise<PRTelegramReport> {
+  console.log(`🔧 Handling PR Telegram callback...`);
+
+  try {
+    const report = await handlePRCallback(callbackData);
+    
+    console.log(`✅ PR callback processed successfully`);
+    console.log(`🔧 Action: ${report.action}`);
+    console.log(`📱 Telegram: ${report.telegramPosted ? '✅ Notified' : '❌ Failed'}`);
+    console.log(`🤖 GitHub: ${report.githubUpdated ? '✅ Updated' : '❌ Failed'}`);
+
+    return report;
+
+  } catch (error) {
+    console.error('❌ Failed to handle PR callback:', error.message);
+    throw error;
+  }
+}
+
+export async function answerPRViaTelegram(prId: string, question: string): Promise<void> {
+  console.log(`💬 Answering PR #${prId} question via Telegram...`);
+
+  try {
+    await answerPRQuestion(prId, question);
+    console.log(`✅ Answer posted to PR #${prId}`);
+
+  } catch (error) {
+    console.error(`❌ Failed to answer PR #${prId}:`, error.message);
+    throw error;
+  }
 }
 
 // Export functions for use by main TGK binary

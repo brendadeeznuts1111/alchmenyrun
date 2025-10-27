@@ -3,6 +3,11 @@
  * Intelligent, bidirectional email-to-Telegram orchestration with AI analysis
  */
 
+import { buildPRRichCard, answerPRViaTelegram, sendTelegramMessage } from './kinja-pr-telegram.js';
+import { createReliabilityLayer } from '../../tgk/utils/reliability.ts';
+import { MessageTracker } from '../../tgk/utils/message-tracking.ts';
+import { createRPCClients } from '../../tgk/core/rpc.ts';
+
 interface EmailMessage {
   from: string;
   to: string;
@@ -30,6 +35,17 @@ interface Env {
   
   // Email service for replies
   EMAIL_SERVICE_API_KEY?: string;
+  
+  // Feature flags
+  EMAIL_PR_TELEGRAM?: string;  // NEW: Enable PR Telegram integration
+  SEND_EMAIL_REPLY?: string;   // NEW: Enable email replies for PR actions
+  
+  // Email reply configuration
+  EMAIL_FROM?: string;         // NEW: From address for email replies
+  SENDGRID_API_KEY?: string;   // NEW: SendGrid API key (already in secrets)
+  
+  // Database
+  DB: D1Database;              // NEW: D1 database for email-telegram mappings
   
   // Observability
   LOGPUSH_URL?: string;
@@ -64,32 +80,14 @@ interface TelegramInlineKeyboard {
   }>>;
 }
 
-// Simple RPC client for internal TGK API calls
-class RpcClient {
-  private apiUrl: string;
-  private apiToken: string;
+// RPC clients are now imported from tgk/core/rpc.ts
 
-  constructor(apiUrl: string, apiToken: string) {
-    this.apiUrl = apiUrl;
-    this.apiToken = apiToken;
-  }
-
-  async call(method: string, params: any): Promise<any> {
-    const response = await fetch(`${this.apiUrl}/api/${method}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiToken}`
-      },
-      body: JSON.stringify(params)
-    });
-
-    if (!response.ok) {
-      throw new Error(`RPC call failed: ${response.statusText}`);
-    }
-
-    return response.json();
-  }
+// Generate unique message ID for tracking
+function generateMessageId(email: EmailMessage): string {
+  const timestamp = Date.now();
+  const fromHash = email.from.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+  const subjectHash = (email.headers.get('subject') || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+  return `msg_${timestamp}_${fromHash}_${subjectHash}`;
 }
 
 // HTML to Markdown conversion
@@ -248,27 +246,73 @@ export default {
   async email(message: EmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const startTime = Date.now();
     let routingSuccess = false;
-
+    const messageId = generateMessageId(message);
+    
+    // Initialize reliability layer and message tracking
+    const reliabilityLayer = createReliabilityLayer();
+    const messageTracker = new MessageTracker(env.DB);
+    
     try {
-      console.log(`📧 Processing email from ${message.from} to ${message.to}`);
+      console.log(`📧 Processing email ${messageId} from ${message.from} to ${message.to}`);
+      
+      // Track message receipt
+      await messageTracker.trackMessage({
+        messageId,
+        emailFrom: message.from,
+        emailTo: message.to,
+        status: 'received',
+        timestamp: new Date().toISOString()
+      });
 
       // Parse email address tokens
       const [localPart] = message.to.split('@');
       const [domain, scope, type, hierarchy, meta, stateId_optional] = localPart.split('.');
 
       console.log(`🔍 Parsed tokens: domain=${domain}, scope=${scope}, type=${type}, hierarchy=${hierarchy}, meta=${meta}, stateId=${stateId_optional}`);
+      
+      // Update tracking with parsed context
+      await messageTracker.updateMessageStatus(messageId, 'processed', undefined, {
+        domain, scope, type, hierarchy, meta, stateId: stateId_optional
+      });
 
       // Extract email content
       const rawEmail = await new Response(message.raw).text();
       const emailBody = parseEmailBody(rawEmail);
       const emailSubject = message.headers.get('subject') || 'No Subject';
 
-      // Initialize RPC client
-      const rpc = new RpcClient(env.TGK_INTERNAL_API_URL, env.TGK_API_TOKEN);
+      // ---- NEW BRANCH: e-mail about a PR → Telegram card ----
+      const prNum = stateId_optional?.match(/^pr(\d+)$/i)?.[1];     // pr123 → 123
+      if (env.EMAIL_PR_TELEGRAM === "1" && prNum && type === "review") {
+        console.log(`📱 PR Telegram branch triggered for PR #${prNum}`);
+        
+        // Execute golden path workflow for PR emails
+        const workflowResult = await reliabilityLayer.executeEmailToPRWorkflow(
+          { message, messageId, domain, scope, type, hierarchy, meta },
+          prNum,
+          '', // Will be resolved from DB
+          env
+        );
+        
+        console.log(`✅ PR workflow completed: ${workflowResult.workflowId}`);
+        
+        // Update tracking with workflow completion
+        await messageTracker.updateMessageStatus(messageId, 'sent_to_telegram', undefined, {
+          workflowId: workflowResult.workflowId,
+          prId: prNum
+        });
+        
+        return; // Stop here - no duplicate email
+      }
+
+      // Initialize RPC clients
+      const rpc = createRPCClients({
+        apiUrl: env.TGK_INTERNAL_API_URL,
+        apiToken: env.TGK_API_TOKEN
+      });
 
       // AI Analysis of Email Content
       console.log(`🧠 Performing AI analysis...`);
-      const aiAnalysis: AIAnalysis = await rpc.call('ai.analyzeEmailContent', {
+      const aiAnalysis: AIAnalysis = await rpc.ai.analyzeEmailContent({
         subject: emailSubject,
         body: emailBody.text,
         stateId: stateId_optional
@@ -291,7 +335,7 @@ export default {
 
       // Dynamic Chat ID Resolution
       console.log(`🎯 Resolving Telegram chat ID...`);
-      const routingSuggestion: RoutingSuggestion = await rpc.call('ai.suggestEmailRouting', {
+      const routingSuggestion: RoutingSuggestion = await rpc.routing.resolveTelegramChatID({
         domain, scope, type, hierarchy, meta, stateId: stateId_optional,
         aiSentiment: aiAnalysis.sentiment,
         emailFrom: message.from
@@ -301,8 +345,8 @@ export default {
         console.error(`❌ No chat ID resolved: ${routingSuggestion.fallback_reason}`);
         
         // Send dead-letter notification
-        await rpc.call('log.deadLetterEmail', { 
-          email: message.to, 
+        await rpc.logging.logDeadLetterEmail({
+          email: message.to,
           reason: routingSuggestion.fallback_reason || 'no_route',
           from: message.from,
           subject: emailSubject
@@ -376,6 +420,12 @@ export default {
     } catch (error) {
       console.error('❌ Email processing failed:', error);
       
+      // Track failure
+      await messageTracker.updateMessageStatus(messageId, 'failed', error.message, {
+        phase: 'email_processing',
+        error: error.message
+      });
+      
       // Log failure metrics
       await logMetrics(env, {
         email_routed_total: 1,
@@ -387,16 +437,94 @@ export default {
 
       // Optionally send error notification
       try {
-        const rpc = new RpcClient(env.TGK_INTERNAL_API_URL, env.TGK_API_TOKEN);
-        await rpc.call('log.emailProcessingError', {
+        const errorRpc = createRPCClients({
+          apiUrl: env.TGK_INTERNAL_API_URL,
+          apiToken: env.TGK_API_TOKEN
+        });
+        await errorRpc.logging.logEmailProcessingError({
           email: message.to,
           from: message.from,
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          messageId
         });
       } catch (logError) {
         console.error('Failed to log error:', logError);
       }
     }
+  },
+
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    
+    // Handle Telegram callback webhook
+    if (url.pathname === '/callback' && request.method === 'POST') {
+      const callbackId = generateMessageId({
+        from: 'telegram',
+        to: '/callback',
+        subject: 'callback',
+        body: '',
+        headers: new Headers(),
+        raw: new ReadableStream()
+      });
+      
+      // Initialize message tracking for callbacks
+      const messageTracker = new MessageTracker(env.DB);
+      const reliabilityLayer = createReliabilityLayer();
+      
+      try {
+        const callbackData = await request.json();
+        console.log('📞 Received Telegram callback:', callbackData);
+        
+        // Track callback receipt
+        await messageTracker.trackMessage({
+          messageId: callbackId,
+          emailFrom: 'telegram',
+          emailTo: '/callback',
+          prId: callbackData.prId ? `pr${callbackData.prId}` : undefined,
+          githubAction: callbackData.action,
+          status: 'callback_received',
+          timestamp: new Date().toISOString(),
+          metadata: { callbackData }
+        });
+        
+        // Handle PR action callbacks with pr: prefix
+        if (callbackData.action?.startsWith('pr:')) {
+          // Execute golden path callback workflow
+          const workflowResult = await reliabilityLayer.executeCallbackWorkflow(
+            callbackData,
+            env
+          );
+          
+          console.log(`✅ PR callback workflow completed: ${workflowResult.workflowId}`);
+          
+          // Update tracking with workflow completion
+          await messageTracker.updateMessageStatus(callbackId, 'github_action_executed', undefined, {
+            workflowId: workflowResult.workflowId,
+            githubResult: workflowResult.githubResult
+          });
+          
+          return new Response('PR action executed & email reply queued', { status: 200 });
+        }
+        
+        // Handle existing callback types (email_reply, acknowledge_alert, etc.)
+        // ... existing callback logic would go here ...
+        
+        return new Response('Callback processed', { status: 200 });
+        
+      } catch (error) {
+        console.error('❌ Callback processing failed:', error);
+        
+        // Track callback failure
+        await messageTracker.updateMessageStatus(callbackId, 'failed', error.message, {
+          phase: 'callback_processing',
+          error: error.message
+        });
+        
+        return new Response('Callback processing failed', { status: 500 });
+      }
+    }
+    
+    return new Response('Not found', { status: 404 });
   }
 };

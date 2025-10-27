@@ -4,7 +4,7 @@
  */
 
 const { Octokit } = require('@octokit/rest');
-const { execSync } = require('child_process');
+const { execSync } = require('node:child_process');
 
 class GitHubManager {
   constructor() {
@@ -106,10 +106,12 @@ class GitHubManager {
     });
   }
 
-  async createPullRequest(title, body, head, base = 'main') {
+  async createPullRequest(title, body, head, base = 'main', options = {}) {
     if (this.isTestMode()) {
       console.log(`🧪 Would create PR: "${title}"`);
       console.log(`📋 Head: ${head}, Base: ${base}`);
+      if (options.topic) console.log(`🏷️ Topic: ${options.topic}`);
+      if (options.labels) console.log(`🏷️ Labels: ${options.labels.join(', ')}`);
       return { number: Math.floor(Math.random() * 1000) };
     }
 
@@ -121,6 +123,23 @@ class GitHubManager {
       head,
       base
     });
+
+    // Add labels if provided
+    if (options.labels && options.labels.length > 0) {
+      await this.addLabels(data.number, options.labels);
+    }
+
+    // Add topic to PR body if provided
+    if (options.topic) {
+      const topicBody = `**Topic:** ${options.topic}\n\n${body}`;
+      await this.octokit.pulls.update({
+        owner: this.owner,
+        repo: this.name,
+        pull_number: data.number,
+        body: topicBody
+      });
+    }
+
     return data;
   }
 
@@ -156,6 +175,113 @@ class GitHubManager {
       pull_number: number,
       merge_method: method
     });
+  }
+
+  async reviewPullRequest(number, action, message = '') {
+    if (this.isTestMode()) {
+      console.log(`👁️ Would ${action} PR #${number}: ${message}`);
+      return;
+    }
+
+    const reviewEvent = action === 'approve' ? 'APPROVE' : 
+                       action === 'request_changes' ? 'REQUEST_CHANGES' : 
+                       'COMMENT';
+
+    await this.octokit.pulls.createReview({
+      owner: this.owner,
+      repo: this.name,
+      pull_number: number,
+      body: message,
+      event: reviewEvent
+    });
+  }
+
+  async approvePullRequest(number, message = 'Approved via TGK') {
+    return await this.reviewPullRequest(number, 'approve', message);
+  }
+
+  async requestChangesOnPullRequest(number, message) {
+    return await this.reviewPullRequest(number, 'request_changes', message);
+  }
+
+  async commentOnPullRequest(number, message) {
+    return await this.reviewPullRequest(number, 'comment', message);
+  }
+
+  async getPRStatus(number, detailed = false) {
+    if (this.isTestMode()) {
+      const mockStatus = {
+        number,
+        title: `Test PR #${number}`,
+        state: 'open',
+        head: { ref: 'feature/test' },
+        base: { ref: 'main' },
+        mergeable: true,
+        merged: false,
+        draft: false,
+        checks: { passing: 3, total: 3 },
+        reviews: [{ state: 'APPROVED' }],
+        labels: [{ name: 'ready' }]
+      };
+
+      if (detailed) {
+        mockStatus.ai = {
+          risk: 'low',
+          coverage: '85%',
+          breaking: false
+        };
+      }
+
+      return mockStatus;
+    }
+
+    const { data: pr } = await this.octokit.pulls.get({
+      owner: this.owner,
+      repo: this.name,
+      pull_number: number
+    });
+
+    // Get combined status
+    const { data: status } = await this.octokit.repos.getCombinedStatusForRef({
+      owner: this.owner,
+      repo: this.name,
+      ref: pr.head.sha
+    });
+
+    // Get reviews
+    const { data: reviews } = await this.octokit.pulls.listReviews({
+      owner: this.owner,
+      repo: this.name,
+      pull_number: number
+    });
+
+    const result = {
+      number: pr.number,
+      title: pr.title,
+      state: pr.state,
+      head: pr.head,
+      base: pr.base,
+      mergeable: pr.mergeable,
+      merged: pr.merged,
+      draft: pr.draft,
+      checks: {
+        passing: status.statuses.filter(s => s.state === 'success').length,
+        total: status.statuses.length
+      },
+      reviews: reviews,
+      labels: pr.labels
+    };
+
+    if (detailed) {
+      // Mock AI analysis for now
+      result.ai = {
+        risk: Math.random() > 0.7 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low',
+        coverage: `${Math.floor(Math.random() * 40 + 60)}%`,
+        breaking: Math.random() > 0.8
+      };
+    }
+
+    return result;
   }
 
   async createRelease(tag, name, body, draft = false) {

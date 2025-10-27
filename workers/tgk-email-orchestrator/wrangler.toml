@@ -1,6 +1,7 @@
 name = "tgk-email-orchestrator"
 main = "index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 # Email routing handled via API in bootstrap script
 
@@ -11,6 +12,8 @@ TELEGRAM_DEFAULT_CHAT_ID = "@general"
 TELEGRAM_ONCALL_CHAT_ID = "@oncall_team"
 TELEGRAM_SRE_CHAT_ID = "@sre_team"
 TELEGRAM_SUPPORT_CHAT_ID = "@support_team"
+EMAIL_PR_TELEGRAM = "1"        # NEW: Enable PR Telegram integration
+EMAIL_FROM = "noreply@tgk.dev" # NEW: From address for email replies
 
 # KV namespace for email caching (disabled for now)
 # [[kv_namespaces]]

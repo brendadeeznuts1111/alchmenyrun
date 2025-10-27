@@ -155,6 +155,73 @@ tgk github labels create alchmenyrun --color ff0000 --description "Critical issu
 tgk github labels remove alchmenyrun --issue 123 --labels "bug"
 ```
 
+### Email Management (`tgk email`) - **NEW in Phase 6**
+
+Outbound email replies with AI drafting and bidirectional email-Telegram orchestration.
+
+#### `tgk email reply <email> <stateId>`
+
+Draft AI-powered email reply for incoming email notifications.
+
+```bash
+tgk email reply user@company.com pr123
+```
+
+**Features:**
+- Retrieves original email context from cache
+- AI-generated reply drafts with tone and confidence analysis
+- Professional email formatting
+- Approval workflow for sensitive communications
+
+#### `tgk email send <email> <stateId> [message]`
+
+Send drafted email reply to original sender.
+
+```bash
+tgk email send user@company.com pr123
+tgk email send user@company.com pr123 "Custom reply message"
+```
+
+**Features:**
+- Sends via integrated email service (SendGrid/Postmark)
+- Supports custom message overrides
+- Tracks delivery status and metrics
+- Audit trail for all outbound communications
+
+#### `tgk email status <email> <stateId>`
+
+Check status of email reply workflow.
+
+```bash
+tgk email status user@company.com pr123
+```
+
+**Features:**
+- Shows current workflow state (drafted/sent/failed)
+- Displays AI draft preview
+- Shows timestamps and delivery status
+
+#### `tgk email list`
+
+List all active email reply workflows.
+
+```bash
+tgk email list
+```
+
+**Features:**
+- Shows all pending and completed email replies
+- Includes status and recipient information
+- Provides workflow statistics
+
+#### `tgk email simulate [email] [subject] [stateId]`
+
+Simulate email receipt for testing (development only).
+
+```bash
+tgk email simulate user@company.com "Test Subject" test123
+```
+
 ### AI Commands (`tgk ai`)
 
 Centralized AI module for intelligent workflow analysis and suggestions.

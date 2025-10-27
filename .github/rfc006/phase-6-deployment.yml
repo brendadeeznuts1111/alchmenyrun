@@ -2,10 +2,15 @@ name: phase-6-email-orchestration
 main: .github/rfc006/worker.js
 compatibility_date: 2025-11-01
 
-# Secrets must exist in CF dashboard (bootstrap script creates them)
+# Phase-6.1 Feature Flags (all opt-in, zero breaking changes)
 vars:
   ENV: production
   TGK_INTERNAL_API: https://tgk.alchemy.run/internal
+  EMAIL_PR_TELEGRAM: "1"      # Enable PR-Telegram integration with buttons
+  EMAIL_PR_REPLY: "1"         # Send email answer back to original sender
+  EMAIL_PR_QUEUE: "1"         # Offload reply to async queue (keeps HTTP <50ms)
+  EMAIL_PR_ANALYTICS: "1"     # Push metrics to Analytics Engine
+  EMAIL_PR_OPA: "1"           # Enforce OPA policy checks
 
 d1_databases:
   - binding: DB
@@ -16,17 +21,40 @@ r2_buckets:
   - binding: ATTACHMENTS
     bucket_name: tgk-email-attachments
 
-# Observability
+# Phase-6.1 Async Queue (zero latency impact)
+queues:
+  - binding: TGK_EMAIL_PR_QUEUE
+    queue_name: tgk-email-pr-queue
+
+[[queues.consumers]]
+queue = "tgk-email-pr-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+
+# Phase-6.1 Analytics Engine (SLA dashboard)
+analytics_engine_datasets:
+  - binding: TGK_PR_ANALYTICS
+    dataset: tgk_pr_dataset
+
+# Observability (enhanced for Phase-6.1)
 logpush: true
 metrics:
   - name: tgk_email_routing_total
     type: counter
     help: "Total emails routed"
     labels: [status, domain, scope, type, meta]
+  - name: tgk_pr_reply_total
+    type: counter
+    help: "PR reply actions processed"
+    labels: [action, status, queue_used]
+  - name: tgk_pr_reply_duration
+    type: histogram
+    help: "Time to process PR replies"
+    buckets: [0.1, 0.5, 1, 2, 5, 10]
 
-# OPA bundle (cached in R2)
+# OPA bundle (enhanced for Phase-6.1 with PR policies)
 opa:
-  bundle_url: r2://tgk-email-attachments/bundles/phase6.tar.gz
+  bundle_url: r2://tgk-email-attachments/bundles/phase61.tar.gz
   poll: 60s
 
 # Grafana dashboard (embedded)

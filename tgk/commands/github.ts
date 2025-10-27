@@ -15,7 +15,8 @@ export async function createPullRequest(title: string, options: {
   head?: string,
   base?: string,
   draft?: boolean,
-  labels?: string[]
+  labels?: string[],
+  topic?: string
 }) {
   console.log(`📋 Creating pull request...`);
 
@@ -27,15 +28,23 @@ export async function createPullRequest(title: string, options: {
       title,
       options.body || '',
       head,
-      options.base || 'main'
+      options.base || 'main',
+      {
+        labels: options.labels,
+        topic: options.topic
+      }
     );
-
-    if (options.labels && options.labels.length > 0) {
-      await gh.addLabels(pr.number, options.labels);
-    }
 
     console.log(`✅ PR created: #${pr.number}`);
     console.log(`🔗 ${pr.html_url}`);
+    
+    if (options.topic) {
+      console.log(`🏷️ Topic: ${options.topic}`);
+    }
+    
+    if (options.labels && options.labels.length > 0) {
+      console.log(`🏷️ Labels: ${options.labels.join(', ')}`);
+    }
 
     return pr;
 
@@ -61,8 +70,23 @@ export async function managePullRequest(number: string, action: string, options:
         break;
 
       case 'review':
-        // Would implement review functionality
-        console.log(`❌ PR review not implemented yet`);
+        await gh.reviewPullRequest(parseInt(number), options.action || 'comment', options.message || '');
+        console.log(`✅ PR #${number} review submitted (${options.action || 'comment'})`);
+        break;
+
+      case 'approve':
+        await gh.approvePullRequest(parseInt(number), options.message || 'Approved via TGK');
+        console.log(`✅ PR #${number} approved`);
+        break;
+
+      case 'request-changes':
+        await gh.requestChangesOnPullRequest(parseInt(number), options.message || 'Changes requested');
+        console.log(`🔄 Changes requested for PR #${number}`);
+        break;
+
+      case 'comment':
+        await gh.commentOnPullRequest(parseInt(number), options.message || '');
+        console.log(`💬 Comment added to PR #${number}`);
         break;
 
       case 'automate':
@@ -501,12 +525,22 @@ async function main() {
             if (args[i] === '--base') createOptions.base = args[i + 1];
             if (args[i] === '--draft') createOptions.draft = true;
             if (args[i] === '--label') createOptions.labels = (createOptions.labels || []).concat(args[i + 1]);
+            if (args[i] === '--topic') createOptions.topic = args[i + 1];
           }
           await createPullRequest(title, createOptions);
         } else if (prNumber) {
-          await managePullRequest(prNumber, prAction, prOptions);
+          // Parse PR management options
+          const manageOptions: any = {};
+          for (let i = 4; i < args.length; i++) {
+            if (args[i] === '--method') manageOptions.method = args[i + 1];
+            if (args[i] === '--message') manageOptions.message = args[i + 1];
+            if (args[i] === '--action') manageOptions.action = args[i + 1];
+          }
+          await managePullRequest(prNumber, prAction, manageOptions);
         } else {
-          console.log('Usage: tgk github pr <create|merge|close|review|automate> [options]');
+          console.log('Usage: tgk github pr <create|merge|close|review|approve|request-changes|comment|automate> [options]');
+          console.log('Create options: --body <text> --head <branch> --base <branch> --draft --label <label> --topic <topic>');
+          console.log('Review options: --message <text> --action <approve|comment|request_changes>');
         }
         break;
 
@@ -565,13 +599,20 @@ async function main() {
 
       default:
         console.log('Available commands:');
-        console.log('  tgk github pr <create|merge|close|review|automate>  - PR management');
+        console.log('  tgk github pr <create|merge|close|review|approve|request-changes|comment|automate>  - PR management');
         console.log('  tgk github repo info [--detailed]                   - Repository information');
         console.log('  tgk github labels <list|create|apply>               - Label management');
         console.log('  tgk github workflow <list|run|status>               - Workflow management');
         console.log('  tgk github security [--details]                    - Security scanning');
         console.log('  tgk github metadata                                - Repository metadata');
         console.log('  tgk github deps <check|update|audit>               - Dependency management');
+        console.log('\nPR Creation Examples:');
+        console.log('  tgk github pr create "Fix bug" --topic "bug-fix" --label bug --label urgent');
+        console.log('  tgk github pr create "Add feature" --body "Description" --topic "enhancement"');
+        console.log('\nPR Review Examples:');
+        console.log('  tgk github pr approve 123 --message "Looks good!"');
+        console.log('  tgk github pr request-changes 123 --message "Need more tests"');
+        console.log('  tgk github pr comment 123 --message "Question about implementation"');
         process.exit(1);
     }
   } catch (error) {
