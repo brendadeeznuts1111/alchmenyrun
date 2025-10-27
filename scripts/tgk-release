@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 🚀 micro-rfc-005 ONE-SHOT ROLLOUT
-# Single-command release wrapper for thread-safe forum state with Durable Objects
+# 🚀 Bun-Native Semver Release Script
+# Valid, comparable, and bump-able versioning without external deps
 
 set -euo pipefail
 
@@ -12,15 +12,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-RFC_ID="micro-rfc-005"
-FEATURE_BRANCH="feat/micro-rfc-005-do-webhooks"
+RFC_ID="${RFC_ID:-}"
+FEATURE_BRANCH="${FEATURE_BRANCH:-}"
 EXPECTED_FILES=(
-    "src/do/github-agent.ts"
-    "workers/github-webhook/index.ts"
-    "alchemy.run.ts"
-    "env.example"
     "package.json"
-    "rfcs/micro-rfc-005.md"
 )
 
 # Logging functions
@@ -164,19 +159,75 @@ run_smoke_test() {
     log_success "Smoke test completed (basic validation)"
 }
 
-# Update version in package.json
-update_version() {
-    local new_version="$1"
-    log_info "Updating version to $new_version..."
+# Calculate and validate next version using Bun's native semver
+calculate_next_version() {
+    local bump_type="$1"
 
-    if [[ -f "package.json" ]]; then
-        # Update version field
-        sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$new_version\"/" package.json && rm package.json.bak
-        log_success "Version updated to $new_version"
-    else
-        log_error "package.json not found"
+    log_info "Calculating next version with bump type: $bump_type"
+
+    # Use Bun's native semver helper to calculate and validate
+    local result
+    if ! result=$(bun run scripts/semver-helper.ts "$bump_type" 2>&1); then
+        log_error "Semver validation failed:"
+        echo "$result"
         exit 1
     fi
+
+    # Extract the new version from output (last line when not dry-run)
+    local new_version
+    new_version=$(echo "$result" | grep -oP 'package.json updated to \K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+
+    if [[ -z "$new_version" ]]; then
+        log_error "Failed to extract new version from semver helper"
+        echo "$result"
+        exit 1
+    fi
+
+    echo "$result"
+    echo "$new_version"
+}
+
+# Update version in package.json using Bun's native semver (DEPRECATED - use calculate_next_version)
+update_version() {
+    local new_version="$1"
+    log_warning "Direct version update deprecated - use calculate_next_version with bump type instead"
+
+    if [[ ! "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log_error "Invalid version format: $new_version (expected x.y.z)"
+        exit 1
+    fi
+
+    log_info "Updating version to $new_version..."
+
+    # Get current version
+    local current_version
+    current_version=$(bun run scripts/semver-helper.ts --current)
+
+    # Validate the bump using Bun's semver
+    if ! bun -e "
+        import { semver } from 'bun';
+        const order = semver.order('$current_version', '$new_version');
+        if (order !== -1) {
+            console.error('❌ Invalid version bump: $current_version → $new_version');
+            console.error('   New version must be greater than current version.');
+            process.exit(1);
+        }
+        console.log('✅ Version bump validated: $current_version → $new_version');
+    "; then
+        exit 1
+    fi
+
+    # Update using the helper
+    if ! bun -e "
+        import { updatePackageVersion } from './scripts/semver-helper.ts';
+        updatePackageVersion('$new_version');
+        console.log('✅ package.json updated to $new_version');
+    "; then
+        log_error "Failed to update package.json"
+        exit 1
+    fi
+
+    log_success "Version updated to $new_version"
 }
 
 # Update RFC status
@@ -237,13 +288,14 @@ Implemented: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # Main execution
 main() {
-    local bump_version=""
+    local bump_type=""
+    local skip_validation=false
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --bump)
-                bump_version="$2"
+                bump_type="$2"
                 shift 2
                 ;;
             --stage)
@@ -254,35 +306,100 @@ main() {
                 export PROFILE="$2"
                 shift 2
                 ;;
+            --skip-validation)
+                skip_validation=true
+                shift
+                ;;
+            --rfc)
+                RFC_ID="$2"
+                shift 2
+                ;;
+            --branch)
+                FEATURE_BRANCH="$2"
+                shift 2
+                ;;
+            --help|-h)
+                echo "Usage: $0 --bump <patch|minor|major> [options]"
+                echo ""
+                echo "Bun-native semver release script with validation"
+                echo ""
+                echo "Required:"
+                echo "  --bump <type>       Version bump type: patch (0.5.0→0.5.1), minor (0.5.0→0.6.0), major (0.5.0→1.0.0)"
+                echo ""
+                echo "Optional:"
+                echo "  --stage <stage>     Deployment stage (default: prod)"
+                echo "  --profile <profile> Cloudflare profile (default: prod)"
+                echo "  --rfc <id>          RFC identifier (e.g., micro-rfc-005)"
+                echo "  --branch <name>     Feature branch name"
+                echo "  --skip-validation   Skip branch and file validation (use with caution)"
+                echo "  --help, -h          Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  $0 --bump patch"
+                echo "  $0 --bump minor --stage prod --profile prod"
+                echo "  $0 --bump major --rfc micro-rfc-006 --branch feat/rfc-006"
+                exit 0
+                ;;
             *)
                 log_error "Unknown option: $1"
-                echo "Usage: $0 --bump <version> [--stage <stage>] [--profile <profile>]"
+                echo "Usage: $0 --bump <patch|minor|major> [options]"
+                echo "Run with --help for more information"
                 exit 1
                 ;;
         esac
     done
 
-    if [[ -z "$bump_version" ]]; then
-        log_error "Version bump required: --bump <version>"
+    # Validate bump type
+    if [[ -z "$bump_type" ]]; then
+        log_error "Version bump type required: --bump <patch|minor|major>"
+        echo "Run with --help for more information"
         exit 1
     fi
 
-    log_info "🚀 Starting micro-rfc-005 one-shot rollout"
-    log_info "Target version: $bump_version"
+    if [[ ! "$bump_type" =~ ^(patch|minor|major)$ ]]; then
+        log_error "Invalid bump type: $bump_type"
+        echo "Expected: patch, minor, or major"
+        exit 1
+    fi
 
-    # Execute rollout steps
-    validate_branch
-    validate_files
+    log_info "🚀 Starting release with Bun-native semver"
+    log_info "Bump type: $bump_type"
+
+    # Calculate and validate new version
+    local version_output
+    version_output=$(calculate_next_version "$bump_type")
+    local new_version
+    new_version=$(echo "$version_output" | tail -n1)
+
+    log_success "Version calculated: $new_version"
+
+    # Execute rollout steps (conditional based on flags)
+    if [[ "$skip_validation" != "true" ]]; then
+        if [[ -n "$FEATURE_BRANCH" ]]; then
+            validate_branch
+        fi
+        if [[ ${#EXPECTED_FILES[@]} -gt 1 ]]; then
+            validate_files
+        fi
+    fi
+
     run_quality_checks
-    update_version "$bump_version"
-    update_rfc_status
-    deploy_staging "$bump_version"
-    run_smoke_test
-    create_release "$bump_version"
 
-    log_success "🎉 micro-rfc-005 rollout completed successfully!"
-    log_success "Version $bump_version is now live in production"
-    log_info "Monitor DO latency for 24h (rollback if >500ms p99)"
+    # Version already updated by calculate_next_version, but update RFC if specified
+    if [[ -n "$RFC_ID" ]] && [[ -f "rfcs/${RFC_ID}.md" ]]; then
+        update_rfc_status
+    fi
+
+    if [[ -n "$STAGE" ]]; then
+        deploy_staging "$new_version"
+        run_smoke_test
+    fi
+
+    create_release "$new_version"
+
+    log_success "🎉 Release completed successfully!"
+    log_success "Version $new_version is now tagged and pushed"
+    log_info "Ship versions with confidence — Bun's native semver has you covered 🚀"
 }
 
 # Run main function

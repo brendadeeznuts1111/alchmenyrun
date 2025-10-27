@@ -1,0 +1,106 @@
+name: Semver Validation
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    tags:
+      - 'v*'
+
+jobs:
+  validate-semver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tag comparison
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Validate semver format
+        run: |
+          VERSION=$(bun run scripts/semver-helper.ts --current)
+          echo "Current version: $VERSION"
+
+          # Validate format
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid semver format: $VERSION"
+            echo "Expected format: x.y.z (e.g., 1.2.3)"
+            exit 1
+          fi
+
+          echo "✅ Semver format valid: $VERSION"
+
+      - name: Validate version bump (on tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Get the tagged version
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "Tag version: $TAG_VERSION"
+
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [[ -n "$PREV_TAG" ]]; then
+            PREV_VERSION="${PREV_TAG#v}"
+            echo "Previous version: $PREV_VERSION"
+
+            # Validate bump using Bun's native semver
+            bun -e "
+              import { semver } from 'bun';
+              const prev = '$PREV_VERSION';
+              const curr = '$TAG_VERSION';
+              const order = semver.order(prev, curr);
+
+              if (order !== -1) {
+                console.error('❌ Invalid version bump: ' + prev + ' → ' + curr);
+                console.error('   New version must be greater than previous version.');
+                console.error('   Comparison result: ' + order + ' (expected: -1)');
+                process.exit(1);
+              }
+
+              console.log('✅ Semver bump valid: ' + prev + ' → ' + curr);
+              console.log('   Using Bun native semver (20x faster than node-semver)');
+            "
+          else
+            echo "⚠️ No previous tag found, skipping bump validation"
+            echo "✅ First version: $TAG_VERSION"
+          fi
+
+      - name: Validate package.json matches tag (on tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(bun run scripts/semver-helper.ts --current)
+
+          if [[ "$TAG_VERSION" != "$PKG_VERSION" ]]; then
+            echo "❌ Version mismatch!"
+            echo "   Tag version:     v$TAG_VERSION"
+            echo "   package.json:    $PKG_VERSION"
+            exit 1
+          fi
+
+          echo "✅ Tag matches package.json: v$TAG_VERSION"
+
+      - name: Test semver helper
+        run: |
+          # Test dry-run mode
+          echo "Testing patch bump..."
+          bun run scripts/semver-helper.ts patch --dry-run
+
+          echo ""
+          echo "Testing minor bump..."
+          bun run scripts/semver-helper.ts minor --dry-run
+
+          echo ""
+          echo "Testing major bump..."
+          bun run scripts/semver-helper.ts major --dry-run
+
+          echo ""
+          echo "✅ All semver helper tests passed"
