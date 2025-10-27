@@ -660,6 +660,81 @@ The external AI categorization service must comply with:
 
 ---
 
+## Alchemy Concepts Integration
+
+### Apps & Stages Compatibility
+
+The proposed governance features are designed to work seamlessly with Alchemy's Apps & Stages model:
+
+- **Stage-Aware Governance**: Governance policies and capacity limits apply per stage (`$USER/`, `prod/`, `pr-123/`)
+- **Cross-Stage Analytics**: Governance metrics collected across all stages with stage-specific filtering
+- **Deployment Integration**: Governance checks integrated into deployment pipelines for each stage
+
+### Scope Integration
+
+Governance features leverage Alchemy's nested scope architecture:
+
+```typescript
+// Governance scope within application
+await alchemy.run("governance", async () => {
+  // Governance metadata storage
+  const governanceDb = await D1Database("governance-db");
+  
+  // Governance analytics storage
+  const metricsStore = await KVNamespace("governance-metrics");
+  
+  // Share with other scopes
+  resources.governanceDb = governanceDb;
+  resources.metricsStore = metricsStore;
+});
+```
+
+### Phase-Aware Operations
+
+Governance operations respect Alchemy execution phases:
+
+- **"up" Phase**: Create governance resources, initialize metrics collection
+- **"destroy" Phase**: Clean up governance data and metrics for stage deletion  
+- **"read" Phase**: Access governance status without making changes
+
+### Resource Bindings Integration
+
+Governance system integrates through type-safe bindings:
+
+```typescript
+export const website = await BunSPA("website", {
+  bindings: {
+    // Governance resources
+    GOVERNANCE_DB: resources.governanceDb,
+    GOVERNANCE_METRICS: resources.metricsStore,
+    
+    // Governance configuration
+    GOVERNANCE_ENABLED: alchemy.secret(process.env.GOVERNANCE_ENABLED),
+    AI_SERVICE_KEY: alchemy.secret(process.env.AI_SERVICE_KEY),
+    
+    // Existing resources
+    DB: resources.db,
+    STORAGE: resources.storage,
+  },
+});
+```
+
+### Secret Management Compliance
+
+All governance features comply with Alchemy's secret handling:
+
+- **AI Service Credentials**: Stored as `alchemy.secret()` with encryption
+- **Governance Configuration**: Sensitive settings use secret bindings
+- **External API Keys**: Encrypted storage and transmission
+
+### Resource Lifecycle Alignment
+
+Governance resources follow Alchemy's lifecycle patterns:
+
+- **Adoption Support**: Can adopt existing governance data when migrating
+- **State Management**: Governance metadata stored in Alchemy state files
+- **Resource Naming**: Automatic stage-specific naming (`governance-db-preview`)
+
 ## Decision
 
 **Status:** Draft - Technical feasibility assessment completed
