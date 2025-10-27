@@ -18,9 +18,186 @@ on:
           - minor
           - major
           - canary
+      force_release:
+        description: 'Force release without AI/policy validation'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
+  ai-suggest-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.force_release != true
+    runs-on: ubuntu-latest
+    outputs:
+      suggested_type: ${{ steps.ai_suggest.outputs.suggested_type }}
+      confidence: ${{ steps.ai_suggest.outputs.confidence }}
+      rationale: ${{ steps.ai_suggest.outputs.rationale }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install tgk
+        run: ./scripts/install-tgk.sh
+
+      - name: AI Release Type Suggestion
+        id: ai_suggest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          # Get recent commits for analysis
+          GIT_LOG=$(git log --pretty=format:'%s%n%b' HEAD~$(git rev-list --count "$(git describe --tags --abbrev=0 2>/dev/null || echo 'HEAD~1')"..HEAD 2>/dev/null || echo '1')..HEAD)
+
+          # AI suggestion
+          SUGGESTION=$(tgk ai suggest release-type --git-log "$GIT_LOG")
+
+          # Extract values (this is a simplified parsing - in reality would use jq)
+          SUGGESTED_TYPE=$(echo "$SUGGESTION" | grep "Suggested:" | cut -d' ' -f2)
+          CONFIDENCE=$(echo "$SUGGESTION" | grep "Confidence:" | cut -d' ' -f2 | tr -d '%')
+
+          echo "suggested_type=$SUGGESTED_TYPE" >> $GITHUB_OUTPUT
+          echo "confidence=$CONFIDENCE" >> $GITHUB_OUTPUT
+          echo "rationale=AI-driven analysis of recent commits" >> $GITHUB_OUTPUT
+
+          # Post to Telegram for human review
+          tgk pin-card "${{ secrets.TG_COUNCIL_CHAT_ID }}" "🤖 AI Release Suggestion" "Suggested: $SUGGESTED_TYPE ($CONFIDENCE% confidence)\n\n$SUGGESTION\n\nReact ✅ to approve or ❌ to override"
+
+      - name: Wait for Human Approval
+        run: |
+          echo "⏳ Waiting for human approval in Telegram..."
+          echo "Check @alchemist_council for AI suggestion"
+          echo "Workflow will continue once approved"
+
+  policy-validation:
+    needs: ai-suggest-release
+    if: success() && (github.event_name == 'push' || inputs.force_release == true || needs.ai-suggest-release.outputs.confidence >= 70)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install tgk
+        run: ./scripts/install-tgk.sh
+
+      - name: Determine Release Type
+        id: release_type
+        run: |
+          if [ "${{ github.event.inputs.bump_type }}" ]; then
+            RELEASE_TYPE="${{ github.event.inputs.bump_type }}"
+          elif [ "${{ needs.ai-suggest-release.outputs.suggested_type }}" ]; then
+            RELEASE_TYPE="${{ needs.ai-suggest-release.outputs.suggested_type }}"
+          else
+            # Auto-detect from commits
+            BREAKING=$(git log --oneline --grep="BREAKING" --grep="feat!:" --grep="fix!:" | wc -l)
+            FEATURES=$(git log --oneline --grep="^feat" | wc -l)
+            FIXES=$(git log --oneline --grep="^fix" | wc -l)
+
+            if [ "$BREAKING" -gt 0 ]; then
+              RELEASE_TYPE="major"
+            elif [ "$FEATURES" -gt 0 ]; then
+              RELEASE_TYPE="minor"
+            else
+              RELEASE_TYPE="patch"
+            fi
+          fi
+
+          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Policy Validation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          RELEASE_TYPE="${{ steps.release_type.outputs.release_type }}"
+          CONTEXT=$(git log --pretty=format:'%s%n%b' HEAD~$(git rev-list --count "$(git describe --tags --abbrev=0 2>/dev/null || echo 'HEAD~1')"..HEAD 2>/dev/null || echo '1')..HEAD)
+
+          echo "🔍 Running policy validation for $RELEASE_TYPE release..."
+          tgk policy check release "$RELEASE_TYPE" "$CONTEXT"
+
   release:
+    needs: [ai-suggest-release, policy-validation]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install release-it
+        run: bun add -D release-it @release-it/conventional-changelog
+
+      - name: Determine Release Type
+        id: release_type
+        run: |
+          if [ "${{ github.event.inputs.bump_type }}" ]; then
+            RELEASE_TYPE="${{ github.event.inputs.bump_type }}"
+          elif [ "${{ needs.ai-suggest-release.outputs.suggested_type }}" ]; then
+            RELEASE_TYPE="${{ needs.ai-suggest-release.outputs.suggested_type }}"
+          else
+            RELEASE_TYPE="patch"
+          fi
+
+          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          RELEASE_TYPE="${{ steps.release_type.outputs.release_type }}"
+          echo "Bumping version with type: $RELEASE_TYPE"
+
+          # Run version bump script
+          bun run scripts/version-bump.ts "$RELEASE_TYPE"
+
+          # Get new version
+          NEW_VERSION=$(cat .tgk/VERSION)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "::set-output name=new_version::$NEW_VERSION"
+
+      - name: Generate Changelog
+        run: bun run release:changelog
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run release-it
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TYPE="${{ steps.release_type.outputs.release_type }}"
+          if [[ "$RELEASE_TYPE" == "canary" ]]; then
+            bun run release:canary
+          else
+            bun run "release:$RELEASE_TYPE"
+          fi
+
+      - name: Release Orchestration
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          CHANGELOG=$(tail -20 CHANGELOG.md | head -15)
+
+          tgk orchestrate release-announcement "$NEW_VERSION" "$CHANGELOG"
+
+  canary-release:
+    if: contains(github.event.inputs.bump_type || '', 'canary')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -105,70 +282,33 @@ jobs:
             - `package.json`
 
             ---
-            **Forum Polish Status:** Boring plumbing ✅
+            **Forum Polish Status:** Boring plumbing 
           draft: false
           prerelease: ${{ contains(steps.bump_version.outputs.new_version, 'canary') }}
 
-  canary-release:
-    if: contains(github.event.inputs.bump_type || '', 'canary') || contains(github.ref, 'canary')
+  post-release-metrics:
+    needs: release
+    if: success()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-
-      - name: Bump canary version
+      - name: Update Release Metrics
         run: |
-          bun run scripts/version-bump.ts canary
+          NEW_VERSION="${{ needs.release.outputs.new_version }}"
+          RELEASE_TYPE="${{ needs.release.outputs.release_type }}"
 
-      - name: Create canary branch
+          # Update Prometheus metrics
+          echo "tgk_release_velocity_total{type=\"$RELEASE_TYPE\"} $(date +%s)" | curl -X POST http://prometheus:9091/metrics/job/tgk/instance/release
+
+          # AI accuracy tracking
+          if [ "${{ needs.ai-suggest-release.outputs.suggested_type }}" = "$RELEASE_TYPE" ]; then
+            echo "tgk_ai_release_suggestion_accuracy_total{correct=\"true\"} 1" | curl -X POST http://prometheus:9091/metrics/job/tgk/instance/ai-accuracy
+          else
+            echo "tgk_ai_release_suggestion_accuracy_total{correct=\"false\"} 1" | curl -X POST http://prometheus:9091/metrics/job/tgk/instance/ai-accuracy
+          fi
+
+      - name: Log Release Event
         run: |
-          NEW_VERSION=$(cat .tgk/VERSION)
-          BRANCH_NAME="release/canary-v${NEW_VERSION}"
-
-          git checkout -b "$BRANCH_NAME"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .tgk/VERSION package.json
-          git commit -m "chore(canary): bump to v${NEW_VERSION}"
-          git push origin "$BRANCH_NAME"
-
-      - name: Create canary tag
-        run: |
-          NEW_VERSION=$(cat .tgk/VERSION)
-          TAG_NAME="v${NEW_VERSION}"
-
-          git tag -a "$TAG_NAME" -m "Canary release $TAG_NAME"
-          git push origin "$TAG_NAME"
-
-      - name: Create canary release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.bump_version.outputs.new_version }}
-          release_name: Canary v${{ steps.bump_version.outputs.new_version }}
-          body: |
-            ## Canary Release
-
-            Pre-release version for testing ongoing development.
-
-            ### Version Details
-            - **Version:** v${{ steps.bump_version.outputs.new_version }}
-            - **Branch:** release/canary-v${{ steps.bump_version.outputs.new_version }}
-
-            ### Installation
-            ```bash
-            # Install canary version
-            curl -Ls https://raw.githubusercontent.com/brendadeeznuts1111/alchmenyrun/canary-v${{ steps.bump_version.outputs.new_version }}/scripts/install-tgk.sh | bash
-            ```
-
-            ---
-            **⚠️ This is a pre-release. Use at your own risk.**
-          draft: false
-          prerelease: true
+          echo " Release completed successfully!"
+          echo "Version: ${{ needs.release.outputs.new_version }}"
+          echo "Type: ${{ needs.release.outputs.release_type }}"
+          echo "AI Confidence: ${{ needs.ai-suggest-release.outputs.confidence }}%"

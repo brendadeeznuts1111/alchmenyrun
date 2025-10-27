@@ -51,7 +51,14 @@
     "version:minor": "bun run scripts/version-bump.ts minor",
     "version:major": "bun run scripts/version-bump.ts major",
     "version:canary": "bun run scripts/version-bump.ts canary",
-    "version:release": "bun run scripts/version-release.ts"
+    "version:release": "bun run scripts/version-release.ts",
+    "release": "release-it",
+    "release:canary": "release-it --preRelease=canary",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major",
+    "release:ai-suggest": "tgk ai suggest release-type --git-log \"$(git log --pretty=format:'%s%n%b' HEAD~$(git rev-list --count \"$(git describe --tags --abbrev=0 2>/dev/null || echo 'HEAD~1')\"..HEAD 2>/dev/null || echo '1')..HEAD)\"",
+    "release:changelog": "bunx @release-it/conventional-changelog --infile CHANGELOG.md --latest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
@@ -71,6 +78,8 @@
     "miniflare": "4.20251011.1",
     "oxfmt": "^0.5.0",
     "postcss": "8.5.6",
+    "release-it": "^19.0.0",
+    "@release-it/conventional-changelog": "^10.0.0",
     "semver": "7.7.3",
     "tailwindcss": "3",
     "typescript": "^5.3.0",

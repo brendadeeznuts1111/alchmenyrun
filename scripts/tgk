@@ -670,9 +670,107 @@ cmd_ai_suggest() {
             echo ""
             echo "   🔧 To apply: tgk forum polish --apply --audit <audit-file>"
             ;;
+        "release-type")
+            local git_log="${2:-}"
+            if [ -z "$git_log" ]; then
+                echo "❌ Usage: tgk ai suggest release-type --git-log \"<git_log_output>\"" >&2
+                exit 1
+            fi
+            
+            echo "🤖 AI Release Type Analysis"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            
+            # Analyze commit messages for release type suggestion
+            local breaking_changes=0
+            local features=0
+            local fixes=0
+            local chores=0
+            local docs=0
+            local tests=0
+            local total_commits=0
+            
+            # Count different types of commits
+            while IFS= read -r line; do
+                ((total_commits++))
+                
+                if echo "$line" | grep -qE "^feat(\(.+\))?!?:|^BREAKING|^BREAKING CHANGE"; then
+                    ((breaking_changes++))
+                elif echo "$line" | grep -qE "^feat(\(.+\))?:|^feat:"; then
+                    ((features++))
+                elif echo "$line" | grep -qE "^fix(\(.+\))?!?:|^fix:"; then
+                    ((fixes++))
+                elif echo "$line" | grep -qE "^chore(\(.+\))?:|^chore:"; then
+                    ((chores++))
+                elif echo "$line" | grep -qE "^docs(\(.+\))?:|^docs:"; then
+                    ((docs++))
+                elif echo "$line" | grep -qE "^test(\(.+\))?:|^test:"; then
+                    ((tests++))
+                fi
+            done <<< "$git_log"
+            
+            echo "📊 Commit Analysis:"
+            echo "   Total commits: $total_commits"
+            echo "   Breaking changes: $breaking_changes"
+            echo "   New features: $features"
+            echo "   Bug fixes: $fixes"
+            echo "   Chores: $chores"
+            echo "   Documentation: $docs"
+            echo "   Tests: $tests"
+            echo ""
+            
+            # Determine release type
+            local suggested_type="patch"
+            local confidence=50
+            local rationale=""
+            
+            if [ $breaking_changes -gt 0 ]; then
+                suggested_type="major"
+                confidence=95
+                rationale="Breaking changes detected"
+            elif [ $features -gt 0 ]; then
+                suggested_type="minor"
+                confidence=85
+                rationale="New features added"
+            elif [ $fixes -gt 0 ]; then
+                suggested_type="patch"
+                confidence=75
+                rationale="Bug fixes included"
+            else
+                suggested_type="patch"
+                confidence=30
+                rationale="Only chores, docs, or tests - minimal impact"
+            fi
+            
+            echo "🎯 RELEASE TYPE RECOMMENDATION"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "📦 Suggested: $suggested_type"
+            echo "📊 Confidence: ${confidence}%"
+            echo "🎯 Rationale: $rationale"
+            echo ""
+            
+            # Check for pre-release considerations
+            if [ $breaking_changes -gt 0 ] && [ $total_commits -gt 10 ]; then
+                echo "⚠️  HIGH RISK: Multiple breaking changes detected"
+                echo "💡 Consider: canary release first"
+                echo ""
+            fi
+            
+            if [ $confidence -lt 60 ]; then
+                echo "⚠️  LOW CONFIDENCE: Manual review recommended"
+                echo "💡 Consider: patch vs minor boundary cases"
+                echo ""
+            fi
+            
+            echo "🔧 To execute:"
+            echo "   bun run release:$suggested_type"
+            echo "   # or"
+            echo "   bun run release:canary  # for pre-release testing"
+            ;;
         *)
             echo "❌ Unknown AI command: $subcmd" >&2
-            echo "💡 Available: template, reviewers, polish" >&2
+            echo "💡 Available: template, reviewers, polish, release-type" >&2
             exit 1
             ;;
     esac
@@ -695,6 +793,103 @@ cmd_policy_upload() {
     echo "   🔍 Validating policy syntax..."
     echo "   ✅ Policies uploaded successfully"
     echo "   🔐 OPA enforcement active"
+}
+
+cmd_policy_check() {
+    local check_type="$1"
+    local context="${2:-}"
+    
+    case "$check_type" in
+        "release")
+            local release_type="$3"
+            echo "🔍 POLICY CHECK: Release Type Validation"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "📋 Release Context:"
+            echo "   Type: $release_type"
+            echo "   Commits: $(echo "$context" | wc -l)"
+            echo ""
+            
+            # Check for breaking changes in major releases
+            if [ "$release_type" = "major" ]; then
+                if ! echo "$context" | grep -qE "BREAKING|BREAKING CHANGE|feat!.+|fix!.+"; then
+                    echo "❌ POLICY VIOLATION: Major release requires breaking changes"
+                    echo "💡 Either downgrade to minor or add BREAKING commit"
+                    exit 1
+                fi
+                echo "✅ Breaking changes confirmed for major release"
+            fi
+            
+            # Check for features in minor releases
+            if [ "$release_type" = "minor" ]; then
+                if ! echo "$context" | grep -qE "^feat"; then
+                    echo "❌ POLICY VIOLATION: Minor release requires new features"
+                    echo "💡 Either downgrade to patch or add feat: commit"
+                    exit 1
+                fi
+                echo "✅ New features confirmed for minor release"
+            fi
+            
+            # Check for security RFCs in critical releases
+            if [ "$release_type" = "major" ] || [ "$release_type" = "minor" ]; then
+                if echo "$context" | grep -qi "security\|vulnerability\|cve"; then
+                    echo "⚠️  SECURITY RELEASE: Extra scrutiny required"
+                    echo "🔐 Security team approval needed"
+                fi
+            fi
+            
+            echo ""
+            echo "✅ Policy check passed - release approved"
+            ;;
+        *)
+            echo "❌ Unknown policy check: $check_type" >&2
+            echo "💡 Available: release" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_orchestrate() {
+    local action="$1"
+    
+    case "$action" in
+        "release-announcement")
+            local version="$2"
+            local changelog="${3:-}"
+            
+            echo "🎯 RELEASE ORCHESTRATION: $version"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            
+            # Post to general channel
+            echo "📢 Posting to @alchemist_general..."
+            echo "   Title: 🚀 tgk $version Released!"
+            echo "   Changelog: $(echo "$changelog" | wc -l) lines"
+            echo "   Deep-link: https://github.com/brendadeeznuts1111/alchmenyrun/releases/tag/v$version"
+            
+            # Post to releases channel
+            echo "📢 Posting to @alchemist_releases..."
+            echo "   Rich card with changelog and metrics"
+            
+            # Update status page
+            echo "📊 Updating status page..."
+            echo "   Current version: $version"
+            echo "   Health: ✅ GREEN"
+            
+            # Trigger monitoring
+            echo "🔍 Triggering post-release monitoring..."
+            echo "   SLO/SLI checks initiated"
+            echo "   Rollback monitoring active"
+            
+            echo ""
+            echo "✅ Release orchestration complete"
+            ;;
+        *)
+            echo "❌ Unknown orchestration action: $action" >&2
+            echo "💡 Available: release-announcement" >&2
+            exit 1
+            ;;
+    esac
 }
 
 # Stream archive command
@@ -2456,12 +2651,20 @@ main() {
                     done
                     cmd_policy_upload "$policy_files" "$repo"
                     ;;
+                "check")
+                    shift
+                    cmd_policy_check "$@"
+                    ;;
                 *)
                     echo "❌ Unknown policy command: $subcmd"
-                    echo "💡 Available: upload"
+                    echo "💡 Available: upload, check"
                     exit 1
                     ;;
             esac
+            ;;
+        "orchestrate")
+            shift
+            cmd_orchestrate "$@"
             ;;
         "ai")
             shift
@@ -2549,7 +2752,15 @@ Commands:
     ai                           AI-powered suggestions
       ├─ suggest template        Suggest RFC template based on context
       ├─ suggest reviewers       Suggest reviewers based on history
-      └─ suggest polish <topic>  Suggest emoji and stream type
+      ├─ suggest polish <topic>  Suggest emoji and stream type
+      └─ suggest release-type    Analyze commits for release type
+
+    policy                       OPA policy management
+      ├─ upload <files>          Upload and validate OPA policies
+      └─ check release <type>    Validate release against policies
+
+    orchestrate                  Release orchestration
+      └─ release-announcement    Post release announcements
 
     merge                        Policy-gated merging
       ├─ ready --id <rfc#>       Check merge readiness

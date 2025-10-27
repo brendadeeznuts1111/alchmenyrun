@@ -1,0 +1,29 @@
+{
+  "git": {
+    "commitMessage": "chore(release): release v${version} [skip ci]",
+    "tagName": "v${version}",
+    "requireBranch": "main",
+    "changelog": "${git.conventionalChangelog}"
+  },
+  "npm": {
+    "publish": false,
+    "version": false
+  },
+  "github": {
+    "release": true,
+    "releaseName": "Release v${version}",
+    "tokenRef": "GITHUB_TOKEN",
+    "assets": []
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "angular",
+      "infile": "CHANGELOG.md"
+    }
+  },
+  "hooks": {
+    "before:init": "tgk policy check release --type ${release.type} --context \"$(git log --pretty=format:'%s%n%b' HEAD~$(git rev-list --count \"$(git describe --tags --abbrev=0 2>/dev/null || echo 'HEAD~1')\"..HEAD 2>/dev/null || echo '1')..HEAD)\"",
+    "after:bump": "bun run release:changelog",
+    "after:release": "tgk orchestrate release-announcement --version ${version} --changelog \"$(tail -20 CHANGELOG.md | head -15)\""
+  }
+}
