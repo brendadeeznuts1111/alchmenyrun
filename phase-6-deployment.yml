@@ -1,0 +1,46 @@
+name = "tgk-email-orchestrator"
+main = "workers/tgk-email-orchestrator/index.ts"
+compatibility_date = "2024-01-01"
+
+# Phase 6.1 Feature Flag Matrix
+[vars]
+EMAIL_PR_TELEGRAM = "0"  # Enable PR-Telegram integration
+EMAIL_PR_REPLY = "0"     # Enable email replies
+EMAIL_PR_QUEUE = "0"     # Use async queue processing
+EMAIL_PR_ANALYTICS = "0" # Enable analytics tracking
+EMAIL_PR_OPA = "0"       # Enable OPA policy enforcement
+
+# D1 Database for message tracking and email mapping
+[[d1_databases]]
+binding = "DB"
+database_name = "tgk_email_metadata"
+database_id = "c4c5dfd2-3d00-4083-b644-5cacb372d007"
+
+# Queue for async PR replies
+[[queues.producers]]
+binding = "TGK_PR_REPLY_QUEUE"
+queue = "tgk-pr-reply-queue"
+
+[[queues.consumers]]
+queue = "tgk-pr-reply-queue"
+
+# R2 bucket for OPA bundles
+[[r2_buckets]]
+binding = "OPA_BUNDLES"
+bucket_name = "tgk-opa-bundles"
+
+# Environment variables
+[env.production]
+name = "tgk-email-orchestrator"
+
+[env.production.vars]
+EMAIL_PR_TELEGRAM = "1"
+EMAIL_PR_REPLY = "1"
+EMAIL_PR_QUEUE = "1"
+EMAIL_PR_ANALYTICS = "1"
+EMAIL_PR_OPA = "1"
+
+# Analytics Engine binding
+[env.production.analytics_engine_datasets]
+binding = "ANALYTICS"
+dataset = "tgk_pr_dataset"

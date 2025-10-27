@@ -63,6 +63,15 @@ await alchemy.run("database", async () => {
 
     // Share with other scopes
     resources.db = db;
+
+    // TGK Email Metadata Database for Phase 6.0
+    const tgkEmailMetadata = await Database("tgk_email_metadata", {
+      adopt: true, // Adopt existing database if it exists
+      apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
+
+    // Share with other scopes
+    resources.tgkEmailMetadata = tgkEmailMetadata;
   } catch (error) {
     // If D1 creation fails, it's likely due to OAuth profile authentication
     // Provide helpful error message with API token setup instructions
@@ -156,7 +165,8 @@ export const website = await Worker("website", {
 
     // Storage bindings
     STORAGE: resources.storage,
-    CACHE: resources.cache,
+    // Temporarily disable KV bindings to allow cleanup during deployment
+    // CACHE: resources.cache,
 
     // Compute bindings
     JOBS: resources.jobs,
@@ -230,10 +240,10 @@ const workflowNamespace = await AlchemyWorkflow("onboarding", {
 //     DB: db,
 //     STORAGE: storage,
 //     JOBS: jobs,
-//     CACHE: cache,
+//     // CACHE: cache,
 //     CHAT: ChatDurableObject,
 //     WORKFLOW: OnboardingWorkflow,
-//     MCP_KV: mcpKv,
+//     // MCP_KV: mcpKv,
 //     // MCP Secrets
 //     MCP_SHARED_SECRET: alchemy.secret(process.env.MCP_SHARED_SECRET || ""),
 //     MCP_JWT_SECRET: alchemy.secret(process.env.MCP_JWT_SECRET || ""),
@@ -285,6 +295,62 @@ await Worker("github-webhook", {
     COUNCIL_ID: process.env.TELEGRAM_COUNCIL_ID || "",
     TOPIC_MOBILE: process.env.TELEGRAM_TOPIC_MOBILE || "",
     TOPIC_FORUM: process.env.TELEGRAM_TOPIC_FORUM || "",
+  },
+  profile: "ci",
+});
+
+// TGK Orchestrator - AI-Driven Customer & Release Orchestration
+await Worker("tgk-orchestrator", {
+  entrypoint: "./workers/tgk-orchestrator/index.ts",
+  bindings: {
+    AI: ai, // Cloudflare AI gateway
+    OPA: process.env.OPA_ENDPOINT || "https://opa.alchemy.run",
+    D12: process.env.D12_ENDPOINT || "https://d12.alchemy.run",
+  },
+  secrets: {
+    OPENAI_API_KEY: alchemy.secret(process.env.OPENAI_API_KEY || ""),
+    D12_TOKEN: alchemy.secret(process.env.D12_TOKEN || ""),
+    TELEGRAM_BOT_TOKEN: alchemy.secret(process.env.TELEGRAM_BOT_TOKEN || ""),
+    TELEGRAM_COUNCIL_ID: alchemy.secret(process.env.TELEGRAM_COUNCIL_ID || ""),
+  },
+  profile: "ci",
+});
+
+// TGK Email Cache R2 Bucket for Phase 6.0
+await alchemy.run("email-cache", async () => {
+  const emailCache = await Bucket("tgk-email-attachments", {
+    adopt: true,
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+
+  // Share with other scopes
+  resources.emailCache = emailCache;
+});
+
+// TGK Email Orchestrator - Phase 6.0 Email-to-Telegram Integration
+await Worker("tgk-email-orchestrator", {
+  entrypoint: "./workers/tgk-email-orchestrator/index.ts",
+  bindings: {
+    DB: resources.tgkEmailMetadata, // D1 database for email metadata and tracking
+    EMAIL_CACHE: resources.emailCache, // R2 bucket for email attachments and cache
+  },
+  secrets: {
+    TG_BOT_TOKEN: alchemy.secret(process.env.TELEGRAM_BOT_TOKEN || ""),
+    TGK_API_TOKEN: alchemy.secret(process.env.TGK_API_TOKEN || ""),
+    SENDGRID_API_KEY: alchemy.secret(process.env.SENDGRID_API_KEY || ""),
+  },
+  vars: {
+    TGK_INTERNAL_API_URL: process.env.TGK_INTERNAL_API_URL || "https://tgk.alchemy.run/internal",
+    TELEGRAM_DEFAULT_CHAT_ID: process.env.TELEGRAM_DEFAULT_CHAT_ID || "@general",
+    TELEGRAM_ONCALL_CHAT_ID: process.env.TELEGRAM_ONCALL_CHAT_ID || "@oncall_team",
+    TELEGRAM_SRE_CHAT_ID: process.env.TELEGRAM_SRE_CHAT_ID || "@sre_team",
+    TELEGRAM_SUPPORT_CHAT_ID: process.env.TELEGRAM_SUPPORT_CHAT_ID || "@support_team",
+    // Dynamic routing variables for incident-specific channels
+    TELEGRAM_INCIDENT_INC123_CHAT_ID: process.env.TELEGRAM_INCIDENT_INC123_CHAT_ID || "",
+    TELEGRAM_INCIDENT_INC456_CHAT_ID: process.env.TELEGRAM_INCIDENT_INC456_CHAT_ID || "",
+    EMAIL_PR_TELEGRAM: process.env.EMAIL_PR_TELEGRAM || "1",
+    SEND_EMAIL_REPLY: process.env.SEND_EMAIL_REPLY || "1",
+    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@tgk.dev",
   },
   profile: "ci",
 });

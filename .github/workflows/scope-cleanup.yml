@@ -1,0 +1,241 @@
+name: 🔧 Scope Cleanup
+# CODEOWNERS TEST: This file should trigger @alice.smith, @infra_dev1, and @diana.prince for review
+
+on:
+  # Manual trigger for administrators
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Stage to cleanup (leave empty for all PR stages)"
+        required: false
+        default: ""
+      strategy:
+        description: "Cleanup strategy"
+        required: false
+        default: "conservative"
+        type: choice
+        options:
+          - conservative
+          - aggressive
+      dry_run:
+        description: "Dry run mode"
+        required: false
+        default: true
+        type: boolean
+
+  # Automatic cleanup on PR close
+  pull_request:
+    types: [closed]
+
+  # Scheduled cleanup (daily at 2 AM UTC)
+  schedule:
+    - cron: "0 2 * * *"
+
+  # Allow manual cleanup via repository dispatch
+  repository_dispatch:
+    types: [scope-cleanup]
+
+jobs:
+  cleanup:
+    name: 🧹 Scope Cleanup
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🔍 Detect cleanup targets
+        id: detect
+        run: |
+          # Determine what to clean up based on trigger type
+          case "${{ github.event_name }}" in
+            "pull_request")
+              if [ "${{ github.event.pull_request.merged }}" = "false" ]; then
+                echo "Skipping cleanup - PR was closed without merging"
+                echo "skip=true" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              STAGE="pr-${{ github.event.pull_request.number }}"
+              echo "stage=$STAGE" >> $GITHUB_OUTPUT
+              echo "reason=PR closed" >> $GITHUB_OUTPUT
+              ;;
+            "schedule")
+              # Daily cleanup - target all PR stages older than 7 days
+              echo "stage=all-pr" >> $GITHUB_OUTPUT
+              echo "reason=scheduled cleanup" >> $GITHUB_OUTPUT
+              ;;
+            "workflow_dispatch")
+              STAGE="${{ inputs.stage }}"
+              if [ -z "$STAGE" ]; then
+                STAGE="all-pr"
+              fi
+              echo "stage=$STAGE" >> $GITHUB_OUTPUT
+              echo "reason=manual trigger" >> $GITHUB_OUTPUT
+              ;;
+            "repository_dispatch")
+              STAGE="${{ github.event.client_payload.stage }}"
+              echo "stage=${STAGE:-all-pr}" >> $GITHUB_OUTPUT
+              echo "reason=repository dispatch" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "stage=all-pr" >> $GITHUB_OUTPUT
+              echo "reason=default" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+          # Set strategy
+          STRATEGY="${{ github.event.inputs.strategy || 'conservative' }}"
+          echo "strategy=$STRATEGY" >> $GITHUB_OUTPUT
+
+          # Set dry run
+          DRY_RUN="${{ github.event.inputs.dry_run != 'false' && 'true' || 'false' }}"
+          echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+
+      - name: 🔒 Wait for concurrent jobs
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          # Prevent multiple cleanup jobs from running simultaneously
+          # This prevents race conditions when multiple PRs close at once
+          echo "Waiting for other cleanup jobs to complete..."
+          # Implementation would use a lock mechanism here
+
+      - name: 📋 Preview cleanup (dry run)
+        if: steps.detect.outputs.skip != 'true' && steps.detect.outputs.dry_run == 'true'
+        run: |
+          echo "🔍 Running cleanup in DRY RUN mode"
+          echo "Stage: ${{ steps.detect.outputs.stage }}"
+          echo "Strategy: ${{ steps.detect.outputs.strategy }}"
+          echo "Reason: ${{ steps.detect.outputs.reason }}"
+          echo ""
+
+          # Run finalize command in dry-run mode
+          if [ "${{ steps.detect.outputs.stage }}" = "all-pr" ]; then
+            bun run alchemy finalize --all --dry-run --strategy ${{ steps.detect.outputs.strategy }}
+          else
+            bun run alchemy finalize --stage ${{ steps.detect.outputs.stage }} --dry-run --strategy ${{ steps.detect.outputs.strategy }}
+          fi
+
+      - name: 🧹 Execute cleanup
+        if: steps.detect.outputs.skip != 'true' && steps.detect.outputs.dry_run == 'false'
+        env:
+          # Set environment variables for Cloudflare access
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ALCHEMY_PROFILE: ci
+        run: |
+          echo "🧹 Executing scope cleanup"
+          echo "Stage: ${{ steps.detect.outputs.stage }}"
+          echo "Strategy: ${{ steps.detect.outputs.strategy }}"
+          echo "Reason: ${{ steps.detect.outputs.reason }}"
+          echo ""
+
+          # Run finalize command
+          if [ "${{ steps.detect.outputs.stage }}" = "all-pr" ]; then
+            bun run alchemy finalize --all --strategy ${{ steps.detect.outputs.strategy }} --force
+          else
+            bun run alchemy finalize --stage ${{ steps.detect.outputs.stage }} --strategy ${{ steps.detect.outputs.strategy }} --force
+          fi
+
+      - name: 📊 Generate cleanup report
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          echo "## 🧹 Scope Cleanup Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ steps.detect.outputs.reason }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | ${{ steps.detect.outputs.stage }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Strategy | ${{ steps.detect.outputs.strategy }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ steps.detect.outputs.dry_run }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +'%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.detect.outputs.dry_run }}" = "false" ]; then
+            echo "### 📋 Cleanup Results" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Scope cleanup completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check the job logs above for detailed cleanup statistics." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### 👁️  Dry Run Results" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 Preview of what would be cleaned up" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Review the dry run output above to ensure the cleanup is safe." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📢 Notify on failure
+        if: failure() && steps.detect.outputs.skip != 'true'
+        run: |
+          echo "❌ Scope cleanup failed"
+          echo "Check the workflow logs for details"
+
+          # Could add Slack/Discord notification here
+          # Example: send notification to cleanup-alerts channel
+
+      - name: ✅ Success notification
+        if: success() && steps.detect.outputs.skip != 'true' && steps.detect.outputs.dry_run == 'false'
+        run: |
+          echo "✅ Scope cleanup completed successfully"
+          echo "Stage: ${{ steps.detect.outputs.stage }}"
+          echo "Strategy: ${{ steps.detect.outputs.strategy }}"
+
+          # Could add success notification here
+
+  # Optional: Health check job
+  health-check:
+    name: 🏥 Health Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🏥 Run scope health check
+        run: |
+          echo "🏥 Running scope system health check..."
+
+          # Check for orphaned state files
+          if [ -d ".alchemy" ]; then
+            echo "📊 Analyzing state files..."
+
+            # Count state files
+            STATE_COUNT=$(find .alchemy -name "state.json" 2>/dev/null | wc -l)
+            echo "Found $STATE_COUNT state files"
+
+            # Check for locked files
+            LOCK_COUNT=$(find .alchemy -name ".lock" 2>/dev/null | wc -l)
+            echo "Found $LOCK_COUNT locked scopes"
+
+            if [ "$LOCK_COUNT" -gt 0 ]; then
+              echo "⚠️  Found locked scopes - may indicate stuck processes"
+              find .alchemy -name ".lock" -exec ls -la {} \;
+            fi
+          else
+            echo "ℹ️  No .alchemy directory found"
+          fi
+
+          echo "✅ Health check completed"
+
+      - name: 📊 Report health metrics
+        run: |
+          echo "## 🏥 Scope Health Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health check completed" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Analyzed scope state files" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Generated cleanup metrics" >> $GITHUB_STEP_SUMMARY

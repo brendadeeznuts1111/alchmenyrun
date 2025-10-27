@@ -1,0 +1,16 @@
+name = "tgk-orchestrator"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+OPA = "https://opa.alchemy.run"
+D12 = "https://d12.alchemy.run"
+
+# Bindings
+[ai]
+binding = "AI"
+
+# Secrets (set via wrangler secret put)
+# D12_TOKEN
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_COUNCIL_ID

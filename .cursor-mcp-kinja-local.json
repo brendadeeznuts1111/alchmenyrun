@@ -1,0 +1,38 @@
+{
+  "name": "kinja-email-orchestrator-local",
+  "description": "Kinja-enhanced Phase-6 e-mail orchestration (local development)",
+  "command": "bun",
+  "args": ["run", "wrangler", "dev", "--local", "--port=8787"],
+  "env": {
+    "WRANGLER_SEND_METRICS": "false"
+  },
+  "rules": [
+    {
+      "name": "kinja:analyze",
+      "description": "Send subject+body to Kinja and return priority, confidence, ETA",
+      "prompt": "kinja:analyze\n$SUBJECT\n$BODY",
+      "handler": "http-post",
+      "url": "http://localhost:8787/kinja/analyze",
+      "headers": { "Content-Type": "application/json" },
+      "body": {
+        "subject": "{{SUBJECT}}",
+        "body": "{{BODY}}"
+      }
+    },
+    {
+      "name": "kinja:test",
+      "description": "Run a quick smoke test against the local Worker",
+      "prompt": "kinja:test",
+      "handler": "http-get",
+      "url": "http://localhost:8787/kinja/health"
+    },
+    {
+      "name": "kinja:metrics",
+      "description": "Pull local metrics from the Worker",
+      "prompt": "kinja:metrics [$METRIC]",
+      "handler": "http-get",
+      "url": "http://localhost:8787/metrics",
+      "params": { "name": "{{METRIC}}" }
+    }
+  ]
+}

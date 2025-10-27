@@ -1,0 +1,301 @@
+name: GitHub Integration Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, closed]
+  issues:
+    types: [opened, labeled, closed]
+  release:
+    types: [published]
+
+jobs:
+  tgk-integration-demo:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Demonstrate GitHub CLI Integration
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 GitHub CLI Integration Demo"
+          echo "================================="
+
+          # Repository information
+          echo ""
+          echo "📊 Repository Information:"
+          tgk github repo info
+
+          # Label management
+          echo ""
+          echo "🏷️ Label Management:"
+          tgk github labels list | head -5
+
+          # Workflow status
+          echo ""
+          echo "⚡ Recent Workflows:"
+          tgk github workflow status --status completed | head -3
+
+          # Security scan
+          echo ""
+          echo "🔒 Security Scan:"
+          tgk github security
+
+          # Dependency check
+          echo ""
+          echo "📦 Dependencies:"
+          tgk github deps check
+
+          # Metadata management
+          echo ""
+          echo "📝 Repository Metadata:"
+          tgk github metadata get
+
+          echo ""
+          echo "✅ GitHub CLI Integration Demo Complete"
+
+  pr-enhancement:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: PR Enhancement
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          echo "🔍 Analyzing PR #$PR_NUMBER..."
+
+          # Get PR details
+          PR_TITLE=$(gh pr view $PR_NUMBER --json title --jq .title)
+          PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
+
+          echo "📋 PR Title: $PR_TITLE"
+
+          # Auto-label based on PR content
+          if [[ $PR_TITLE == *"feat"* ]] || [[ $PR_TITLE == *"feature"* ]]; then
+            echo "🏷️ Auto-labeling as feature"
+            tgk github labels apply $PR_NUMBER type/feature
+          elif [[ $PR_TITLE == *"fix"* ]] || [[ $PR_TITLE == *"bug"* ]]; then
+            echo "🏷️ Auto-labeling as bug fix"
+            tgk github labels apply $PR_NUMBER type/bug
+          fi
+
+          # Size labeling based on changes
+          CHANGED_FILES=$(gh pr view $PR_NUMBER --json files --jq '.files | length')
+          if [ "$CHANGED_FILES" -le 5 ]; then
+            tgk github labels apply $PR_NUMBER size/xs
+          elif [ "$CHANGED_FILES" -le 20 ]; then
+            tgk github labels apply $PR_NUMBER size/s
+          elif [ "$CHANGED_FILES" -le 50 ]; then
+            tgk github labels apply $PR_NUMBER size/m
+          else
+            tgk github labels apply $PR_NUMBER size/l
+          fi
+
+          echo "✅ PR enhancement complete"
+
+  issue-enhancement:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Issue Enhancement
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+
+          echo "🎫 Processing issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+
+          # Enhanced issue processing
+          if [[ $ISSUE_TITLE == *"bug"* ]] || [[ $ISSUE_TITLE == *"fix"* ]]; then
+            tgk github labels apply $ISSUE_NUMBER type/bug
+            tgk github labels apply $ISSUE_NUMBER priority/medium
+          elif [[ $ISSUE_TITLE == *"feature"* ]] || [[ $ISSUE_TITLE == *"feat"* ]]; then
+            tgk github labels apply $ISSUE_NUMBER type/feature
+            tgk github labels apply $ISSUE_NUMBER priority/low
+          fi
+
+          # Add triage label if not already labeled
+          if ! gh issue view $ISSUE_NUMBER --json labels --jq '.labels[].name' | grep -q "status/"; then
+            tgk github labels apply $ISSUE_NUMBER status/needs-triage
+          fi
+
+          echo "✅ Issue enhancement complete"
+
+  release-enhancement:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Release Enhancement
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+          D12_TOKEN: ${{ secrets.D12_TOKEN }}
+        run: |
+          RELEASE_TAG=${{ github.event.release.tag_name }}
+          RELEASE_NAME=${{ github.event.release.name }}
+
+          echo "🎉 Processing release: $RELEASE_TAG"
+
+          # Update repository topics based on release
+          if [[ $RELEASE_TAG == *"alpha"* ]] || [[ $RELEASE_TAG == *"beta"* ]]; then
+            tgk github metadata add-topic prerelease
+          else
+            tgk github metadata remove-topic prerelease
+            tgk github metadata add-topic stable
+          fi
+
+          # Notify customers for major releases
+          if [[ $RELEASE_TAG =~ ^v[0-9]+\.[0-9]+\.0$ ]]; then
+            echo "📢 Major release - customer notifications triggered"
+            # tgk customer notify would be called here
+          fi
+
+          # Update release-related labels
+          if ${{ github.event.release.prerelease }}; then
+            tgk github metadata add-topic prerelease
+          else
+            tgk github metadata add-topic stable
+          fi
+
+          echo "✅ Release enhancement complete"
+
+  weekly-maintenance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Weekly Repository Maintenance
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧹 Weekly repository maintenance..."
+
+          # Sync repository metadata
+          tgk github metadata sync
+
+          # Check for stale issues
+          STALE_ISSUES=$(gh issue list --state open --limit 50 --json number,title,updatedAt --jq '.[] | select(.updatedAt < now - 30*24*60*60) | .number')
+          if [ -n "$STALE_ISSUES" ]; then
+            echo "⚠️ Found stale issues: $STALE_ISSUES"
+            # Could add stale labels or notifications
+          fi
+
+          # Update dependency information
+          tgk github deps check
+
+          # Refresh workflow status
+          tgk github workflow list
+
+          echo "✅ Weekly maintenance complete"

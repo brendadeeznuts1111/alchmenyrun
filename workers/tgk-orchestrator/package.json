@@ -1,0 +1,20 @@
+{
+  "name": "tgk-orchestrator",
+  "version": "1.0.0",
+  "description": "TGK Orchestrator Worker with Health Infrastructure",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "./test-health.sh"
+  },
+  "dependencies": {
+    "@cloudflare/ai": "^1.2.2",
+    "base64-js": "^1.5.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "wrangler": "^3.0.0"
+  }
+}

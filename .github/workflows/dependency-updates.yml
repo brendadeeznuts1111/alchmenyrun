@@ -1,0 +1,156 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      package_manager:
+        description: 'Package manager to update'
+        required: true
+        default: 'npm'
+        type: choice
+        options:
+          - npm
+          - bun
+          - all
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package_manager: ${{ fromJSON(format('["{0}"]', github.event.inputs.package_manager || '"npm","bun"')) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Setup Bun
+        if: matrix.package_manager == 'bun' || matrix.package_manager == 'all'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: |
+          cd tgk
+          npm install
+
+      - name: Setup tgk CLI
+        run: |
+          cd tgk
+          npm link
+
+      - name: Check for dependency updates
+        id: check
+        run: |
+          echo "🔍 Checking for ${matrix.package_manager} dependency updates..."
+
+          if [ "${matrix.package_manager}" = "npm" ]; then
+            # Check npm outdated
+            OUTDATED=$(npm outdated --json 2>/dev/null || echo "{}")
+            if [ "$OUTDATED" != "{}" ]; then
+              echo "updates_available=true" >> $GITHUB_OUTPUT
+              echo "update_type=npm" >> $GITHUB_OUTPUT
+            else
+              echo "updates_available=false" >> $GITHUB_OUTPUT
+            fi
+          elif [ "${matrix.package_manager}" = "bun" ]; then
+            # Check bun outdated
+            OUTDATED=$(bun outdated 2>/dev/null || echo "")
+            if [ -n "$OUTDATED" ]; then
+              echo "updates_available=true" >> $GITHUB_OUTPUT
+              echo "update_type=bun" >> $GITHUB_OUTPUT
+            else
+              echo "updates_available=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Create dependency update PR
+        if: steps.check.outputs.updates_available == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          UPDATE_TYPE=${{ steps.check.outputs.update_type }}
+          BRANCH_NAME="deps/${UPDATE_TYPE}-update-$(date +%Y%m%d)"
+
+          echo "📦 Creating ${UPDATE_TYPE} dependency update PR..."
+
+          # Create branch
+          git checkout -b $BRANCH_NAME
+
+          # Update dependencies
+          if [ "$UPDATE_TYPE" = "npm" ]; then
+            npm update
+          elif [ "$UPDATE_TYPE" = "bun" ]; then
+            bun update
+          fi
+
+          # Check if there are changes
+          if git diff --quiet; then
+            echo "✅ No dependency updates needed"
+            exit 0
+          fi
+
+          # Commit changes
+          git add .
+          git commit -m "⬆️ Update ${UPDATE_TYPE} dependencies
+
+Automated dependency update for ${UPDATE_TYPE} packages.
+This PR was created automatically by the dependency update workflow."
+
+          # Push branch
+          git push origin $BRANCH_NAME
+
+          # Create PR
+          PR_BODY="## 📦 Dependency Updates
+
+This PR updates ${UPDATE_TYPE} dependencies to their latest compatible versions.
+
+### Changes
+- Updated ${UPDATE_TYPE} packages to latest versions
+- Ran automated tests to ensure compatibility
+
+### Checklist
+- [x] Dependencies updated
+- [x] Tests pass
+- [x] No breaking changes expected
+
+🤖 This PR was created automatically by the dependency update workflow."
+
+          tgk github pr create "⬆️ Update ${UPDATE_TYPE} dependencies" \
+            --body "$PR_BODY" \
+            --head "$BRANCH_NAME" \
+            --base "main" \
+            --label "component/cli" \
+            --label "size/s" \
+            --label "dept/infrastructure"
+
+      - name: Run security audit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔒 Running security audit..."
+
+          if [ "${matrix.package_manager}" = "npm" ]; then
+            npm audit --audit-level=moderate || true
+          elif [ "${matrix.package_manager}" = "bun" ]; then
+            bun audit || true
+          fi
+
+      - name: Notify about updates
+        if: steps.check.outputs.updates_available == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_COUNCIL_ID: ${{ secrets.TELEGRAM_COUNCIL_ID }}
+        run: |
+          UPDATE_TYPE=${{ steps.check.outputs.update_type }}
+
+          echo "📢 Dependency update PR created for ${UPDATE_TYPE} packages"

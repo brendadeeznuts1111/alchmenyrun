@@ -689,4 +689,34 @@ Alchemy resources follow an async/await pattern with a pseudo-class implementati
      throw error; // Propagate errors
    }
    ```
+## Kinja Email Grammar (Phase-6)
+
+When creating email addresses for the Kinja-enhanced email orchestration system, always use this exact format:
+
+```
+[DOMAIN].[SCOPE].[TYPE].[HIERARCHY].[META]@cloudflare.com
+```
+
+**Token Definitions:**
+- **DOMAIN**: `infra`, `docs`, `qa`, `integrations`, `exec` (team subdomain)
+- **SCOPE**: `lead`, `senior`, `junior`, `bot`, `alert` (role level)
+- **TYPE**: `pr`, `issue`, `deploy`, `alert`, `review` (event type)
+- **HIERARCHY**: `p0`, `p1`, `p2`, `p3`, `blk` (priority level)
+- **META**: `gh`, `tg`, `cf`, `24h` (source/SLA indicator)
+
+**Examples:**
+- `infra.lead.pr.p0.gh@cloudflare.com` → Infrastructure lead PR review, P0 priority, GitHub source
+- `docs.senior.issue.p2.tg@cloudflare.com` → Documentation issue from Telegram, P2 priority
+- `qa.bot.alert.blk.24h@cloudflare.com` → QA pipeline alert, blocker, 24h SLA
+
+**Usage Context:**
+- Use in CODEOWNERS files to route notifications to correct teams
+- Use in commit messages to reference email routing
+- Use in documentation to show notification flows
+
+**Validation:**
+- Always use lowercase, dot-separated tokens
+- Exactly 5 tokens before @cloudflare.com
+- No spaces or special characters except dots
+
    [https://github.com/alchemy-run/alchemy/blob/main/.cursorrules]
