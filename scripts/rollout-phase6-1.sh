@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 # Configuration
 WORKER_NAME="tgk-email-orchestrator"
 DEPLOYMENT_FILE=".github/rfc006/phase-6-deployment.yml"
+QUEUE_NAME="tgk-email-pr-queue"
 
 # Function to check deployment status
 check_deployment() {
@@ -27,15 +28,29 @@ check_deployment() {
 roll_forward() {
   echo -e "${GREEN}▶️  ROLLING FORWARD Phase-6.1 features${NC}"
 
-  # 1. Bootstrap infrastructure (idempotent)
-  echo "🏗️  Bootstrapping infrastructure..."
-  ./scripts/bootstrap-phase6-1.sh
+  # 1. Ensure infrastructure exists
+  echo "🏗️  Checking infrastructure..."
+  if ! npx wrangler queues list 2>/dev/null | grep -q "$QUEUE_NAME"; then
+    echo "Infrastructure not found. Run: bun run phase61:bootstrap"
+    exit 1
+  fi
 
-  # 2. Deploy with all features enabled
+  # 2. Enable feature flags in deployment file
+  echo "🎛️  Enabling feature flags..."
+  # Use sed instead of yq for better compatibility
+  sed -i.bak \
+    -e 's/EMAIL_PR_TELEGRAM: ".*"/EMAIL_PR_TELEGRAM: "1"/' \
+    -e 's/EMAIL_PR_REPLY: ".*"/EMAIL_PR_REPLY: "1"/' \
+    -e 's/EMAIL_PR_QUEUE: ".*"/EMAIL_PR_QUEUE: "1"/' \
+    -e 's/EMAIL_PR_ANALYTICS: ".*"/EMAIL_PR_ANALYTICS: "1"/' \
+    -e 's/EMAIL_PR_OPA: ".*"/EMAIL_PR_OPA: "1"/' \
+    "$DEPLOYMENT_FILE"
+
+  # 3. Deploy with all features enabled
   echo "📦 Deploying with Phase-6.1 features..."
   npx wrangler deploy --config "$DEPLOYMENT_FILE"
 
-  # 3. Verify deployment
+  # 4. Verify deployment
   echo "✅ Verifying deployment..."
   check_deployment
 
@@ -52,19 +67,25 @@ roll_forward() {
 roll_back() {
   echo -e "${YELLOW}◀️  ROLLING BACK to Phase-6.0${NC}"
 
-  # 1. Disable all Phase-6.1 features via secrets (immediate effect)
+  # 1. Disable feature flags in deployment file
   echo "🔧 Disabling feature flags..."
-  npx wrangler secret put EMAIL_PR_TELEGRAM "0" 2>/dev/null || echo "⚠️  EMAIL_PR_TELEGRAM not set"
-  npx wrangler secret put EMAIL_PR_REPLY "0" 2>/dev/null || echo "⚠️  EMAIL_PR_REPLY not set"
-  npx wrangler secret put EMAIL_PR_QUEUE "0" 2>/dev/null || echo "⚠️  EMAIL_PR_QUEUE not set"
-  npx wrangler secret put EMAIL_PR_ANALYTICS "0" 2>/dev/null || echo "⚠️  EMAIL_PR_ANALYTICS not set"
-  npx wrangler secret put EMAIL_PR_OPA "0" 2>/dev/null || echo "⚠️  EMAIL_PR_OPA not set"
+  sed -i.bak \
+    -e 's/EMAIL_PR_TELEGRAM: ".*"/EMAIL_PR_TELEGRAM: "0"/' \
+    -e 's/EMAIL_PR_REPLY: ".*"/EMAIL_PR_REPLY: "0"/' \
+    -e 's/EMAIL_PR_QUEUE: ".*"/EMAIL_PR_QUEUE: "0"/' \
+    -e 's/EMAIL_PR_ANALYTICS: ".*"/EMAIL_PR_ANALYTICS: "0"/' \
+    -e 's/EMAIL_PR_OPA: ".*"/EMAIL_PR_OPA: "0"/' \
+    "$DEPLOYMENT_FILE"
 
-  # 2. Deploy clean Phase-6.0 code (optional, if code changes needed)
+  # 2. Deploy with features disabled
+  echo "📦 Deploying Phase-6.0 (features disabled)..."
+  npx wrangler deploy --config "$DEPLOYMENT_FILE"
+
+  # 3. Optional: Revert code to Phase-6.0
   read -p "Also revert code to Phase-6.0? (y/N): " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "📦 Deploying Phase-6.0 code..."
+    echo "📦 Reverting to Phase-6.0 code..."
     git checkout HEAD~1 2>/dev/null || echo "⚠️  Cannot auto-revert, manual revert needed"
     npx wrangler deploy --config "$DEPLOYMENT_FILE"
   fi
@@ -79,23 +100,19 @@ show_status() {
 
   # Check if infrastructure exists
   echo "🏗️  Infrastructure:"
-  npx wrangler queues list 2>/dev/null | grep -q tgk-email-pr-queue && echo "  ✅ Queue: tgk-email-pr-queue" || echo "  ❌ Queue: Not found"
+  npx wrangler queues list 2>/dev/null | grep -q "$QUEUE_NAME" && echo "  ✅ Queue: $QUEUE_NAME" || echo "  ❌ Queue: Not found"
   npx wrangler analytics-engine list 2>/dev/null | grep -q tgk_pr_dataset && echo "  ✅ Analytics: tgk_pr_dataset" || echo "  ❌ Analytics: Not found"
+  npx wrangler r2 object list tgk-email-attachments 2>/dev/null | grep -q "bundles/phase61.tar.gz" && echo "  ✅ OPA Bundle: phase61.tar.gz" || echo "  ❌ OPA Bundle: Not found"
 
   # Check deployment
   echo ""
   echo "🚀 Deployment:"
   npx wrangler deployments list 2>/dev/null | head -5 || echo "  ❌ Cannot check deployments"
 
-  # Check feature flags (if deployed)
+  # Check feature flags in deployment file
   echo ""
-  echo "🎛️  Feature Flags (current values):"
-  echo "  Note: These are runtime secrets, check Cloudflare dashboard for current values"
-  echo "  EMAIL_PR_TELEGRAM=1      # Interactive PR buttons"
-  echo "  EMAIL_PR_REPLY=1         # Email replies"
-  echo "  EMAIL_PR_QUEUE=1         # Async processing"
-  echo "  EMAIL_PR_ANALYTICS=1     # SLA tracking"
-  echo "  EMAIL_PR_OPA=1           # Policy enforcement"
+  echo "🎛️  Feature Flags (deployment file):"
+  grep "EMAIL_PR_" "$DEPLOYMENT_FILE" | sed 's/.*EMAIL_PR_/  /' || echo "  ❌ Cannot read deployment file"
 }
 
 # Main menu

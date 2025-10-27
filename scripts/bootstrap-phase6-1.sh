@@ -7,10 +7,10 @@ set -euo pipefail
 # ============================================================================
 
 # ---------- config ----------
-QUEUE_NAME="tgk-pr-reply-queue"
+QUEUE_NAME="tgk-email-pr-queue"
 DATASET="tgk_pr_dataset"
-OPA_BUCKET="tgk-opa-bundles"
-BUNDLE_KEY="phase61/pr.tar.gz"
+OPA_BUCKET="tgk-email-attachments"
+BUNDLE_KEY="bundles/phase61.tar.gz"
 WORKER_NAME="tgk-email-orchestrator"
 CF_ACCOUNT_ID="${CF_ACCOUNT_ID:-}"
 CF_API_TOKEN="${CF_API_TOKEN:-}"
@@ -28,48 +28,27 @@ npx wrangler queues create "$QUEUE_NAME" 2>/dev/null || true
 
 # 2. Analytics Engine (time-to-answer metrics)
 echo "➡️  Dataset $DATASET"
+# Note: Analytics Engine creation via wrangler not yet supported
+# Using curl as fallback until wrangler adds support
 curl -sX POST "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/analytics_engine/datasets" \
   -H "Authorization: Bearer $CF_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"$DATASET\",\"retention_days\":90}" 2>/dev/null || true
+  -d "{\"name\":\"$DATASET\",\"retention_days\":90}" 2>/dev/null || echo "⚠️  Analytics Engine may already exist or API unavailable"
 
 # 3. OPA bundle (merge gate)
 echo "➡️  OPA bundle"
-mkdir -p .opa/phase61
-cat > .opa/phase61/pr.rego <<'REGO'
-package tgk.pr
-default allow = false
-allow {
-  input.action == "merge"
-  input.gh_status == "clean"
-  input.reviews["APPROVED"] >= 2
-}
-REGO
-tar -czf - -C .opa/phase61 . | \
-  npx wrangler r2 object put "$BUNDLE_KEY" --pipe --bucket "$OPA_BUCKET" 2>/dev/null || true
+if [[ -f ".github/rfc006/policies/phase61-pr.rego" ]]; then
+  mkdir -p .opa/phase61
+  cp .github/rfc006/policies/phase61-pr.rego .opa/phase61/pr.rego
+  tar -czf - -C .opa/phase61 . | \
+    npx wrangler r2 object put "$BUNDLE_KEY" --pipe --bucket "$OPA_BUCKET" 2>/dev/null || echo "⚠️  Failed to upload OPA bundle"
+else
+  echo "⚠️  OPA policy file not found: .github/rfc006/policies/phase61-pr.rego"
+fi
 
-# 4. Patch wrangler manifest (feature flags)
-echo "➡️  Feature flags"
-yq eval -i '
-  .vars.EMAIL_PR_TELEGRAM = "1" |
-  .vars.EMAIL_PR_REPLY     = "1" |
-  .vars.EMAIL_PR_QUEUE     = "1" |
-  .vars.EMAIL_PR_ANALYTICS = "1" |
-  .vars.EMAIL_PR_OPA       = "1"
-' phase-6-deployment.yml
-
-# 5. Deploy
-echo "➡️  Deploy Worker"
-npx wrangler deploy --config phase-6-deployment.yml
-
-# 6. Smoke test (canary)
-echo "➡️  Canary smoke test"
-RESP=$(curl -sX POST "https://$WORKER_NAME.your-subdomain.workers.dev/kinja/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{"subject":"PR #999 merge gate","body":"CI green, 2 approvals"}')
-echo "Canary response: $RESP"
-grep -q '"priority":"p0"' <<<"$RESP" && echo "✅ Canary healthy" || { echo "❌ Canary failed"; exit 1; }
-
-echo "🎉 Phase 6.1 live – flags on, queue ready, analytics streaming"
-echo "🔍  Canary dashboard: https://dash.cloudflare.com/$CF_ACCOUNT_ID/analytics-engine"
-echo "⏮️  Rollback: wrangler secret put EMAIL_PR_TELEGRAM 0 && wrangler deploy"
+echo "🎉 Phase 6.1 infrastructure ready – bootstrap complete"
+echo ""
+echo "📋 Next steps:"
+echo "  1. Enable features: bun run phase61:rollout"
+echo "  2. Monitor status: bun run phase61:status"
+echo "  3. Rollback if needed: bun run phase61:rollback"

@@ -6,11 +6,11 @@ compatibility_date: 2025-11-01
 vars:
   ENV: production
   TGK_INTERNAL_API: https://tgk.alchemy.run/internal
-  EMAIL_PR_TELEGRAM: "1"      # Enable PR-Telegram integration with buttons
-  EMAIL_PR_REPLY: "1"         # Send email answer back to original sender
-  EMAIL_PR_QUEUE: "1"         # Offload reply to async queue (keeps HTTP <50ms)
-  EMAIL_PR_ANALYTICS: "1"     # Push metrics to Analytics Engine
-  EMAIL_PR_OPA: "1"           # Enforce OPA policy checks
+  EMAIL_PR_TELEGRAM: "0"      # Enable PR-Telegram integration with buttons
+  EMAIL_PR_REPLY: "0"         # Send email answer back to original sender
+  EMAIL_PR_QUEUE: "0"         # Offload reply to async queue (keeps HTTP <50ms)
+  EMAIL_PR_ANALYTICS: "0"     # Push metrics to Analytics Engine
+  EMAIL_PR_OPA: "0"           # Enforce OPA policy checks
 
 d1_databases:
   - binding: DB
