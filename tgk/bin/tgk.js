@@ -319,6 +319,60 @@ program
     }
   });
 
+// Orchestrate commands
+program
+  .command('orchestrate auto-triage <issue-id>')
+  .description('Proactively triggers tgk issue triage on new issues, posts initial report to relevant Telegram stream')
+  .action(async (issueId) => {
+    try {
+      const { autoTriage } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await autoTriage(issueId);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('orchestrate release-candidate <pr-id>')
+  .description('Triggers full release candidate pipeline (staging deploy, E2E tests, auto-promotion if green)')
+  .action(async (prId) => {
+    try {
+      const { releaseCandidate } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await releaseCandidate(prId);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('orchestrate revert <component> <version>')
+  .description('Policy-gated rollback of component (Worker, DB, config) to previous version')
+  .option('--stage <stage>', 'Target stage (production, staging)', 'production')
+  .action(async (component, version, options) => {
+    try {
+      const { revertComponent } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await revertComponent(component, version, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('orchestrate audit-compliance <scope>')
+  .description('Initiates a compliance audit, cross-referencing OPA policies vs. current state')
+  .action(async (scope) => {
+    try {
+      const { auditCompliance } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await auditCompliance(scope);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
 // AI commands
 program
   .command('ai labels <issue-id>')

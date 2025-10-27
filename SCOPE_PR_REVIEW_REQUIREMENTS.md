@@ -7,24 +7,24 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 ### 🎯 Primary Reviewers (Infrastructure Team)
 | GitHub Handle | Role | Telegram Contact | Email | Required For |
 |---------------|------|------------------|--------|--------------|
-| `@alice.smith` | Infrastructure Lead | @alice_smith (ID: 987654321) | alice.smith@infra.cloudflare.com | All scope files |
-| `@infra_dev2` | Senior Infra Dev | @infra_dev2 (ID: 444555666) | dev2@infra.cloudflare.com | `src/scope/*` files |
+| `@alice.smith` | Engineering Manager | @alice_smith (ID: 987654321) | Alice.Smith@infra.cloudflare.com [INFRA LEAD - Alice Smith, Engineering Manager, infra.cloudflare.com] | All scope files |
+| `@infra_dev2` | Engineer | @infra_dev2 (ID: 444555666) | Dev2.Junior@infra.cloudflare.com [INFRA JUNIOR - Dev2 Junior, Engineer, infra.cloudflare.com] | `src/scope/*` files |
 
 ### 🔄 Secondary Reviewers (Scripts & Workflows)
 | GitHub Handle | Role | Telegram Contact | Email | Required For |
 |---------------|------|------------------|--------|--------------|
-| `@infra_dev1` | Infra Dev | @infra_dev1 (ID: 111222333) | dev1@infra.cloudflare.com | Scripts & workflows |
+| `@infra_dev1` | Senior Engineer | @infra_dev1 (ID: 111222333) | Dev1.Senior@infra.cloudflare.com [INFRA SENIOR - Dev1 Senior, Senior Engineer, infra.cloudflare.com] | Scripts & workflows |
 
 ### 📚 Cross-Functional Reviewers
 | GitHub Handle | Team | Telegram Contact | Email | Required For |
 |---------------|------|------------------|--------|--------------|
-| `@frank.taylor` | Documentation Lead | @frank_taylor (ID: 333444555) | frank.taylor@docs.cloudflare.com | Deployment checklist |
-| `@diana.prince` | Quality Lead | @diana_prince (ID: 999000111) | diana.prince@quality.cloudflare.com | GitHub workflows |
+| `@frank.taylor` | Documentation Manager | @frank_taylor (ID: 333444555) | Frank.Taylor@docs.cloudflare.com [DOCS LEAD - Frank Taylor, Documentation Manager, docs.cloudflare.com] | Deployment checklist |
+| `@diana.prince` | Quality Assurance Manager | @diana_prince (ID: 999000111) | Diana.Prince@quality.cloudflare.com [QA LEAD - Diana Prince, Quality Assurance Manager, quality.cloudflare.com] | GitHub workflows |
 
 ### 👑 Strategic Reviewers (CODEOWNERS Changes)
 | GitHub Handle | Role | Telegram Contact | Email | Required For |
 |---------------|------|------------------|--------|--------------|
-| `@brendadeeznuts1111` | Leadership | @brendadeeznuts1111 (ID: 123456789) | brendadeeznuts1111@cloudflare.com | CODEOWNERS changes |
+| `@brendadeeznuts1111` | Executive Director | @brendadeeznuts1111 (ID: 123456789) | Brendan.Dee@cloudflare.com [SCOPE LEAD - Brendan Dee, Executive Director, cloudflare.com] | CODEOWNERS changes |
 
 ## 📞 Complete Team Contact Directory
 
@@ -32,12 +32,12 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 **Team Lead:** Alice Smith
 - **GitHub:** @alice.smith
 - **Telegram:** @alice_smith (ID: 987654321)
-- **Email:** alice.smith@infra.cloudflare.com
+- **Email:** Alice.Smith@infra.cloudflare.com [INFRA LEAD - Alice Smith, Engineering Manager, infra.cloudflare.com]
 - **Domain:** infra.cloudflare.com
 
 **Team Members:**
-- **Dev1:** @infra_dev1 | @infra_dev1 (ID: 111222333) | dev1@infra.cloudflare.com
-- **Dev2:** @infra_dev2 | @infra_dev2 (ID: 444555666) | dev2@infra.cloudflare.com
+- **Dev1 Senior:** @infra_dev1 | @infra_dev1 (ID: 111222333) | Dev1.Senior@infra.cloudflare.com [INFRA SENIOR - Dev1 Senior, Senior Engineer, infra.cloudflare.com]
+- **Dev2 Junior:** @infra_dev2 | @infra_dev2 (ID: 444555666) | Dev2.Junior@infra.cloudflare.com [INFRA JUNIOR - Dev2 Junior, Engineer, infra.cloudflare.com]
 
 **Responsibilities:** Core infrastructure, CI/CD, deployments, scope system
 
@@ -45,11 +45,11 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 **Team Lead:** Charlie Brown
 - **GitHub:** @charlie.brown
 - **Telegram:** @charlie_brown (ID: 777888999)
-- **Email:** charlie.brown@integrations.cloudflare.com
+- **Email:** Charlie.Brown@integrations.cloudflare.com [PROVIDER LEAD - Charlie Brown, Integration Manager, integrations.cloudflare.com]
 - **Domain:** integrations.cloudflare.com
 
 **Team Members:**
-- **Provider Dev:** @provider_dev1 | @provider_dev1 (ID: 000111222) | provider@integrations.cloudflare.com
+- **Provider Senior:** @provider_dev1 | @provider_dev1 (ID: 000111222) | Provider.Senior@integrations.cloudflare.com [PROVIDER SENIOR - Provider Senior, Senior Integration Engineer, integrations.cloudflare.com]
 
 **Responsibilities:** Cloud provider integrations, API clients
 
@@ -57,11 +57,11 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 **Team Lead:** Frank Taylor
 - **GitHub:** @frank.taylor
 - **Telegram:** @frank_taylor (ID: 333444555)
-- **Email:** frank.taylor@docs.cloudflare.com
+- **Email:** Frank.Taylor@docs.cloudflare.com [DOCS LEAD - Frank Taylor, Documentation Manager, docs.cloudflare.com]
 - **Domain:** docs.cloudflare.com
 
 **Team Members:**
-- **Writer:** @doc_writer1 | @doc_writer1 (ID: 666777888) | writer@docs.cloudflare.com
+- **Writer Senior:** @doc_writer1 | @doc_writer1 (ID: 666777888) | Writer.Senior@docs.cloudflare.com [DOCS SENIOR - Writer Senior, Senior Technical Writer, docs.cloudflare.com]
 
 **Responsibilities:** Documentation, examples, guides, READMEs
 
@@ -69,11 +69,11 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 **Team Lead:** Diana Prince
 - **GitHub:** @diana.prince
 - **Telegram:** @diana_prince (ID: 999000111)
-- **Email:** diana.prince@quality.cloudflare.com
+- **Email:** Diana.Prince@quality.cloudflare.com [QA LEAD - Diana Prince, Quality Assurance Manager, quality.cloudflare.com]
 - **Domain:** quality.cloudflare.com
 
 **Team Members:**
-- **QA Analyst:** @qa_analyst1 | @qa_analyst1 (ID: 222333444) | qa@quality.cloudflare.com
+- **QA Senior:** @qa_analyst1 | @qa_analyst1 (ID: 222333444) | QA.Senior@quality.cloudflare.com [QA SENIOR - QA Senior, Senior QA Engineer, quality.cloudflare.com]
 
 **Responsibilities:** Testing, quality assurance, CI/CD validation
 
@@ -81,7 +81,7 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 **Executive Lead:** Brendan Dee
 - **GitHub:** @brendadeeznuts1111
 - **Telegram:** @brendadeeznuts1111 (ID: 123456789)
-- **Email:** brendadeeznuts1111@cloudflare.com
+- **Email:** Brendan.Dee@cloudflare.com [SCOPE LEAD - Brendan Dee, Executive Director, cloudflare.com]
 - **Domain:** cloudflare.com (leadership)
 
 **RFC Council Members:** All team leads above participate in strategic decisions
@@ -114,9 +114,9 @@ Based on our CODEOWNERS configuration, the scope system PR should automatically 
 3. **CI/CD Blockers:** @infra_dev1 (Telegram: @infra_dev1)
 
 ### Emergency Contacts
-- **Primary:** brendadeeznuts1111@cloudflare.com
-- **Infrastructure:** alice.smith@infra.cloudflare.com
-- **Quality:** diana.prince@quality.cloudflare.com
+- **Primary:** Brendan.Dee@cloudflare.com [SCOPE LEAD - Brendan Dee, Executive Director, cloudflare.com]
+- **Infrastructure:** Alice.Smith@infra.cloudflare.com [INFRA LEAD - Alice Smith, Engineering Manager, infra.cloudflare.com]
+- **Quality:** Diana.Prince@quality.cloudflare.com [QA LEAD - Diana Prince, Quality Assurance Manager, quality.cloudflare.com]
 
 ## 📱 Telegram Channels & Groups
 
