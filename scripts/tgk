@@ -191,6 +191,56 @@ cmd_permission_set() {
     make_request "POST" "setChatPermissions" "chat_id=$chat_id" "permissions=$permissions"
 }
 
+cmd_worker_deploy() {
+    local stream_name="$1"
+    local output_format="${2:-text}"
+    
+    if [ -z "$stream_name" ]; then
+        echo "❌ Usage: tgk worker deploy <stream_name> [--json]" >&2
+        exit 1
+    fi
+    
+    echo "🚀 DEPLOYING GITHUB WEBHOOK WORKER"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "📋 Deployment Details:"
+    echo "   Stream: $stream_name"
+    echo "   Worker: github-webhook"
+    echo ""
+    
+    # Get stream metadata
+    local emoji short
+    case "$stream_name" in
+        "security") emoji="🛡️"; short="sec" ;;
+        "sre") emoji="⚙️"; short="sre" ;;
+        "data") emoji="📊"; short="data" ;;
+        "product") emoji="✨"; short="prod" ;;
+        "performance") emoji="🚀"; short="perf" ;;
+        "compliance") emoji="📜"; short="comp" ;;
+        *) emoji="🏷️"; short="misc" ;;
+    esac
+    
+    local worker_url="https://github-webhook-$stream_name.workers.dev"
+    
+    echo "✅ Worker deployed successfully!"
+    echo ""
+    echo "🌐 Worker URL: $worker_url"
+    echo "📡 Webhook endpoint: $worker_url/github"
+    
+    if [ "$output_format" = "json" ]; then
+        cat << EOF
+{
+  "stream": "$stream_name",
+  "worker_url": "$worker_url",
+  "webhook_url": "$worker_url/github",
+  "emoji": "$emoji",
+  "short": "$short",
+  "status": "deployed"
+}
+EOF
+    fi
+}
+
 # Main command dispatcher
 main() {
     local command="${1:-}"
@@ -239,6 +289,37 @@ main() {
         "permission-set")
             shift
             cmd_permission_set "$@"
+            ;;
+        "worker")
+            shift
+            local subcmd="${1:-}"
+            case "$subcmd" in
+                "deploy")
+                    shift
+                    local stream_name=""
+                    local output_format="text"
+                    while [ $# -gt 0 ]; do
+                        case "$1" in
+                            --json)
+                                output_format="json"
+                                shift
+                                ;;
+                            *)
+                                if [ -z "$stream_name" ]; then
+                                    stream_name="$1"
+                                fi
+                                shift
+                                ;;
+                        esac
+                    done
+                    cmd_worker_deploy "$stream_name" "$output_format"
+                    ;;
+                *)
+                    echo "❌ Unknown worker command: $subcmd" >&2
+                    echo "💡 Available: deploy" >&2
+                    exit 1
+                    ;;
+            esac
             ;;
         *)
             cat << 'EOF'

@@ -1,0 +1,190 @@
+name: PR Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  deploy-preview:
+    name: Deploy PR Preview (Stage pr-${{ github.event.pull_request.number }})
+    runs-on: ubuntu-latest
+    environment:
+      name: pr-${{ github.event.pull_request.number }}
+      url: https://pr-${{ github.event.pull_request.number }}.alchmenyrun.pages.dev
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Deploy to isolated PR stage
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+          ALCHEMY_PROFILE: ci
+        run: |
+          echo "🚀 Deploying to isolated stage: pr-${{ github.event.pull_request.number }}"
+          echo "📦 This creates dedicated cloud resources:"
+          echo "   - D1 Database: alchemy-demo-db-pr-${{ github.event.pull_request.number }}"
+          echo "   - KV Namespace: alchemy-kv-pr-${{ github.event.pull_request.number }}"
+          echo "   - R2 Bucket: alchemy-bucket-pr-${{ github.event.pull_request.number }}"
+          echo "   - Worker: pr-${{ github.event.pull_request.number }}.alchmenyrun.workers.dev"
+          echo ""
+          
+          bun ./alchemy.run.ts --stage pr-${{ github.event.pull_request.number }}
+
+      - name: Run E2E tests against preview
+        run: |
+          echo "🧪 Running E2E tests against isolated preview environment"
+          PREVIEW_URL="https://pr-${{ github.event.pull_request.number }}.alchmenyrun.pages.dev"
+          
+          # Wait for deployment to be ready
+          sleep 10
+          
+          # Run tests (if they exist)
+          if [ -f "tests/e2e.test.ts" ]; then
+            PREVIEW_URL=$PREVIEW_URL bun test tests/e2e.test.ts
+          else
+            echo "⚠️  No E2E tests found - skipping"
+          fi
+
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://pr-${prNumber}.alchmenyrun.pages.dev`;
+            const workerUrl = `https://pr-${prNumber}.alchmenyrun.workers.dev`;
+            
+            const comment = `## 🚀 Preview Deployment Ready!
+            
+            **Stage:** \`pr-${prNumber}\`
+            
+            ### 🌐 Preview URLs
+            - **Frontend**: ${previewUrl}
+            - **Worker**: ${workerUrl}
+            
+            ### 📦 Isolated Resources Created
+            - ✅ D1 Database: \`alchemy-demo-db-pr-${prNumber}\`
+            - ✅ KV Namespace: \`alchemy-kv-pr-${prNumber}\`
+            - ✅ R2 Bucket: \`alchemy-bucket-pr-${prNumber}\`
+            - ✅ Worker: Deployed to Cloudflare
+            
+            ### 🎯 Zero Resource Contention
+            This PR has **completely isolated** cloud resources. No interference with:
+            - ❌ Other PRs
+            - ❌ Production environment
+            - ❌ Developer sandboxes
+            
+            ### 🧪 Testing
+            E2E tests run automatically against this preview environment.
+            
+            ### 🗑️ Cleanup
+            All resources will be **automatically destroyed** when this PR is closed.
+            
+            ---
+            
+            **Powered by Alchemy Stage Isolation** 🧪`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+            
+            const botComment = comments.find(c => 
+              c.user.type === 'Bot' && c.body.includes('Preview Deployment Ready')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }
+
+  cleanup-preview:
+    name: Cleanup PR Preview
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Destroy PR stage resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+          ALCHEMY_PROFILE: ci
+        run: |
+          echo "🗑️  Destroying isolated stage: pr-${{ github.event.pull_request.number }}"
+          echo "📦 Removing all dedicated resources:"
+          echo "   - D1 Database"
+          echo "   - KV Namespace"
+          echo "   - R2 Bucket"
+          echo "   - Worker deployment"
+          echo ""
+          
+          PHASE=destroy bun ./alchemy.run.ts --stage pr-${{ github.event.pull_request.number }}
+          
+          echo "✅ All resources cleaned up - zero lingering costs!"
+
+      - name: Comment cleanup status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `## 🗑️ Preview Environment Cleaned Up
+              
+              **Stage \`pr-${prNumber}\` destroyed successfully!**
+              
+              All isolated resources have been removed:
+              - ✅ D1 Database deleted
+              - ✅ KV Namespace deleted
+              - ✅ R2 Bucket deleted
+              - ✅ Worker undeployed
+              
+              **Zero lingering cloud costs!** 💰
+              
+              ---
+              
+              *Automated cleanup via Alchemy stage lifecycle management*`
+            });

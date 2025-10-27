@@ -187,6 +187,202 @@ We are committed to:
 - **Diverse leadership**: Encouraging diverse leadership in the project
 - **Regular assessment**: Regularly assessing our inclusivity efforts
 
+## Issue Tracking and Closure Requirements
+
+### Issue Closure Standards
+
+**All closed issues MUST include:**
+
+#### 1. **Resolution Report**
+Every closed issue must have a final comment documenting:
+- **Root cause analysis**: What was the actual problem?
+- **Solution implemented**: What was done to fix it?
+- **Testing performed**: How was the fix validated?
+- **Impact assessment**: What changed as a result?
+
+#### 2. **Commit References**
+All issue closures must reference commits:
+```markdown
+Closes #123
+
+**Fixed in commits:**
+- abc1234 - Initial fix for X
+- def5678 - Additional edge case handling
+- ghi9012 - Documentation update
+
+**Related PRs:**
+- #456 - Main implementation PR
+- #789 - Follow-up improvements
+```
+
+#### 3. **PR Linkage**
+Issues must be linked to PRs:
+- Use `Closes #issue` or `Fixes #issue` in PR description
+- Reference issue number in commit messages: `fix: resolve #123 - description`
+- Tag related issues in PR body
+
+#### 4. **Proper Labeling**
+Before closing, ensure issue has:
+- ✅ Type label (`type/bug`, `type/feature`, etc.)
+- ✅ Department label (`dept/infrastructure`, etc.)
+- ✅ Status label (`status/resolved`, `status/wontfix`, etc.)
+- ✅ Component label if applicable
+
+#### 5. **Team Attribution**
+Closure comment must tag:
+- **Implementer**: Who fixed it? `@username`
+- **Reviewer**: Who approved? `@username`
+- **Department**: Which team? `@brendadeeznuts1111 (Infrastructure)`
+
+### Closure Types and Requirements
+
+#### ✅ **Resolved Issues**
+```markdown
+## ✅ Resolution: Fixed
+
+**Root Cause:** [Brief description]
+**Solution:** [What was implemented]
+**Testing:** [How it was validated]
+
+**Fixed in:**
+- Commit: abc1234
+- PR: #456
+- Branch: fix/issue-123
+
+**Team:** @username (Department)
+**Reviewed by:** @reviewer
+
+Closes #123
+```
+
+#### ❌ **Won't Fix Issues**
+```markdown
+## ❌ Resolution: Won't Fix
+
+**Reason:** [Why this won't be fixed]
+**Alternative:** [What users should do instead]
+**Discussion:** [Link to relevant discussion]
+
+**Decision by:** @username (Department Lead)
+**Date:** YYYY-MM-DD
+
+Closes #123 as wontfix
+```
+
+#### 🔄 **Duplicate Issues**
+```markdown
+## 🔄 Resolution: Duplicate
+
+**Duplicate of:** #original-issue
+**Status:** See #original-issue for tracking
+
+Closes #123 as duplicate of #original-issue
+```
+
+#### ✨ **Already Fixed Issues**
+```markdown
+## ✨ Resolution: Already Fixed
+
+**Fixed in:** Version X.Y.Z
+**Commit:** abc1234
+**PR:** #456
+**Date:** YYYY-MM-DD
+
+**Verification:** [How we confirmed it's fixed]
+
+Closes #123 as already fixed
+```
+
+### Commit Message Standards
+
+**Format:**
+```
+type(scope): brief description (#issue)
+
+Detailed explanation of what changed and why.
+
+Closes #123
+Refs #456
+```
+
+**Examples:**
+```
+fix(queue): convert maxWaitTimeMs to seconds (#29)
+
+Updated queue consumer configuration to properly convert
+milliseconds to seconds for Cloudflare compatibility.
+
+Closes #29
+Refs #28
+
+---
+
+feat(worker): add GitHub webhook integration (#41)
+
+Implemented zero-config Cloudflare Worker deployment for
+RFC streams with automatic GitHub webhook forwarding.
+
+Closes #36, #31
+Refs #32
+```
+
+### PR Requirements
+
+**Every PR must:**
+1. **Reference issues**: Use `Closes #123` or `Fixes #123`
+2. **Include testing**: Document how changes were tested
+3. **Update docs**: If behavior changes, update documentation
+4. **Add changelog**: Update CHANGELOG.md if applicable
+5. **Tag reviewers**: Assign appropriate department reviewers
+
+**PR Description Template:**
+```markdown
+## 🎯 Purpose
+Closes #123
+
+## 📋 Changes
+- Change 1
+- Change 2
+
+## 🧪 Testing
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+
+## 📚 Documentation
+- [ ] README updated
+- [ ] API docs updated
+- [ ] CHANGELOG updated
+
+## 🔗 Related
+- Refs #456 (related issue)
+- Depends on #789
+
+## 👥 Team
+**Department:** Infrastructure
+**Reviewers:** @reviewer1, @reviewer2
+```
+
+### Enforcement
+
+**Issues closed without proper documentation will be:**
+1. **Reopened** with a request for proper closure documentation
+2. **Labeled** with `needs-documentation`
+3. **Assigned** back to the closer for completion
+
+**Maintainers are responsible for:**
+- Ensuring all closures meet standards
+- Requesting additional information when needed
+- Maintaining traceability between issues, PRs, and commits
+
+### Benefits of Proper Tracking
+
+✅ **Traceability**: Easy to find why decisions were made
+✅ **Accountability**: Clear ownership of changes
+✅ **Knowledge preservation**: Future contributors understand history
+✅ **Audit trail**: Complete record of project evolution
+✅ **Quality assurance**: Ensures thorough resolution process
+
 ## Conflict Resolution
 
 ### Healthy Disagreement

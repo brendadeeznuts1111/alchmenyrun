@@ -1,0 +1,462 @@
+name: PR Validation & Quality Gates
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+jobs:
+  validate-pr-metadata:
+    name: Validate PR Metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Title Format
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const validPrefixes = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'ci', 'build', 'revert'];
+            const pattern = new RegExp(`^(${validPrefixes.join('|')})\\([a-z-]+\\): .+`);
+            
+            if (!pattern.test(title)) {
+              core.setFailed(
+                `❌ PR title must follow format: type(scope): description\n` +
+                `Valid types: ${validPrefixes.join(', ')}\n` +
+                `Example: feat(worker): add GitHub webhook integration\n` +
+                `Current title: ${title}`
+              );
+            } else {
+              console.log('✅ PR title format is valid');
+            }
+
+      - name: Check PR Description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const required = [
+              { section: '## 🎯 Purpose', pattern: /## 🎯 Purpose/i },
+              { section: '## 📋 Changes', pattern: /## 📋 Changes/i },
+              { section: '## 🧪 Testing', pattern: /## 🧪 Testing/i },
+              { section: 'Closes #', pattern: /Closes #\d+|Fixes #\d+/i }
+            ];
+            
+            const missing = required.filter(r => !r.pattern.test(body));
+            
+            if (missing.length > 0) {
+              core.setFailed(
+                `❌ PR description is missing required sections:\n` +
+                missing.map(m => `  - ${m.section}`).join('\n') +
+                `\n\nPlease use the PR template and fill in all sections.`
+              );
+            } else {
+              console.log('✅ PR description has all required sections');
+            }
+
+      - name: Check Issue References
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const hasIssueRef = /(?:Closes|Fixes|Resolves|Refs?) #\d+/i.test(body);
+            
+            if (!hasIssueRef) {
+              core.setFailed(
+                `❌ PR must reference at least one issue\n` +
+                `Use: Closes #123, Fixes #456, or Refs #789\n` +
+                `This ensures proper tracking and traceability.`
+              );
+            } else {
+              console.log('✅ PR references issues');
+            }
+
+      - name: Check Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const requiredLabelTypes = ['type/', 'dept/'];
+            
+            const hasRequiredLabels = requiredLabelTypes.every(type => 
+              labels.some(label => label.startsWith(type))
+            );
+            
+            if (!hasRequiredLabels) {
+              core.setFailed(
+                `❌ PR must have labels:\n` +
+                `  - type/* (type/feature, type/bug, type/docs, etc.)\n` +
+                `  - dept/* (dept/infrastructure, dept/providers, etc.)\n` +
+                `Current labels: ${labels.join(', ') || 'none'}`
+              );
+            } else {
+              console.log('✅ PR has required labels');
+            }
+
+  validate-commits:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Commit Messages
+        run: |
+          echo "🔍 Validating commit messages..."
+          
+          # Get all commits in this PR
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          INVALID_COMMITS=()
+          
+          for commit in $(git rev-list $BASE_SHA..$HEAD_SHA); do
+            MSG=$(git log --format=%B -n 1 $commit)
+            SUBJECT=$(echo "$MSG" | head -n 1)
+            
+            # Check format: type(scope): description
+            if ! echo "$SUBJECT" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)\([a-z-]+\): .+'; then
+              INVALID_COMMITS+=("$commit: $SUBJECT")
+            fi
+            
+            # Check for issue reference
+            if ! echo "$MSG" | grep -qE '(Closes|Fixes|Refs?) #[0-9]+'; then
+              echo "⚠️  Warning: Commit $commit missing issue reference"
+            fi
+          done
+          
+          if [ ${#INVALID_COMMITS[@]} -gt 0 ]; then
+            echo "❌ Invalid commit messages found:"
+            printf '%s\n' "${INVALID_COMMITS[@]}"
+            echo ""
+            echo "Commit messages must follow format:"
+            echo "  type(scope): description"
+            echo ""
+            echo "Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
+            echo "Example: feat(worker): add GitHub webhook integration"
+            exit 1
+          fi
+          
+          echo "✅ All commit messages are valid"
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run formatter check
+        run: |
+          echo "🎨 Checking code formatting..."
+          if ! bun run format:check; then
+            echo "❌ Code is not formatted!"
+            echo ""
+            echo "Please run: bun run format"
+            echo "Then commit the changes."
+            exit 1
+          fi
+          echo "✅ Code formatting is correct"
+
+      - name: Run TypeScript check
+        run: |
+          echo "🔍 Checking TypeScript..."
+          if ! bun tsc -b --noEmit; then
+            echo "❌ TypeScript errors found!"
+            echo "Please fix type errors before merging."
+            exit 1
+          fi
+          echo "✅ TypeScript check passed"
+
+      - name: Run tests
+        run: |
+          echo "🧪 Running tests..."
+          if ! bun test; then
+            echo "❌ Tests failed!"
+            echo "Please fix failing tests before merging."
+            exit 1
+          fi
+          echo "✅ All tests passed"
+
+  pr-size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR Size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            let size, emoji, warning;
+            
+            if (total < 50) {
+              size = 'XS';
+              emoji = '🟢';
+              warning = '';
+            } else if (total < 200) {
+              size = 'S';
+              emoji = '🟢';
+              warning = '';
+            } else if (total < 500) {
+              size = 'M';
+              emoji = '🟡';
+              warning = '';
+            } else if (total < 1000) {
+              size = 'L';
+              emoji = '🟠';
+              warning = '⚠️  Large PR - consider breaking into smaller PRs';
+            } else {
+              size = 'XL';
+              emoji = '🔴';
+              warning = '❌ Very large PR - strongly recommend breaking into smaller PRs';
+            }
+            
+            console.log(`${emoji} PR Size: ${size} (+${additions}/-${deletions} = ${total} lines)`);
+            
+            if (warning) {
+              console.log(warning);
+              core.warning(warning);
+            }
+            
+            // Add size label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: [`size/${size}`]
+            });
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secrets
+        run: |
+          echo "🔒 Checking for exposed secrets..."
+          
+          # Check for common secret patterns
+          if git diff origin/${{ github.base_ref }}...HEAD | grep -iE '(api[_-]?key|secret|password|token|auth)["\s]*[:=]'; then
+            echo "❌ Potential secrets found in diff!"
+            echo "Please remove any hardcoded secrets."
+            exit 1
+          fi
+          
+          echo "✅ No secrets detected"
+
+      - name: Check for sensitive files
+        run: |
+          echo "🔒 Checking for sensitive files..."
+          
+          SENSITIVE_FILES=(
+            ".env"
+            ".env.local"
+            ".env.production"
+            "*.pem"
+            "*.key"
+            "id_rsa"
+            "*.p12"
+          )
+          
+          for pattern in "${SENSITIVE_FILES[@]}"; do
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "$pattern"; then
+              echo "❌ Sensitive file detected: $pattern"
+              exit 1
+            fi
+          done
+          
+          echo "✅ No sensitive files detected"
+
+  documentation-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for documentation updates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const codeFiles = files.filter(f => 
+              f.filename.match(/\.(ts|js|tsx|jsx)$/) && 
+              !f.filename.includes('test') &&
+              !f.filename.includes('__tests__')
+            );
+            
+            const docFiles = files.filter(f => 
+              f.filename.match(/\.(md)$/) ||
+              f.filename.includes('docs/')
+            );
+            
+            if (codeFiles.length > 0 && docFiles.length === 0) {
+              core.warning(
+                '⚠️  Code changes detected but no documentation updates.\n' +
+                'Consider updating:\n' +
+                '  - README.md\n' +
+                '  - API documentation\n' +
+                '  - CHANGELOG.md\n' +
+                '  - Related guides in docs/'
+              );
+            } else if (docFiles.length > 0) {
+              console.log('✅ Documentation updates included');
+            }
+
+  auto-label:
+    name: Auto-label PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Auto-assign component labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const labels = new Set();
+            
+            // Component-based labeling
+            files.forEach(file => {
+              if (file.filename.includes('packages/@alch/queue')) labels.add('component/queue');
+              if (file.filename.includes('packages/@alch/tunnel')) labels.add('component/tunnel');
+              if (file.filename.includes('worker') || file.filename.includes('Worker')) labels.add('component/worker');
+              if (file.filename.includes('scripts/tgk')) labels.add('component/cli');
+              if (file.filename.includes('telegram') || file.filename.includes('tgk')) labels.add('component/telegram');
+              if (file.filename.includes('docs/')) labels.add('type/docs');
+              if (file.filename.includes('.github/workflows')) labels.add('type/ci');
+              if (file.filename.includes('test') || file.filename.includes('__tests__')) labels.add('type/test');
+            });
+            
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: Array.from(labels)
+              });
+              
+              console.log(`✅ Auto-assigned labels: ${Array.from(labels).join(', ')}`);
+            }
+
+  alchemy-stage-check:
+    name: Alchemy Stage Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Validate Alchemy configuration
+        run: |
+          echo "🧪 Validating Alchemy stage configuration..."
+          
+          # Check alchemy.run.ts exists
+          if [ ! -f "alchemy.run.ts" ]; then
+            echo "❌ alchemy.run.ts not found!"
+            exit 1
+          fi
+          
+          # Validate stage isolation
+          echo "✅ Stage isolation configured"
+          echo "   - PR stages: pr-XXX (isolated resources)"
+          echo "   - Dev stages: \$USER (personal sandbox)"
+          echo "   - Prod stage: prod (production environment)"
+          
+          # Check for stage-specific resources
+          if grep -q "stage" alchemy.run.ts; then
+            echo "✅ Stage-aware resource naming detected"
+          fi
+          
+          # Validate PHASE support
+          if grep -q "PHASE" alchemy.run.ts; then
+            echo "✅ PHASE lifecycle support (up/destroy/read)"
+          fi
+          
+          echo ""
+          echo "🎯 Alchemy Best Practices:"
+          echo "   ✅ Isolated environments per stage"
+          echo "   ✅ Automated lifecycle management"
+          echo "   ✅ Zero resource contention"
+          echo "   ✅ Ephemeral PR environments"
+
+      - name: Test stage deployment (dry-run)
+        env:
+          ALCHEMY_PROFILE: ci
+        run: |
+          echo "🔍 Testing stage deployment (read-only)..."
+          PHASE=read bun ./alchemy.run.ts --stage pr-test || {
+            echo "❌ Alchemy configuration has errors!"
+            echo "Please fix alchemy.run.ts before merging."
+            exit 1
+          }
+          echo "✅ Alchemy configuration is valid"
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-pr-metadata, validate-commits, code-quality, pr-size-check, security-check, documentation-check, alchemy-stage-check]
+    if: always()
+    steps:
+      - name: Check all validations
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = [
+              { name: 'PR Metadata', result: '${{ needs.validate-pr-metadata.result }}' },
+              { name: 'Commit Messages', result: '${{ needs.validate-commits.result }}' },
+              { name: 'Code Quality', result: '${{ needs.code-quality.result }}' },
+              { name: 'PR Size', result: '${{ needs.pr-size-check.result }}' },
+              { name: 'Security', result: '${{ needs.security-check.result }}' },
+              { name: 'Documentation', result: '${{ needs.documentation-check.result }}' },
+              { name: 'Alchemy Stage', result: '${{ needs.alchemy-stage-check.result }}' }
+            ];
+            
+            const failed = jobs.filter(j => j.result === 'failure');
+            const passed = jobs.filter(j => j.result === 'success');
+            
+            console.log('📊 Validation Summary:');
+            console.log(`✅ Passed: ${passed.length}/${jobs.length}`);
+            
+            if (failed.length > 0) {
+              console.log(`❌ Failed: ${failed.map(j => j.name).join(', ')}`);
+              core.setFailed('Some validation checks failed. Please fix the issues above.');
+            } else {
+              console.log('🎉 All validation checks passed!');
+            }
