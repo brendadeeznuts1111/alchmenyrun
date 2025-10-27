@@ -72,6 +72,7 @@ CLAUDE.md @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.t
 .github/CODEOWNERS @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
 .github/workflows/deploy.yml @alice.smith @infra_dev1 @diana.prince @qa_analyst1
 .github/workflows/ci-matrix.yml @alice.smith @infra_dev1 @diana.prince @qa_analyst1
+.github/workflows/semver-validation.yml @alice.smith @infra_dev1 @diana.prince @qa_analyst1
 
 # Strategic files (Leadership approval required)
 LICENSE @brendadeeznuts1111 @frank.taylor
