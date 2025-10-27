@@ -10,7 +10,7 @@ vars:
 d1_databases:
   - binding: DB
     database_name: tgk_email_metadata
-    database_id: tgk_email_metadata     # replaced by bootstrap script
+    database_id: tgk_email_metadata # replaced by bootstrap script
 
 r2_buckets:
   - binding: ATTACHMENTS
