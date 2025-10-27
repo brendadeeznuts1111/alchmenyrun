@@ -64,6 +64,21 @@ See `.github/workflows/semver-validation.yml` for automatic:
 - Version bump validation on new tags
 - Tag/package.json consistency checks
 
+## Team Ownership
+
+This release system is maintained by:
+
+- **Infrastructure Team** (@alice.smith, @infra_dev1) - Scripts & CI/CD
+- **Quality & Testing Team** (@diana.prince, @qa_analyst1) - Validation workflow
+- **Documentation Team** (@frank.taylor, @doc_writer1) - Release guides
+
+See [CODEOWNERS](../.github/CODEOWNERS) for full ownership matrix.
+
+**Support:**
+- Telegram Infrastructure: https://t.me/+nieD7pJAJ4NmYWQx
+- Telegram CI Status: https://t.me/+S7yXUYv8nvs1NGFh
+- Email: conduct@alchemists.dev
+
 ## Documentation
 
 Full guide: [`../docs/semver-release-guide.md`](../docs/semver-release-guide.md)

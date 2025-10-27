@@ -295,11 +295,54 @@ git push --tags
    - **MINOR** - New features (backward-compatible)
    - **PATCH** - Bug fixes (backward-compatible)
 
+## Team Contacts
+
+This release system is maintained by multiple teams:
+
+### Infrastructure Team (Alchemist Core Infra)
+- **Lead**: @alice.smith
+- **Team**: @infra_dev1, @infra_dev2
+- **Responsible for**: Release scripts, CI/CD workflows, semver tooling
+- **Telegram**: [@alchemist_infra_team](https://t.me/+nieD7pJAJ4NmYWQx)
+
+### Quality & Testing Team (Alchemist Quality Gate)
+- **Lead**: @diana.prince
+- **Team**: @qa_analyst1
+- **Responsible for**: Semver validation workflow, test coverage, release quality gates
+- **Telegram**: [@alchemist_ci_status](https://t.me/+S7yXUYv8nvs1NGFh)
+- **Action Item**: Publish `alchemist/telegram-notifier@v3` *(this sprint)*
+
+### Documentation Team (Alchemist Knowledge Base)
+- **Lead**: @frank.taylor
+- **Team**: @doc_writer1
+- **Responsible for**: Release guide documentation, changelog management
+- **Telegram**: [@alchemist_releases](https://t.me/+zA-Rw8weDJUwMjg5)
+
+### Council (Strategic Approvals)
+- **Lead**: @brendadeeznuts1111
+- **Telegram**: [@AlchemistsCouncil](https://t.me/c/3293940131/1)
+- **Email**: conduct@alchemists.dev
+
+### Getting Help
+
+**For semver-related issues:**
+1. **Scripts/tooling issues** → Infrastructure Team (@alice.smith)
+2. **CI workflow failures** → Quality & Testing Team (@diana.prince)
+3. **Documentation questions** → Documentation Team (@frank.taylor)
+4. **Strategic release decisions** → Council (@brendadeeznuts1111)
+
+**Support Channels:**
+- GitHub Issues: [Create issue](https://github.com/brendadeeznuts1111/alchmenyrun/issues)
+- Telegram CI Status: https://t.me/+S7yXUYv8nvs1NGFh
+- Council Chat: https://t.me/c/3293940131/1
+
 ## References
 
 - [Bun Semver Docs](https://bun.sh/docs/api/semver)
 - [Semantic Versioning Spec](https://semver.org/)
 - [micro-rfc-005](../rfcs/micro-rfc-005.md) - First release using this system
+- [CODEOWNERS](../.github/CODEOWNERS) - Team ownership matrix
+- [Definition of Done](./DEFINITION_OF_DONE.md) - Team responsibilities
 
 ---
 
