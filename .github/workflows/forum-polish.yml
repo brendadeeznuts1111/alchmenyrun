@@ -1,0 +1,66 @@
+name: Quarterly Forum Polish
+on:
+  schedule:
+    - cron: '0 0 1 */3 *'  # 1st day of quarter
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for polish'
+        required: true
+        default: 'quarterly-polish'
+        type: string
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup tgk
+        run: |
+          curl -Ls https://alch.run/tgk4-4 | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Discover → Dry-run → Apply → Report
+        run: |
+          REASON="${{ github.event.inputs.reason || 'quarterly-$(date +%Y-Q%q)' }}"
+          COUNCIL_ID="${{ secrets.TG_COUNCIL_CHAT_ID || '-1003293940131' }}"
+          
+          echo "🔍 Starting quarterly forum polish with reason: $REASON"
+          
+          # 1. Discover all topics
+          echo "📋 Discovering forum topics..."
+          tgk forum audit -c $COUNCIL_ID -o json > /tmp/forum-audit.json
+          
+          # 2. Dry-run for review
+          echo "🔍 Running dry-run..."
+          tgk forum polish --dry-run --audit /tmp/forum-audit.json
+          
+          # 3. Apply polish
+          echo "🎨 Applying polish..."
+          tgk forum polish --apply --audit /tmp/forum-audit.json --reason "$REASON"
+          
+          # 4. Generate and pin report
+          echo "📋 Generating report..."
+          tgk forum report --audit /tmp/forum-audit.json --pin -c $COUNCIL_ID
+          
+          echo "✅ Quarterly forum polish completed"
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_COUNCIL_CHAT_ID: ${{ secrets.TG_COUNCIL_CHAT_ID }}
+          
+      - name: Update metrics
+        run: |
+          # Update Prometheus metrics for forum polish
+          echo "tgk_forum_polish_applied_total{reason=\"${{ github.event.inputs.reason || 'quarterly' }}\"} 1" | \
+            curl -X POST http://prometheus:9091/metrics/job/tgk/instance/forum-polish \
+            -d @-
+            
+      - name: Commit audit ledger
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .tgk/meta/forum-polish.jsonl
+          git commit -m "chore: update forum polish ledger - $(date +%F)" || exit 0
+          git push
