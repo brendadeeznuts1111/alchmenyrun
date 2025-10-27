@@ -1,0 +1,12 @@
+{
+  "name": "github-webhook-worker",
+  "version": "1.0.0",
+  "description": "GitHub webhook receiver for Telegram stream notifications",
+  "main": "index.js",
+  "dependencies": {
+    "itty-router": "^5.0.17"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
