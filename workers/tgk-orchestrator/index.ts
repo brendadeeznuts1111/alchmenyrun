@@ -1,4 +1,6 @@
 import { Ai } from '@cloudflare/ai';
+import { createHealthCheck, HealthStatus } from './health';
+import { orchestratorMetrics, trackRequest } from './metrics';
 
 export interface Env {
   AI: any;
@@ -27,20 +29,82 @@ export default {
     const url = new URL(request.url);
 
     switch (url.pathname) {
+      case '/health':
+        return trackRequest('health', () => handleHealthCheck(request, env));
+      case '/metrics':
+        return trackRequest('metrics', () => handleMetrics(request, env));
       case '/api/v1/policy/check':
-        return handlePolicyCheck(request, env);
+        return trackRequest('policy_check', () => handlePolicyCheck(request, env));
       case '/api/v1/customer/notify':
-        return handleCustomerNotify(request, env);
+        return trackRequest('customer_notify', () => handleCustomerNotify(request, env));
       case '/api/v1/ai/label':
-        return handleAILabel(request, env);
+        return trackRequest('ai_label', () => handleAILabel(request, env));
       default:
         return new Response('Not Found', { status: 404 });
     }
   }
 };
 
+async function handleHealthCheck(request: Request, env: Env): Promise<Response> {
+  try {
+    orchestratorMetrics.incrementCounter('tgk_health_checks_total');
+    
+    const healthCheck = createHealthCheck(env);
+    const healthStatus: HealthStatus = await healthCheck.check();
+
+    // Return appropriate HTTP status based on health
+    let statusCode = 200;
+    if (healthStatus.status === 'unhealthy') {
+      statusCode = 503;
+    } else if (healthStatus.status === 'degraded') {
+      statusCode = 200; // Still serve traffic but indicate issues
+    }
+
+    return new Response(JSON.stringify(healthStatus), {
+      status: statusCode,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return new Response(JSON.stringify({ 
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleMetrics(request: Request, env: Env): Promise<Response> {
+  try {
+    const metrics = orchestratorMetrics.getPrometheusFormat();
+    
+    return new Response(metrics, {
+      headers: { 
+        'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      }
+    });
+
+  } catch (error) {
+    console.error('Metrics failed:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 async function handlePolicyCheck(request: Request, env: Env): Promise<Response> {
   try {
+    orchestratorMetrics.incrementCounter('tgk_policy_checks_total');
+    
     const policyRequest: PolicyRequest = await request.json();
 
     // Call OPA policy evaluation
@@ -88,6 +152,12 @@ async function handleCustomerNotify(request: Request, env: Env): Promise<Respons
 
     const result = await d12Response.json();
 
+    // Track notification metrics
+    orchestratorMetrics.incrementCounter('tgk_notifications_total', {
+      channel: notification.channels?.join(',') || 'unknown',
+      priority: notification.priority || 'normal'
+    });
+
     // Log metrics
     console.log(`alc.orchestrator.action={customer}, customer_id=${notification.customer_id}, template=${notification.priority}`);
 
@@ -107,6 +177,8 @@ async function handleCustomerNotify(request: Request, env: Env): Promise<Respons
 async function handleAILabel(request: Request, env: Env): Promise<Response> {
   try {
     const { title, body, changedFiles } = await request.json();
+
+    orchestratorMetrics.incrementCounter('tgk_ai_requests_total');
 
     const ai = new Ai(env.AI);
 
