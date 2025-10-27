@@ -1,4 +1,5 @@
 # RFC Process (Alchemist Core Council) - Lead: @brendadeeznuts1111
+# Telegram: @brendadeeznuts1111 (ID: 123456789) | Email: brendadeeznuts1111@cloudflare.com
 rfcs/* @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
 micro-rfc-* @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank.taylor
 
@@ -9,6 +10,9 @@ micro-rfc-* @brendadeeznuts1111 @alice.smith @charlie.brown @diana.prince @frank
 * @brendadeeznuts1111
 
 # Infrastructure Team (Alchemist Core Infra) - Lead: @alice.smith
+# Telegram: @alice_smith (ID: 987654321) | Email: alice.smith@infra.cloudflare.com
+# Team: @infra_dev1 (ID: 111222333) | Email: dev1@infra.cloudflare.com
+# Team: @infra_dev2 (ID: 444555666) | Email: dev2@infra.cloudflare.com
 packages/@alch/queue/* @alice.smith @infra_dev1
 packages/@alch/tunnel/* @alice.smith @infra_dev2
 packages/@alch/blocks/* @alice.smith @infra_dev2
@@ -21,6 +25,8 @@ src/frontend/* @alice.smith @infra_dev2
 scripts/* @alice.smith @infra_dev1
 
 # Resource Provider Team (Alchemist Integrations Hub) - Lead: @charlie.brown
+# Telegram: @charlie_brown (ID: 777888999) | Email: charlie.brown@integrations.cloudflare.com
+# Team: @provider_dev1 (ID: 000111222) | Email: provider@integrations.cloudflare.com
 alchemy/src/cloudflare/* @charlie.brown @provider_dev1
 alchemy/src/docker/* @charlie.brown @provider_dev1
 alchemy/src/github/* @charlie.brown @provider_dev1
@@ -30,6 +36,8 @@ alchemy/src/neon/* @charlie.brown @provider_dev1
 alchemy/src/vercel/* @charlie.brown @provider_dev1
 
 # Documentation Team (Alchemist Knowledge Base) - Lead: @frank.taylor
+# Telegram: @frank_taylor (ID: 333444555) | Email: frank.taylor@docs.cloudflare.com
+# Team: @doc_writer1 (ID: 666777888) | Email: writer@docs.cloudflare.com
 docs/* @frank.taylor @doc_writer1
 examples/* @frank.taylor @doc_writer1
 examples/cloudflare-worker-loader/* @frank.taylor @doc_writer1
@@ -43,6 +51,8 @@ ROADMAP.md @frank.taylor @doc_writer1
 LICENSE @frank.taylor @doc_writer1
 
 # Quality & Testing Team (Alchemist Quality Gate) - Lead: @diana.prince
+# Telegram: @diana_prince (ID: 999000111) | Email: diana.prince@quality.cloudflare.com
+# Team: @qa_analyst1 (ID: 222333444) | Email: qa@quality.cloudflare.com
 src/__tests__/* @diana.prince @qa_analyst1
 **/*.test.ts @diana.prince @qa_analyst1
 **/*.test.js @diana.prince @qa_analyst1
@@ -72,6 +82,9 @@ alchemy.run.js @alice.smith @infra_dev2
 src/* @alice.smith @infra_dev2
 
 # Scope System (New Feature) - Infrastructure Team ownership
+# Contact: Infrastructure Team - alice.smith@infra.cloudflare.com
+# Telegram: @alice_smith (ID: 987654321) | @infra_dev1 (ID: 111222333) | @infra_dev2 (ID: 444555666)
+# Cross-team: frank.taylor@docs.cloudflare.com | diana.prince@quality.cloudflare.com
 src/scope/* @alice.smith @infra_dev2
 scripts/scope-*.ts @alice.smith @infra_dev2
 SCOPE_DEPLOYMENT_CHECKLIST.md @alice.smith @infra_dev2 @frank.taylor

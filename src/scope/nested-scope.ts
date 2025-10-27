@@ -1,9 +1,10 @@
 import { StateManager } from "./state-manager";
+import { Scope, BaseScopeOptions, ScopeMetadata, FinalizationReport } from "./interfaces";
 
 /**
  * Nested scope configuration
  */
-export interface NestedScopeConfig {
+export interface NestedScopeConfig extends BaseScopeOptions {
   /**
    * Parent scope path (e.g., "my-app/prod")
    */
@@ -13,16 +14,6 @@ export interface NestedScopeConfig {
    * Nested scope name (e.g., "backend", "frontend")
    */
   scopeName: string;
-
-  /**
-   * Base directory for state files
-   */
-  stateDir?: string;
-
-  /**
-   * Enable state file locking
-   */
-  enableLocking?: boolean;
 }
 
 /**
@@ -39,10 +30,17 @@ export interface NestedScopeContext {
 /**
  * Nested scope - hierarchical grouping for service layers and components
  */
-export class NestedScope {
+export class NestedScope implements Scope {
   public readonly parentScopePath: string;
   public readonly scopeName: string;
   public readonly scopePath: string;
+  public readonly path: string;
+  public readonly id: string;
+  public readonly name: string;
+  public readonly parent: Scope;
+  public readonly children = new Map<string, Scope>();
+  public readonly createdAt: number;
+  public readonly type = 'nested' as const;
 
   private readonly stateManager: StateManager;
   private initialized = false;
@@ -77,10 +75,15 @@ export class NestedScope {
     this.initialized = true;
   }
 
-  constructor(config: NestedScopeConfig) {
+  constructor(config: NestedScopeConfig, parent: Scope) {
     this.parentScopePath = config.parentScopePath;
     this.scopeName = config.scopeName;
     this.scopePath = `${this.parentScopePath}/${this.scopeName}`;
+    this.path = this.scopePath;
+    this.name = this.scopeName;
+    this.id = `nested-${this.scopePath.replace(/\//g, '-')}`;
+    this.parent = parent;
+    this.createdAt = Date.now();
 
     this.stateManager = new StateManager({
       baseDir: config.stateDir,
@@ -115,6 +118,62 @@ export class NestedScope {
     };
 
     this.initialized = true;
+  }
+
+  /**
+   * Add a child scope
+   */
+  addChild(child: Scope): void {
+    this.children.set(child.name, child);
+  }
+
+  /**
+   * Remove a child scope
+   */
+  removeChild(name: string): void {
+    this.children.delete(name);
+  }
+
+  /**
+   * Get a child scope by name
+   */
+  getChild(name: string): Scope | undefined {
+    return this.children.get(name);
+  }
+
+  /**
+   * Check if a child scope exists
+   */
+  hasChild(name: string): boolean {
+    return this.children.has(name);
+  }
+
+  /**
+   * Get all descendant scopes
+   */
+  getDescendants(): Scope[] {
+    const descendants: Scope[] = [];
+    for (const child of this.children.values()) {
+      descendants.push(child);
+      descendants.push(...child.getDescendants());
+    }
+    return descendants;
+  }
+
+  /**
+   * Get scope metadata
+   */
+  getMetadata(): ScopeMetadata {
+    return {
+      id: this.id,
+      name: this.name,
+      path: this.path,
+      type: this.type,
+      createdAt: this.createdAt,
+      childrenCount: this.children.size,
+      resourceCount: this.context ? Object.keys(this.context.resources).length : 0,
+      statePath: this.stateManager.baseDir,
+    };
   }
 
   /**
@@ -206,14 +265,28 @@ export class NestedScope {
       parentScopePath: this.scopePath,
       scopeName: childScopeName,
       stateDir: this.stateManager['baseDir'] // Access private property (in real impl, add getter)
-    });
+    }, this);
   }
 
   /**
    * Finalize this nested scope (automatic cleanup)
    */
-  async finalize(): Promise<void> {
-    if (!this.initialized) return;
+  async finalize(): Promise<FinalizationReport> {
+    if (!this.initialized) {
+      return {
+        scope: this,
+        created: [],
+        updated: [],
+        destroyed: [],
+        errors: [],
+        duration: 0,
+        success: true,
+      };
+    }
+
+    const startTime = Date.now();
+    const errors: Error[] = [];
+    const destroyed: string[] = [];
 
     try {
       // Get all resources before deletion for cleanup
@@ -225,9 +298,10 @@ export class NestedScope {
         try {
           await this.performResourceDeletion(resourceId);
           await this.removeResource(resourceId);
+          destroyed.push(resourceId);
         } catch (error) {
           console.warn(`Failed to delete resource ${resourceId} in nested scope ${this.scopePath}:`, error);
-          // Continue with other resources
+          errors.push(error as Error);
         }
       }
 
@@ -235,7 +309,9 @@ export class NestedScope {
       const nestedScopes = await this.getNestedScopes();
       for (const nestedScopeName of nestedScopes) {
         const childScope = this.createChildScope(nestedScopeName);
-        await childScope.finalize();
+        const childReport = await childScope.finalize();
+        destroyed.push(...childReport.destroyed);
+        errors.push(...childReport.errors);
       }
 
       // Remove from parent scope
@@ -246,8 +322,18 @@ export class NestedScope {
 
     } catch (error) {
       console.error(`Failed to finalize nested scope ${this.scopePath}:`, error);
-      throw error;
+      errors.push(error as Error);
     }
+
+    return {
+      scope: this,
+      created: [],
+      updated: [],
+      destroyed,
+      errors,
+      duration: Date.now() - startTime,
+      success: errors.length === 0,
+    };
   }
 
   /**

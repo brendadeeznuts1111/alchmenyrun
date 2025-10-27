@@ -1,9 +1,10 @@
 import { StateManager } from "./state-manager";
+import { Scope, BaseScopeOptions, ScopeMetadata, FinalizationReport } from "./interfaces";
 
 /**
  * Stage scope configuration
  */
-export interface StageScopeConfig {
+export interface StageScopeConfig extends BaseScopeOptions {
   /**
    * Application name
    */
@@ -18,16 +19,6 @@ export interface StageScopeConfig {
    * Profile for security isolation
    */
   profile?: string;
-
-  /**
-   * Base directory for state files
-   */
-  stateDir?: string;
-
-  /**
-   * Enable state file locking
-   */
-  enableLocking?: boolean;
 }
 
 /**
@@ -49,11 +40,17 @@ export interface StageSnapshot {
 /**
  * Stage scope - environment-specific isolation (dev, prod, pr-XXX)
  */
-export class StageScope {
+export class StageScope implements Scope {
   public readonly appName: string;
   public readonly stageName: string;
   public readonly profile: string;
   public readonly scopePath: string;
+  public readonly path: string;
+  public readonly id: string;
+  public readonly parent: Scope;
+  public readonly children = new Map<string, Scope>();
+  public readonly createdAt: number;
+  public readonly type = 'stage' as const;
 
   private readonly stateManager: StateManager;
   private initialized = false;
@@ -74,11 +71,15 @@ export class StageScope {
     this.initialized = true;
   }
 
-  constructor(config: StageScopeConfig) {
+  constructor(config: StageScopeConfig, parent: Scope) {
     this.appName = config.appName;
     this.stageName = config.stageName;
     this.profile = config.profile || "default";
     this.scopePath = `${this.appName}/${this.stageName}`;
+    this.path = this.scopePath;
+    this.id = `stage-${this.scopePath.replace(/\//g, '-')}`;
+    this.parent = parent;
+    this.createdAt = Date.now();
 
     this.stateManager = new StateManager({
       baseDir: config.stateDir,
@@ -100,6 +101,100 @@ export class StageScope {
     }
 
     this.initialized = true;
+  }
+
+  /**
+   * Add a child scope
+   */
+  addChild(child: Scope): void {
+    this.children.set(child.name, child);
+  }
+
+  /**
+   * Remove a child scope
+   */
+  removeChild(name: string): void {
+    this.children.delete(name);
+  }
+
+  /**
+   * Get a child scope by name
+   */
+  getChild(name: string): Scope | undefined {
+    return this.children.get(name);
+  }
+
+  /**
+   * Check if a child scope exists
+   */
+  hasChild(name: string): boolean {
+    return this.children.has(name);
+  }
+
+  /**
+   * Get all descendant scopes
+   */
+  getDescendants(): Scope[] {
+    const descendants: Scope[] = [];
+    for (const child of this.children.values()) {
+      descendants.push(child);
+      descendants.push(...child.getDescendants());
+    }
+    return descendants;
+  }
+
+  /**
+   * Finalize the stage scope
+   */
+  async finalize(): Promise<FinalizationReport> {
+    const startTime = Date.now();
+    const errors: Error[] = [];
+    const destroyed: string[] = [];
+
+    try {
+      // Finalize all child scopes first
+      for (const child of this.children.values()) {
+        try {
+          const childReport = await child.finalize();
+          destroyed.push(...childReport.destroyed);
+          errors.push(...childReport.errors);
+        } catch (error) {
+          errors.push(error as Error);
+        }
+      }
+
+      // Stage-specific cleanup logic would go here
+      console.log(`Stage scope ${this.scopePath} finalized`);
+
+    } catch (error) {
+      errors.push(error as Error);
+    }
+
+    return {
+      scope: this,
+      created: [],
+      updated: [],
+      destroyed,
+      errors,
+      duration: Date.now() - startTime,
+      success: errors.length === 0,
+    };
+  }
+
+  /**
+   * Get scope metadata
+   */
+  getMetadata(): ScopeMetadata {
+    return {
+      id: this.id,
+      name: this.stageName,
+      path: this.path,
+      type: this.type,
+      createdAt: this.createdAt,
+      childrenCount: this.children.size,
+      resourceCount: 0, // Would be calculated from actual resources
+      statePath: this.stateManager.baseDir,
+    };
   }
 
   /**

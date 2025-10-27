@@ -80,27 +80,54 @@ export async function managePullRequest(number: string, action: string, options:
   }
 }
 
-export async function repositoryInfo(options: { detailed?: boolean } = {}) {
-  console.log(`📊 Repository information...`);
+export async function repositoryInfo(repoName?: string, options: { detailed?: boolean } = {}) {
+  console.log(`📊 Getting repository information...`);
 
   try {
-    const repo = await gh.getRepoInfo();
-    const metadata = await gh.getRepositoryMetadata();
+    // Parse repo name if provided (format: owner/repo or just repo)
+    let owner = 'brendadeeznuts1111';
+    let repo = repoName;
+    
+    if (repoName && repoName.includes('/')) {
+      [owner, repo] = repoName.split('/');
+    } else if (!repoName) {
+      repo = 'alchmenyrun'; // Default repo
+    }
 
-    console.log(`📦 Repository: ${repo.full_name}`);
+    const repoData = await gh.getRepoInfo(owner, repo);
+    const metadata = await gh.getRepositoryMetadata(owner, repo);
+
+    console.log(`📦 Repository: ${repoData.full_name}`);
+    console.log(`🔗 URL: ${repoData.html_url}`);
     console.log(`⭐ Stars: ${metadata.stars}`);
     console.log(`🍴 Forks: ${metadata.forks}`);
     console.log(`🐛 Open Issues: ${metadata.issues}`);
     console.log(`🏷️  Primary Language: ${metadata.language}`);
     console.log(`📝 Description: ${metadata.description}`);
+    console.log(`👥 Owner: ${repoData.owner.login}`);
 
     if (options.detailed) {
-      console.log(`🏠 Homepage: ${metadata.homepage}`);
-      console.log(`📋 License: ${metadata.license}`);
+      console.log(`🏠 Homepage: ${metadata.homepage || 'none'}`);
+      console.log(`📋 License: ${metadata.license || 'none'}`);
       console.log(`🏷️  Topics: ${metadata.topics?.join(', ') || 'none'}`);
+      console.log(`📅 Created: ${new Date(repoData.created_at).toLocaleDateString()}`);
+      console.log(`🔄 Last Updated: ${new Date(repoData.updated_at).toLocaleDateString()}`);
+      console.log(`👁️ Watchers: ${repoData.watchers_count}`);
+      console.log(`🌳 Default Branch: ${repoData.default_branch}`);
+      
+      // Try to get CODEOWNERS file content
+      try {
+        const codeowners = await gh.getFileContent(owner, repo, '.github/CODEOWNERS');
+        if (codeowners) {
+          console.log(`\n📋 CODEOWNERS:`);
+          console.log(codeowners);
+        }
+      } catch (e) {
+        console.log(`\n📋 CODEOWNERS: Not found`);
+      }
     }
 
-    return { repo, metadata };
+    return { repo: repoData, metadata };
 
   } catch (error) {
     console.error('❌ Failed to get repository info:', error.message);
@@ -112,10 +139,18 @@ export async function manageLabels(action: string, name?: string, options: any =
   console.log(`🏷️ Managing labels...`);
 
   try {
+    // Parse repo name if provided
+    let owner = 'brendadeeznuts1111';
+    let repo = options.repo || 'alchmenyrun';
+    
+    if (options.repo && options.repo.includes('/')) {
+      [owner, repo] = options.repo.split('/');
+    }
+
     switch (action) {
       case 'list':
-        const labels = await gh.getLabels();
-        console.log('📋 Repository labels:');
+        const labels = await gh.getLabels(owner, repo);
+        console.log(`📋 Labels for ${owner}/${repo}:`);
         labels.forEach(label => {
           console.log(`  ${label.name} (${label.color}) - ${label.description || 'no description'}`);
         });
@@ -125,20 +160,32 @@ export async function manageLabels(action: string, name?: string, options: any =
         if (!name || !options.color) {
           throw new Error('Label name and color are required');
         }
-        await gh.createLabel(name, options.color, options.description);
-        console.log(`✅ Created label: ${name}`);
+        await gh.createLabel(owner, repo, name, options.color, options.description);
+        console.log(`✅ Created label: ${name} in ${owner}/${repo}`);
         break;
 
       case 'apply':
         if (!options.issue || !name) {
+          throw new Error('Issue number and label(s) are required');
+        }
+        
+        // Support multiple labels (comma-separated)
+        const labelsToApply = name.split(',').map(l => l.trim());
+        await gh.addLabels(owner, repo, parseInt(options.issue), labelsToApply);
+        console.log(`✅ Applied labels "${labelsToApply.join(', ')}" to issue #${options.issue} in ${owner}/${repo}`);
+        break;
+
+      case 'remove':
+        if (!options.issue || !name) {
           throw new Error('Issue number and label name are required');
         }
-        await gh.addLabels(parseInt(options.issue), [name]);
-        console.log(`✅ Applied label "${name}" to issue #${options.issue}`);
+        await gh.removeLabel(owner, repo, parseInt(options.issue), name);
+        console.log(`✅ Removed label "${name}" from issue #${options.issue} in ${owner}/${repo}`);
         break;
 
       default:
         console.log(`❓ Unknown action: ${action}`);
+        console.log('Available actions: list, create, apply, remove');
     }
 
   } catch (error) {
@@ -362,6 +409,64 @@ async function getCurrentBranch(): Promise<string> {
     return execSync('git branch --show-current', { encoding: 'utf8' }).trim();
   } catch {
     return 'main';
+  }
+}
+
+export async function createGitHubIssue(repoName: string, options: { title?: string, body?: string, labels?: string }) {
+  console.log(`📝 Creating GitHub issue in ${repoName}...`);
+
+  try {
+    if (!options.title) {
+      throw new Error('Issue title is required');
+    }
+
+    const labels = options.labels ? options.labels.split(',').map(l => l.trim()) : [];
+    const issue = await gh.createIssue(repoName, options.title, options.body || '', labels);
+
+    console.log(`✅ Issue created: ${repoName}#${issue.number}`);
+    console.log(`🔗 https://github.com/${repoName}/issues/${issue.number}`);
+
+    return issue;
+
+  } catch (error) {
+    console.error('❌ Failed to create GitHub issue:', error.message);
+    throw error;
+  }
+}
+
+export async function reviewGitHubPR(prId: string, options: { action?: string, message?: string }) {
+  console.log(`👁️ Reviewing PR #${prId}...`);
+
+  try {
+    const action = options.action as 'approve' | 'comment' || 'comment';
+    await gh.reviewPR(parseInt(prId), action, options.message || '');
+
+    console.log(`✅ PR review submitted (${action})`);
+
+  } catch (error) {
+    console.error('❌ Failed to review PR:', error.message);
+    throw error;
+  }
+}
+
+export async function getGitHubPRStatus(prId: string, options: { detailed?: boolean }) {
+  console.log(`📊 Getting PR #${prId} status...`);
+
+  try {
+    const status = await gh.getPRStatus(parseInt(prId), options.detailed);
+
+    if (options.detailed && status.ai) {
+      console.log('\n🤖 AI Analysis:');
+      console.log(`🎯 Risk Level: ${status.ai.risk}`);
+      console.log(`📈 Test Coverage: ${status.ai.coverage}`);
+      console.log(`🔗 Breaking Changes: ${status.ai.breaking ? 'Yes' : 'No'}`);
+    }
+
+    return status;
+
+  } catch (error) {
+    console.error('❌ Failed to get PR status:', error.message);
+    throw error;
   }
 }
 

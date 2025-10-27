@@ -28,7 +28,7 @@ export class ScopeFactory {
    * Usage: await alchemy("my-app", { stage: "prod" })
    */
   static createStage(parent: ApplicationScope, options: StageScopeOptions): StageScope {
-    return new StageScope(parent, options);
+    return new StageScope(options, parent);
   }
 
   /**
@@ -36,7 +36,7 @@ export class ScopeFactory {
    * Usage: await alchemy.run("backend", ...)
    */
   static createNested(parent: Scope, options: NestedScopeOptions): NestedScope {
-    return new NestedScope(parent, options);
+    return new NestedScope(options, parent);
   }
 
   /**

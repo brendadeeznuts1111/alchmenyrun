@@ -1,9 +1,10 @@
 import { StateManager, ResourceState } from "./state-manager";
+import { Scope, BaseScopeOptions, ScopeMetadata, FinalizationReport } from "./interfaces";
 
 /**
  * Application scope configuration
  */
-export interface ApplicationScopeConfig {
+export interface ApplicationScopeConfig extends BaseScopeOptions {
   /**
    * Application name (used for state directory)
    */
@@ -25,27 +26,9 @@ export interface ApplicationScopeConfig {
   destroyStrategy?: "sequential" | "parallel";
 
   /**
-   * Enable state file locking
+   * Phase for deployment operations
    */
-  enableLocking?: boolean;
-
-  /**
-   * Base directory for state files
-   */
-  stateDir?: string;
-}
-
-/**
- * Finalization report for application scope
- */
-export interface FinalizationReport {
-  scopePath: string;
-  resourcesDeleted: number;
-  resourcesFailed: number;
-  nestedScopesProcessed: number;
-  duration: number;
-  errors: string[];
-  dryRun?: boolean;
+  phase?: "up" | "destroy" | "read";
 }
 
 /**
@@ -81,12 +64,18 @@ export interface TestScopeOptions extends BaseScopeOptions {
  *
  * CODEOWNERS TEST: This file should trigger @alice.smith and @infra_dev2 for review
  */
-export class ApplicationScope {
+export class ApplicationScope implements Scope {
+  public readonly id: string;
   public readonly name: string;
   public readonly stage: string;
   public readonly profile: string;
   public readonly scopePath: string;
   public readonly destroyStrategy: "sequential" | "parallel";
+  public readonly path: string;
+  public readonly parent: Scope | null = null;
+  public readonly children = new Map<string, Scope>();
+  public readonly createdAt: number;
+  public readonly type = 'application' as const;
 
   private readonly stateManager: StateManager;
   private readonly nestedScopes = new Set<string>();
@@ -118,12 +107,71 @@ export class ApplicationScope {
     this.stage = config.stage || process.env.USER || "default";
     this.profile = config.profile || "default";
     this.scopePath = `${this.name}/${this.stage}`;
+    this.path = this.scopePath;
     this.destroyStrategy = config.destroyStrategy || "sequential";
+    this.createdAt = Date.now();
+    this.id = `app-${this.name}-${this.stage}`;
 
     this.stateManager = new StateManager({
       baseDir: config.stateDir,
       enableLocking: config.enableLocking ?? true
     });
+  }
+
+  /**
+   * Add a child scope
+   */
+  addChild(child: Scope): void {
+    this.children.set(child.name, child);
+  }
+
+  /**
+   * Remove a child scope
+   */
+  removeChild(name: string): void {
+    this.children.delete(name);
+  }
+
+  /**
+   * Get a child scope by name
+   */
+  getChild(name: string): Scope | undefined {
+    return this.children.get(name);
+  }
+
+  /**
+   * Check if a child scope exists
+   */
+  hasChild(name: string): boolean {
+    return this.children.has(name);
+  }
+
+  /**
+   * Get all descendant scopes
+   */
+  getDescendants(): Scope[] {
+    const descendants: Scope[] = [];
+    for (const child of this.children.values()) {
+      descendants.push(child);
+      descendants.push(...child.getDescendants());
+    }
+    return descendants;
+  }
+
+  /**
+   * Get scope metadata
+   */
+  getMetadata(): ScopeMetadata {
+    return {
+      id: this.id,
+      name: this.name,
+      path: this.path,
+      type: this.type,
+      createdAt: this.createdAt,
+      childrenCount: this.children.size,
+      resourceCount: this.currentResourceIds.size,
+      statePath: this.stateManager.baseDir,
+    };
   }
 
   /**
@@ -191,14 +239,10 @@ export class ApplicationScope {
     dryRun?: boolean;
   } = {}): Promise<FinalizationReport> {
     const startTime = Date.now();
-    const report: FinalizationReport = {
-      scopePath: this.scopePath,
-      resourcesDeleted: 0,
-      resourcesFailed: 0,
-      nestedScopesProcessed: 0,
-      duration: 0,
-      errors: []
-    };
+    const created: string[] = [];
+    const updated: string[] = [];
+    const destroyed: string[] = [];
+    const errors: Error[] = [];
 
     const { retryAttempts = 3, strategy = 'conservative', dryRun = false } = options;
 
@@ -214,22 +258,26 @@ export class ApplicationScope {
           try {
             const nestedScopePath = `${this.scopePath}/${scopeName}`;
             await this.finalizeNestedScope(nestedScopePath, { retryAttempts, strategy, dryRun });
-            report.nestedScopesProcessed++;
+            return scopeName;
           } catch (error) {
-            report.errors.push(`Failed to finalize nested scope ${scopeName}: ${error}`);
+            errors.push(error as Error);
+            return null;
           }
         });
 
-        await Promise.all(nestedPromises);
+        const results = await Promise.all(nestedPromises);
+        results.forEach(result => {
+          if (result) destroyed.push(result);
+        });
       } else {
         // Process nested scopes sequentially
         for (const scopeName of nestedScopeNames) {
           try {
             const nestedScopePath = `${this.scopePath}/${scopeName}`;
             await this.finalizeNestedScope(nestedScopePath, { retryAttempts, strategy, dryRun });
-            report.nestedScopesProcessed++;
+            destroyed.push(scopeName);
           } catch (error) {
-            report.errors.push(`Failed to finalize nested scope ${scopeName}: ${error}`);
+            errors.push(error as Error);
             if (strategy === 'conservative') {
               // In conservative mode, stop on first error
               break;
@@ -247,37 +295,47 @@ export class ApplicationScope {
         const deletePromises = resourceIds.map(async (resourceId) => {
           const success = await this.deleteResourceWithRetry(resourceId, retryAttempts, dryRun);
           if (success) {
-            report.resourcesDeleted++;
+            return resourceId;
           } else {
-            report.resourcesFailed++;
+            errors.push(new Error(`Failed to delete resource ${resourceId}`));
+            return null;
           }
         });
 
-        await Promise.all(deletePromises);
+        const results = await Promise.all(deletePromises);
+        results.forEach(result => {
+          if (result) destroyed.push(result);
+        });
       } else {
         // Delete resources sequentially
         for (const resourceId of resourceIds) {
           const success = await this.deleteResourceWithRetry(resourceId, retryAttempts, dryRun);
           if (success) {
-            report.resourcesDeleted++;
+            destroyed.push(resourceId);
           } else {
-            report.resourcesFailed++;
+            errors.push(new Error(`Failed to delete resource ${resourceId}`));
           }
         }
       }
 
       // Clean up state file if no resources remain
-      if (!dryRun && report.resourcesDeleted > 0 && Object.keys(await this.getResources()).length === 0) {
+      if (!dryRun && destroyed.length > 0 && Object.keys(await this.getResources()).length === 0) {
         await this.stateManager.deleteState(this.scopePath);
       }
 
     } catch (error) {
-      report.errors.push(`Application scope finalization failed: ${error}`);
+      errors.push(error as Error);
     }
 
-    report.duration = Date.now() - startTime;
-    report.dryRun = dryRun;
-    return report;
+    return {
+      scope: this,
+      created,
+      updated,
+      destroyed,
+      errors,
+      duration: Date.now() - startTime,
+      success: errors.length === 0,
+    };
   }
 
   /**

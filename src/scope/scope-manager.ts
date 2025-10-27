@@ -1,12 +1,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { Scope, FinalizationReport } from "./interfaces";
 import {
-  Scope,
   ApplicationScope,
   ApplicationScopeConfig as ApplicationScopeOptions,
   StageScopeOptions,
   NestedScopeOptions,
-  TestScopeOptions,
-  FinalizationReport
+  TestScopeOptions
 } from "./application-scope";
 import { ScopeFactory } from "./scope-factory";
 

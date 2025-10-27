@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Release action'
+        description: "Release action"
         required: true
         type: choice
         options:

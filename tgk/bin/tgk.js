@@ -44,14 +44,42 @@ program
     }
   });
 
+program
+  .command('issue-follow <issue-number>')
+  .description('Set up auto-notifications for key issue status changes')
+  .option('--telegram <chat-id>', 'Telegram chat ID for notifications')
+  .option('--email <address>', 'Email address for notifications')
+  .action(async (issueNumber, options) => {
+    try {
+      const { followIssue } = await import(path.resolve(__dirname, '../commands/issue.ts'));
+      await followIssue(issueNumber, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('issue-status <issue-number>')
+  .description('Get detailed issue status, linked PRs, SLA, and AI-suggested next steps')
+  .option('--detailed', 'Show comprehensive status including AI analysis')
+  .action(async (issueNumber, options) => {
+    try {
+      const { getIssueStatus } = await import(path.resolve(__dirname, '../commands/issue.ts'));
+      await getIssueStatus(issueNumber, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
 // Release orchestration commands
 program
   .command('release-plan')
   .description('AI-generated release planning and council approval')
-  .option('--type <type>', 'Release type (patch, minor, major)', 'minor')
+  .option('--type <type>', 'Release type (patch, minor, major, ai-suggest)', 'minor')
   .action(async (options) => {
     try {
-      console.log('DEBUG: options.type:', options.type);
       const { planRelease } = await import(path.resolve(__dirname, '../commands/release.ts'));
       await planRelease({ type: options.type });
     } catch (error) {
@@ -61,7 +89,7 @@ program
   });
 
 program
-  .command('release approve <release-id>')
+  .command('release-approve <release-id>')
   .description('Approve release plan (OPA policy gated)')
   .option('--reviewer <username>', 'Specify reviewer username')
   .action(async (releaseId, options) => {
@@ -76,12 +104,27 @@ program
   });
 
 program
-  .command('release deploy <release-id>')
+  .command('release-deploy <release-id>')
   .description('Deploy approved release (policy pass → CI trigger)')
   .action(async (releaseId) => {
     try {
       const { deployRelease } = await import('../commands/release.ts');
       await deployRelease(releaseId);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('release-monitor <release-id>')
+  .description('Activate post-release SLO/SLI monitoring & anomaly detection')
+  .option('--duration <hours>', 'Monitoring duration in hours', '24')
+  .option('--sensitivity <level>', 'Anomaly detection sensitivity (low|medium|high)', 'medium')
+  .action(async (releaseId, options) => {
+    try {
+      const { monitorRelease } = await import(path.resolve(__dirname, '../commands/release.ts'));
+      await monitorRelease(releaseId, options);
     } catch (error) {
       console.error('❌ Error:', error.message);
       process.exit(1);
@@ -135,15 +178,15 @@ program
   });
 
 program
-  .command('github repo <action>')
+  .command('github repo <action> [repo-name]')
   .description('GitHub repository management')
   .option('--detailed', 'Show detailed information')
-  .action(async (action, options) => {
+  .action(async (action, repoName, options) => {
     try {
       const { repositoryInfo } = await import('../commands/github.ts');
 
       if (action === 'info') {
-        await repositoryInfo(options);
+        await repositoryInfo(repoName, options);
       }
     } catch (error) {
       console.error('❌ Error:', error.message);
@@ -152,15 +195,21 @@ program
   });
 
 program
-  .command('github labels <action>')
+  .command('github labels <action> [repo-name]')
   .description('GitHub label management')
   .option('--color <color>', 'Label color (hex without #)')
   .option('--description <desc>', 'Label description')
   .option('--issue <number>', 'Issue number to apply label to')
-  .action(async (action, options) => {
+  .option('--labels <labels>', 'Comma-separated labels to apply')
+  .action(async (action, repoName, options) => {
     try {
       const { manageLabels } = await import('../commands/github.ts');
-      const labelName = options._[1];
+      
+      // Set repo in options for the manageLabels function
+      options.repo = repoName;
+      
+      // For apply action, use labels option instead of positional argument
+      const labelName = action === 'apply' ? options.labels : options._[1];
       await manageLabels(action, labelName, options);
     } catch (error) {
       console.error('❌ Error:', error.message);
@@ -217,8 +266,114 @@ program
   .option('--value <value>', 'Metadata value')
   .action(async (action, options) => {
     try {
-      const { metadataManagement } = await import('../commands/github.ts');
+      const { metadataManagement } = await import(path.resolve(__dirname, '../commands/github.ts'));
       await metadataManagement(action, options.key, options.value, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('github issue create <repo-name>')
+  .description('Create GitHub issue with AI-drafted body')
+  .option('--title <title>', 'Issue title', '')
+  .option('--body <body>', 'Issue body', '')
+  .option('--labels <labels>', 'Comma-separated labels', '')
+  .action(async (repoName, options) => {
+    try {
+      const { createGitHubIssue } = await import(path.resolve(__dirname, '../commands/github.ts'));
+      await createGitHubIssue(repoName, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('github pr review <pr-id>')
+  .description('Provide GitHub PR review from Telegram')
+  .option('--action <action>', 'Review action (approve|comment)', 'comment')
+  .option('--message <message>', 'Review message', '')
+  .action(async (prId, options) => {
+    try {
+      const { reviewGitHubPR } = await import(path.resolve(__dirname, '../commands/github.ts'));
+      await reviewGitHubPR(prId, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('github pr status <pr-id>')
+  .description('Get detailed PR status, CI checks, CODEOWNERS approval, and AI-suggested actions')
+  .option('--detailed', 'Show comprehensive PR analysis')
+  .action(async (prId, options) => {
+    try {
+      const { getGitHubPRStatus } = await import(path.resolve(__dirname, '../commands/github.ts'));
+      await getGitHubPRStatus(prId, options);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+// AI commands
+program
+  .command('ai labels <issue-id>')
+  .description('AI-powered label suggestion for issues and PRs')
+  .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
+  .action(async (issueId, options) => {
+    try {
+      const { suggestLabels } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const [owner, repo] = options.repo.includes('/') ? options.repo.split('/') : ['brendadeeznuts1111', options.repo];
+      const labels = await suggestLabels(issueId, owner, repo);
+      console.log('\n🏷️ **AI Label Suggestion:**');
+      console.log(`Labels: ${labels.labels.join(', ')}`);
+      console.log(`Confidence: ${(labels.confidence * 100).toFixed(1)}%`);
+      console.log(`Reasoning: ${labels.reasoning}`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('ai release-type')
+  .description('AI-powered release type suggestion based on commit analysis')
+  .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
+  .action(async (options) => {
+    try {
+      const { suggestReleaseType } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const [owner, repo] = options.repo.includes('/') ? options.repo.split('/') : ['brendadeeznuts1111', options.repo];
+      const releaseType = await suggestReleaseType(owner, repo);
+      console.log('\n🚀 **AI Release Type Suggestion:**');
+      console.log(`Type: ${releaseType.type}`);
+      console.log(`Confidence: ${(releaseType.confidence * 100).toFixed(1)}%`);
+      console.log(`Reasoning: ${releaseType.reasoning}`);
+      console.log(`Analysis: ${releaseType.commit_analysis.features} features, ${releaseType.commit_analysis.fixes} fixes, ${releaseType.commit_analysis.breaking} breaking changes`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('ai impact <changes...>')
+  .description('AI-powered impact analysis for changes')
+  .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
+  .action(async (changes, options) => {
+    try {
+      const { analyzeImpact } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const [owner, repo] = options.repo.includes('/') ? options.repo.split('/') : ['brendadeeznuts1111', options.repo];
+      const impact = await analyzeImpact(changes, owner, repo);
+      console.log('\n💥 **AI Impact Analysis:**');
+      console.log(`Impact: ${impact.impact}`);
+      console.log(`Confidence: ${(impact.confidence * 100).toFixed(1)}%`);
+      console.log(`Risk Score: ${impact.risk_score}/100`);
+      console.log(`Affected Areas: ${impact.affected_areas.join(', ') || 'None'}`);
+      console.log(`Reasoning: ${impact.reasoning}`);
     } catch (error) {
       console.error('❌ Error:', error.message);
       process.exit(1);

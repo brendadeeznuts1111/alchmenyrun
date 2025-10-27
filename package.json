@@ -55,7 +55,8 @@
     "scope:cleanup:staging": "bun run src/commands/finalize.ts --app cloudflare-demo --stage staging --dry-run",
     "scope:monitor": "bun run scripts/scope-monitor.ts",
     "scope:training": "bun run scripts/scope-training.ts",
-    "scope:comprehensive:test": "bun run scripts/staging-scope-test.ts"
+    "scope:comprehensive:test": "bun run scripts/staging-scope-test.ts",
+    "codeowners:validate": "bun run scripts/validate-codeowners.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

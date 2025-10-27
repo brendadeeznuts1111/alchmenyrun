@@ -1,6 +1,9 @@
+// Core scope interfaces and base types
+export { Scope, BaseScopeOptions, ScopeMetadata, FinalizationReport, TestScope, StateLock } from "./interfaces";
+
 // Core scope hierarchy exports
 export { ApplicationScope } from "./application-scope";
-export type { ApplicationScopeConfig, FinalizationReport } from "./application-scope";
+export type { ApplicationScopeConfig } from "./application-scope";
 
 export { StageScope } from "./stage-scope";
 export { NestedScope } from "./nested-scope";
