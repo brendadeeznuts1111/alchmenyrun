@@ -735,6 +735,72 @@ Governance resources follow Alchemy's lifecycle patterns:
 - **State Management**: Governance metadata stored in Alchemy state files
 - **Resource Naming**: Automatic stage-specific naming (`governance-db-preview`)
 
+## CI/CD Integration
+
+The governance features include comprehensive CI/CD integration for automated validation and testing:
+
+### Governance Checks Workflow
+
+Automated validation runs on all PRs affecting governance features:
+
+```yaml
+# .github/workflows/governance-checks.yml
+- RFC-004 document structure validation
+- TypeScript compilation and code quality checks
+- Documentation rules compliance enforcement
+- Governance implementation status verification
+- Automated PR comments with validation results
+```
+
+### Governance Preview Workflow
+
+PR-specific preview environments for governance testing:
+
+```yaml
+# .github/workflows/governance-preview.yml
+- Isolated preview deployments (pr-${number} stages)
+- Governance features enabled in preview environments
+- Automatic cleanup when PRs are closed
+- Preview URLs posted as PR comments
+```
+
+### Governance Validation Script
+
+Comprehensive validation script for local and CI use:
+
+```bash
+# scripts/governance-check.sh
+./scripts/governance-check.sh
+
+# Validates:
+# - RFC document structure
+# - Code quality standards
+# - Documentation compliance
+# - Governance implementation status
+```
+
+### Custom GitHub Actions
+
+Reusable actions for governance environment setup:
+
+```yaml
+# .github/actions/setup-governance/action.yml
+- Environment variable configuration
+- Secret validation and setup
+- Governance feature flag management
+```
+
+### Integration with Existing Pipelines
+
+Governance checks integrate with existing CI/CD workflows:
+
+- **Quality Gates**: Governance validation as merge requirements
+- **Preview Environments**: Governance features testable in isolation
+- **Automated Cleanup**: Resources cleaned up automatically
+- **Status Reporting**: Real-time governance compliance status
+
+---
+
 ## Decision
 
 **Status:** Draft - Technical feasibility assessment completed
