@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Hook for managing Cloudflare Workers with Alchemy framework
@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function useWorker<T = any>(
   workerId: string,
-  workerFactory: () => Promise<T> | T
+  workerFactory: () => Promise<T> | T,
 ) {
   const [worker, setWorker] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ export function useDynamicWorker(
     compatibilityDate: string;
     mainModule: string;
     modules: Record<string, string>;
-  }
+  },
 ) {
   return useWorker(workerId, async () => {
     // This would integrate with the WorkerLoader binding

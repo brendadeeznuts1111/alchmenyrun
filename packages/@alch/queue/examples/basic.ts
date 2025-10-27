@@ -1,8 +1,8 @@
-import { JobQueue } from '../src/index';
+import { JobQueue } from "../src/index";
 
 // One line → queue + processor + DLQ + REST producer deployed
-export const emailQueue = JobQueue('emails', {
-  name: 'emails',
+export const emailQueue = JobQueue("emails", {
+  name: "emails",
   batchSize: 20,
   maxRetries: 5,
   deadLetterQueue: true,

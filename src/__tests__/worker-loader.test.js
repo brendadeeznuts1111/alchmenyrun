@@ -3,46 +3,36 @@
  * Tests the WorkerLoader binding type functionality following official Alchemy patterns
  * Based on: https://github.com/alchemy-run/alchemy/blob/e3d6bb69e3a7eb75046271cbd8737f06240feee5/alchemy/test/cloudflare/worker-loader.test.ts
  */
-
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { Worker, WorkerLoader } from "alchemy/cloudflare";
-
+import { WorkerLoader } from "alchemy/cloudflare";
 describe("WorkerLoader", () => {
   const originalEnv = process.env;
-
   beforeEach(() => {
     // Reset environment before each test
     process.env = { ...originalEnv };
   });
-
   afterEach(() => {
     // Restore original environment after each test
     process.env = originalEnv;
   });
-
   describe("WorkerLoader Binding Type", () => {
     test("should create WorkerLoader binding with correct type", () => {
       const workerLoader = WorkerLoader();
-
       expect(workerLoader).toBeDefined();
       expect(workerLoader.type).toEqual("worker_loader");
       expect(typeof workerLoader).toBe("object");
     });
-
     test("should create consistent WorkerLoader instances", () => {
       const workerLoader1 = WorkerLoader();
       const workerLoader2 = WorkerLoader();
-
       expect(workerLoader1).toEqual(workerLoader2);
       expect(workerLoader1.type).toBe("worker_loader");
       expect(workerLoader2.type).toBe("worker_loader");
     });
   });
-
   describe("WorkerLoader Integration", () => {
     test("should create worker configuration with WorkerLoader binding", () => {
       const workerName = "test-worker-loader";
-
       // This tests the configuration structure without actual deployment
       const workerConfig = {
         name: workerName,
@@ -73,19 +63,17 @@ describe("WorkerLoader", () => {
             }
           };
         `,
-        format: "esm" as const,
+        format: "esm",
         bindings: {
           LOADER: WorkerLoader(),
         },
       };
-
       expect(workerConfig.name).toEqual(workerName);
       expect(workerConfig.bindings?.LOADER).toBeDefined();
       expect(workerConfig.bindings?.LOADER.type).toEqual("worker_loader");
       expect(workerConfig.script).toContain("env.LOADER.get");
       expect(workerConfig.script).toContain("dynamic-worker");
     });
-
     test("should handle multiple WorkerLoader bindings", () => {
       const workerConfig = {
         name: "test-multiple-loaders",
@@ -96,18 +84,16 @@ describe("WorkerLoader", () => {
             }
           };
         `,
-        format: "esm" as const,
+        format: "esm",
         bindings: {
           LOADER: WorkerLoader(),
           SECONDARY_LOADER: WorkerLoader(),
           TERTIARY_LOADER: WorkerLoader(),
         },
       };
-
       expect(workerConfig.bindings?.LOADER).toBeDefined();
       expect(workerConfig.bindings?.SECONDARY_LOADER).toBeDefined();
       expect(workerConfig.bindings?.TERTIARY_LOADER).toBeDefined();
-
       expect(workerConfig.bindings?.LOADER.type).toEqual("worker_loader");
       expect(workerConfig.bindings?.SECONDARY_LOADER.type).toEqual(
         "worker_loader",
@@ -117,7 +103,6 @@ describe("WorkerLoader", () => {
       );
     });
   });
-
   describe("Dynamic Worker Patterns", () => {
     test("should support dynamic worker creation pattern", () => {
       const dynamicWorkerScript = `
@@ -152,13 +137,11 @@ describe("WorkerLoader", () => {
           }
         };
       `;
-
       expect(dynamicWorkerScript).toContain("env.LOADER.get");
       expect(dynamicWorkerScript).toContain("dynamic-${workerType}");
       expect(dynamicWorkerScript).toContain("getEntrypoint");
       expect(dynamicWorkerScript).toContain("compatibilityDate");
     });
-
     test("should support metrics collection worker pattern", () => {
       const metricsWorkerScript = `
         import { env } from "cloudflare:workers";
@@ -196,14 +179,12 @@ describe("WorkerLoader", () => {
           }
         };
       `;
-
       expect(metricsWorkerScript).toContain("metrics-collector");
       expect(metricsWorkerScript).toContain("timestamp");
       expect(metricsWorkerScript).toContain("activeConnections");
       expect(metricsWorkerScript).toContain("responseTime");
       expect(metricsWorkerScript).toContain("healthScore");
     });
-
     test("should support configuration management worker pattern", () => {
       const configWorkerScript = `
         import { env } from "cloudflare:workers";
@@ -250,7 +231,6 @@ describe("WorkerLoader", () => {
           }
         };
       `;
-
       expect(configWorkerScript).toContain("config-reloader");
       expect(configWorkerScript).toContain("version");
       expect(configWorkerScript).toContain("features");
@@ -258,7 +238,6 @@ describe("WorkerLoader", () => {
       expect(configWorkerScript).toContain("dynamicWorkers");
     });
   });
-
   describe("WorkerLoader Error Handling", () => {
     test("should handle WorkerLoader creation errors gracefully", () => {
       // Test that WorkerLoader creation doesn't throw errors
@@ -267,22 +246,18 @@ describe("WorkerLoader", () => {
         expect(workerLoader.type).toBe("worker_loader");
       }).not.toThrow();
     });
-
     test("should validate WorkerLoader binding structure", () => {
       const workerLoader = WorkerLoader();
-
       // Validate the structure matches expected interface
       expect(workerLoader).toHaveProperty("type");
       expect(typeof workerLoader.type).toBe("string");
       expect(workerLoader.type).toBe("worker_loader");
-
       // Ensure no unexpected properties
       const keys = Object.keys(workerLoader);
       expect(keys).toHaveLength(1);
       expect(keys[0]).toBe("type");
     });
   });
-
   describe("WorkerLoader Advanced Patterns", () => {
     test("should support multi-tenant worker pattern", () => {
       const multiTenantScript = `
@@ -317,12 +292,10 @@ describe("WorkerLoader", () => {
           }
         };
       `;
-
       expect(multiTenantScript).toContain("tenant-${tenantId}");
       expect(multiTenantScript).toContain("tenantId");
       expect(multiTenantScript).toContain("Response from tenant");
     });
-
     test("should support feature flag worker pattern", () => {
       const featureFlagScript = `
         import { env } from "cloudflare:workers";
@@ -356,7 +329,6 @@ describe("WorkerLoader", () => {
           }
         };
       `;
-
       expect(featureFlagScript).toContain("feature-${featureName}");
       expect(featureFlagScript).toContain("featureName");
       expect(featureFlagScript).toContain("Feature");

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Simple stage listing script
+
+echo "📋 Available Alchemy Stages:"
+echo ""
+
+if [ -d ".alchemy/cloudflare-demo" ]; then
+    for stage in .alchemy/cloudflare-demo/*/; do
+        if [ -d "$stage" ]; then
+            stage_name=$(basename "$stage")
+            echo "✅ Stage: $stage_name"
+            
+            # List workers in this stage
+            echo "   Workers:"
+            find "$stage" -name "*.json" -exec basename {} .json \; | while read worker; do
+                if [ "$worker" != "website" ] && [ "$worker" != "db" ] && [ "$worker" != "storage" ] && [ "$worker" != "cache" ] && [ "$worker" != "jobs" ]; then
+                    echo "     - $worker"
+                fi
+            done
+            
+            # Always show website if it exists
+            if [ -f "$stage/website.json" ]; then
+                echo "     - website"
+            fi
+            
+            # Check for github-webhook specifically
+            if [ -f "$stage/github-webhook.json" ]; then
+                echo "     - github-webhook ✨"
+            fi
+            
+            echo ""
+        fi
+    done
+else
+    echo "❌ No Alchemy state found (.alchemy/cloudflare-demo directory missing)"
+fi
+
+echo "🎯 Expected: github-webhook worker should appear in a stage"
+echo "📝 Status: Implementation ready, deployment pending authentication"

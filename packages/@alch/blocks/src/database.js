@@ -4,9 +4,7 @@
  * This wrapper automatically appends the stage name to D1 databases
  * to prevent name collisions between preview, prod, and PR environments.
  */
-
 import { D1Database } from "alchemy/cloudflare";
-
 /**
  * Create a D1 database with automatic stage suffixing
  *
@@ -22,11 +20,10 @@ import { D1Database } from "alchemy/cloudflare";
  * // Results in: alchemy-demo-db-preview, alchemy-demo-db-prod, etc.
  * ```
  */
-export function Database(name: string, opts: any = {}) {
+export function Database(name, opts = {}) {
   // Get the current stage from the app context
   // Note: This assumes we're in an alchemy.run context
   const stage = process.env.STAGE || "dev";
-
   return D1Database(name, {
     ...opts,
     // Auto-append stage to guarantee uniqueness per environment

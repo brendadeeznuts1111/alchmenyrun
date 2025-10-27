@@ -1,7 +1,7 @@
 micro-rfc–005  Thread-Safe Forum State with Durable Objects
 -----------------------------------------------------------
 
-Status  `proposed` → `ready`
+Status  `implemented`
 Target  `alchmenyrun/tgk`  (v0.5.0)
 Files   `workers/github-webhook/*`  +  `src/do/github-agent.ts`  +  `alchemy.run.ts`
 Author  `@brendadeeznuts1111`

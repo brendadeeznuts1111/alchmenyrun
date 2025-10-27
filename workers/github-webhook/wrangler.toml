@@ -1,0 +1,20 @@
+name = "github-webhook"
+main = "index.ts"
+compatibility_date = "2025-10-27"
+
+[[migrations]]
+tag = "v1"
+new_classes = [ "GithubAgent" ]
+
+[env.prod]
+name = "github-webhook-prod"
+
+[[env.prod.durable_objects.bindings]]
+name = "GITHUB_DO"
+class_name = "GithubAgent"
+
+[[env.prod.vars]]
+TG_TOKEN = ""
+COUNCIL_ID = ""
+TOPIC_MOBILE = "25781"
+TOPIC_FORUM = "25782"

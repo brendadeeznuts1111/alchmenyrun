@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Hook for managing Alchemy Queue resources
@@ -13,7 +13,7 @@ export function useQueue(
     name?: string;
     delete?: boolean;
     retries?: number;
-  }
+  },
 ) {
   const [queue, setQueue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,10 @@ export function useQueue(
           config: queueConfig,
           send: async (message: any) => {
             console.log(`Queue ${queueId} sending message:`, message);
-            setMessages(prev => [...prev, { ...message, timestamp: Date.now() }]);
+            setMessages((prev) => [
+              ...prev,
+              { ...message, timestamp: Date.now() },
+            ]);
           },
           receive: async () => {
             // Placeholder for receiving messages
@@ -70,11 +73,14 @@ export function useQueue(
     };
   }, [queueId, queueConfig?.delete]);
 
-  const sendMessage = useCallback(async (message: any) => {
-    if (queue) {
-      await queue.send(message);
-    }
-  }, [queue]);
+  const sendMessage = useCallback(
+    async (message: any) => {
+      if (queue) {
+        await queue.send(message);
+      }
+    },
+    [queue],
+  );
 
   const receiveMessage = useCallback(async () => {
     if (queue) {
@@ -101,7 +107,10 @@ export function useQueue(
  * @param interval - Polling interval in milliseconds
  * @returns Latest message and polling status
  */
-export function useQueuePolling(queueHook: ReturnType<typeof useQueue>, interval = 5000) {
+export function useQueuePolling(
+  queueHook: ReturnType<typeof useQueue>,
+  interval = 5000,
+) {
   const [latestMessage, setLatestMessage] = useState<any>(null);
   const [polling, setPolling] = useState(false);
 
@@ -116,7 +125,7 @@ export function useQueuePolling(queueHook: ReturnType<typeof useQueue>, interval
           setLatestMessage(message);
         }
       } catch (error) {
-        console.error('Error polling queue:', error);
+        console.error("Error polling queue:", error);
       }
     }, interval);
 
