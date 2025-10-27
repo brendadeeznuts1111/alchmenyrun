@@ -88,6 +88,21 @@ bun test
 
 ---
 
+## 🎯 Customer Impact
+<!-- For customer-facing changes -->
+- **Group:** <!-- /label customer/group-alpha -->
+- **Topic:** <!-- /label topic/telegram-group -->
+- **Impact:** <!-- /label impact/high -->
+
+## 📋 Implementation Checklist
+<!-- For customer-facing changes -->
+- [ ] Customer-facing change?
+- [ ] Thread-safety tested?
+- [ ] State pinned correctly?
+- [ ] Back-compat preserved?
+
+---
+
 ## 👥 Reviewers
 <!-- Auto-assigned via CODEOWNERS, but you can request specific reviewers -->
 
@@ -107,3 +122,10 @@ bun test
 - ✅ Commit messages: Follow conventional format
 - ✅ No secrets: Security scan
 - ✅ PR size: Auto-labeled
+
+---
+
+## 🏷️ Quick Labels
+```
+/label type/feature,component/worker,dept/infrastructure
+```
