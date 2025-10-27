@@ -69,15 +69,28 @@ See `.github/workflows/semver-validation.yml` for automatic:
 This release system is maintained by:
 
 - **Infrastructure Team** (@alice.smith, @infra_dev1) - Scripts & CI/CD
+  - Issue Topic: `#semver-tooling` in [@alchemist_infra_team](https://t.me/+nieD7pJAJ4NmYWQx)
 - **Quality & Testing Team** (@diana.prince, @qa_analyst1) - Validation workflow
+  - Issue Topic: `#ci-workflow-failures` in [@alchemist_quality_gate](https://t.me/+QualityGateDiscuss)
 - **Documentation Team** (@frank.taylor, @doc_writer1) - Release guides
+  - Issue Topic: `#documentation` in [@alchemist_docs_discuss](https://t.me/+DocsTeamDiscuss)
 
 See [CODEOWNERS](../.github/CODEOWNERS) for full ownership matrix.
 
-**Support:**
-- Telegram Infrastructure: https://t.me/+nieD7pJAJ4NmYWQx
-- Telegram CI Status: https://t.me/+S7yXUYv8nvs1NGFh
-- Email: conduct@alchemists.dev
+**Support Channels:**
+
+| Channel | Type | Link |
+|---------|------|------|
+| Infrastructure (bi-directional) | Telegram Group | https://t.me/+nieD7pJAJ4NmYWQx |
+| Quality & Testing (bi-directional) | Telegram Group | https://t.me/+QualityGateDiscuss |
+| CI Status (broadcast) | Telegram Channel | https://t.me/+S7yXUYv8nvs1NGFh |
+| GitHub Issues (bi-directional) | Issue Tracker | [Create issue](https://github.com/brendadeeznuts1111/alchmenyrun/issues) |
+| Council Email | Email | conduct@alchemists.dev |
+
+**Report Issues:**
+- Script bugs → Post in `#semver-tooling` @ Infrastructure Group
+- CI failures → Post in `#ci-workflow-failures` @ Quality Group
+- Doc issues → Post in `#documentation` @ Documentation Group
 
 ## Documentation
 

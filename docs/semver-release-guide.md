@@ -303,38 +303,76 @@ This release system is maintained by multiple teams:
 - **Lead**: @alice.smith
 - **Team**: @infra_dev1, @infra_dev2
 - **Responsible for**: Release scripts, CI/CD workflows, semver tooling
-- **Telegram**: [@alchemist_infra_team](https://t.me/+nieD7pJAJ4NmYWQx)
+- **Telegram Group** (bi-directional): [@alchemist_infra_team](https://t.me/+nieD7pJAJ4NmYWQx)
+- **Issue Topic**: `#semver-tooling` in [@alchemist_infra_team](https://t.me/+nieD7pJAJ4NmYWQx)
 
 ### Quality & Testing Team (Alchemist Quality Gate)
 - **Lead**: @diana.prince
 - **Team**: @qa_analyst1
 - **Responsible for**: Semver validation workflow, test coverage, release quality gates
-- **Telegram**: [@alchemist_ci_status](https://t.me/+S7yXUYv8nvs1NGFh)
+- **Telegram Channel** (broadcast): [@alchemist_ci_status](https://t.me/+S7yXUYv8nvs1NGFh)
+- **Telegram Group** (bi-directional): [@alchemist_quality_gate](https://t.me/+QualityGateDiscuss)
+- **Issue Topic**: `#ci-workflow-failures` in [@alchemist_quality_gate](https://t.me/+QualityGateDiscuss)
 - **Action Item**: Publish `alchemist/telegram-notifier@v3` *(this sprint)*
 
 ### Documentation Team (Alchemist Knowledge Base)
 - **Lead**: @frank.taylor
 - **Team**: @doc_writer1
 - **Responsible for**: Release guide documentation, changelog management
-- **Telegram**: [@alchemist_releases](https://t.me/+zA-Rw8weDJUwMjg5)
+- **Telegram Channel** (broadcast): [@alchemist_releases](https://t.me/+zA-Rw8weDJUwMjg5)
+- **Telegram Group** (bi-directional): [@alchemist_docs_discuss](https://t.me/+DocsTeamDiscuss)
+- **Issue Topic**: `#documentation` in [@alchemist_docs_discuss](https://t.me/+DocsTeamDiscuss)
 
 ### Council (Strategic Approvals)
 - **Lead**: @brendadeeznuts1111
-- **Telegram**: [@AlchemistsCouncil](https://t.me/c/3293940131/1)
+- **Telegram Super-Group** (bi-directional, forum-enabled): [@AlchemistsCouncil](https://t.me/c/3293940131/1)
+- **Issue Topic**: `#release-approvals` in [@AlchemistsCouncil](https://t.me/c/3293940131/1)
 - **Email**: conduct@alchemists.dev
 
 ### Getting Help
 
 **For semver-related issues:**
 1. **Scripts/tooling issues** → Infrastructure Team (@alice.smith)
+   - Post in `#semver-tooling` topic: https://t.me/+nieD7pJAJ4NmYWQx
 2. **CI workflow failures** → Quality & Testing Team (@diana.prince)
+   - Post in `#ci-workflow-failures` topic: https://t.me/+QualityGateDiscuss
 3. **Documentation questions** → Documentation Team (@frank.taylor)
+   - Post in `#documentation` topic: https://t.me/+DocsTeamDiscuss
 4. **Strategic release decisions** → Council (@brendadeeznuts1111)
+   - Post in `#release-approvals` topic: https://t.me/c/3293940131/1
 
 **Support Channels:**
-- GitHub Issues: [Create issue](https://github.com/brendadeeznuts1111/alchmenyrun/issues)
-- Telegram CI Status: https://t.me/+S7yXUYv8nvs1NGFh
-- Council Chat: https://t.me/c/3293940131/1
+
+| Purpose | Channel Type | Link | Interaction |
+|---------|--------------|------|-------------|
+| GitHub Issues | Issue Tracker | [Create issue](https://github.com/brendadeeznuts1111/alchmenyrun/issues) | Bi-directional |
+| CI Status Updates | Telegram Channel | https://t.me/+S7yXUYv8nvs1NGFh | Broadcast only |
+| Release Announcements | Telegram Channel | https://t.me/+zA-Rw8weDJUwMjg5 | Broadcast only |
+| Infrastructure Support | Telegram Group | https://t.me/+nieD7pJAJ4NmYWQx | **Bi-directional** |
+| Quality & Testing Support | Telegram Group | https://t.me/+QualityGateDiscuss | **Bi-directional** |
+| Documentation Support | Telegram Group | https://t.me/+DocsTeamDiscuss | **Bi-directional** |
+| Council Decisions | Telegram Super-Group (Forum) | https://t.me/c/3293940131/1 | **Bi-directional** |
+
+**Channel Usage Guide:**
+
+📢 **Broadcast Channels** (read-only, bot-only):
+- `@alchemist_ci_status` - CI pass/fail notifications
+- `@alchemist_releases` - Release announcements & changelogs
+
+💬 **Interactive Groups** (bi-directional, team responds):
+- `@alchemist_infra_team` - Ask Infrastructure Team questions
+- `@alchemist_quality_gate` - Report CI/testing issues
+- `@alchemist_docs_discuss` - Documentation feedback & questions
+
+🏛️ **Council Forum** (bi-directional, approval workflow):
+- `@AlchemistsCouncil` - Strategic decisions, release approvals
+- Uses forum topics for organized discussion
+
+**Best Practices:**
+- ✅ Use **issue topics** (`#semver-tooling`, `#ci-workflow-failures`, etc.) for bug reports
+- ✅ Use **bi-directional groups** for questions & support
+- ✅ Monitor **broadcast channels** for status updates
+- ✅ Tag team leads (e.g., `@alice.smith`) for urgent issues
 
 ## References
 
