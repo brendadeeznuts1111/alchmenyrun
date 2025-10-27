@@ -2639,6 +2639,10 @@ main() {
                     cmd_forum_polish "$@"
                     ;;
                 "report")
+                "governance")
+                    shift
+                    cmd_forum_governance "$@"
+                    ;;
                     shift
                     local audit_file=""
                     local pin_flag=""
