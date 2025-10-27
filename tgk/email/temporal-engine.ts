@@ -1,36 +1,21 @@
 /**
  * Temporal Intelligence Engine
- * Analyzes time-related context and calculates response expectations
+ * Analyzes time sensitivity, deadlines, and response time expectations
  */
 
-import { KinjaClient, TemporalAnalysis, TimePhrase } from './kinja-analyzer';
-
-export interface TemporalContext {
-  content: string;
-  sender: string;
-  receivedTime: Date;
-  stateId?: string;
-}
-
-export interface SenderPattern {
-  averageResponseTime: number;
-  responseDistribution: { immediate: number; hours: number; days: number; weeks: number };
-  lastInteraction: Date;
-}
+import { TemporalAnalysis, TimePhrase } from './kinja-analyzer';
 
 export class TemporalIntelligenceEngine {
-  private kinja: KinjaClient;
-  private senderPatterns: Map<string, SenderPattern> = new Map();
+  async analyzeTemporalContext(context: {
+    content: string;
+    sender: string;
+    receivedTime: Date;
+    stateId?: string;
+  }): Promise<TemporalAnalysis> {
 
-  constructor(kinjaClient: KinjaClient) {
-    this.kinja = kinjaClient;
-  }
-
-  async analyzeTemporalContext(context: TemporalContext): Promise<TemporalAnalysis> {
-    
     // Extract time-related phrases using NLP
     const timePhrases = await this.extractTimeReferences(context.content);
-    
+
     // Calculate expected response time based on multiple factors
     const expectedResponseTime = await this.calculateExpectedResponseTime({
       sender: context.sender,
@@ -45,12 +30,9 @@ export class TemporalIntelligenceEngine {
     // Calculate deadline
     const deadline = this.calculateDeadline(context.receivedTime, expectedResponseTime, urgencyLevel);
 
-    // Get SLA time for context
-    const slaTime = await this.getSLAForContext(context.stateId, context.sender);
-
     return {
       expectedResponseTime,
-      slaTime,
+      slaTime: await this.getSLAForContext(context.stateId, context.sender),
       urgencyLevel,
       deadline,
       timePhrases,
@@ -59,51 +41,68 @@ export class TemporalIntelligenceEngine {
   }
 
   private async extractTimeReferences(content: string): Promise<TimePhrase[]> {
-    const timePhrases: TimePhrase[] = [];
-    
-    // Time urgency patterns
-    const patterns = [
-      { regex: /\b(immediate|immediately|right now|asap|as soon as possible)\b/i, urgency: 'immediate' as const, hours: 1 },
-      { regex: /\b(urgent|urgently|emergency|critical|stat)\b/i, urgency: 'urgent' as const, hours: 4 },
-      { regex: /\b(today|this morning|this afternoon|tonight)\b/i, urgency: 'today' as const, hours: 8 },
-      { regex: /\b(soon|shortly|quickly|promptly)\b/i, urgency: 'soon' as const, hours: 24 },
-      { regex: /\b(tomorrow|tom|tmrw)\b/i, urgency: 'normal' as const, hours: 48 },
-      { regex: /\b(this week|within a week)\b/i, urgency: 'normal' as const, hours: 168 },
-      { regex: /\b(next week|sometime next week)\b/i, urgency: 'normal' as const, hours: 336 }
-    ];
+    const phrases: TimePhrase[] = [];
+    const lowerContent = content.toLowerCase();
 
-    for (const pattern of patterns) {
-      const matches = content.match(pattern.regex);
-      if (matches) {
-        for (const match of matches) {
-          timePhrases.push({
-            text: match,
-            urgency: pattern.urgency,
-            hours: pattern.hours
-          });
-        }
-      }
+    // Immediate urgency patterns
+    if (lowerContent.includes('immediately') || lowerContent.includes('right now') ||
+        lowerContent.includes('asap') || lowerContent.includes('urgent')) {
+      phrases.push({
+        phrase: 'immediately',
+        urgency: 'immediate',
+        hours: 1
+      });
     }
 
-    // Extract specific time mentions
-    const timeMatches = content.match(/\b(\d+)\s*(hours?|hrs?|days?|minutes?|mins?)\b/i);
-    if (timeMatches) {
-      const quantity = parseInt(timeMatches[1]);
-      const unit = timeMatches[2].toLowerCase();
-      
-      let hours = 0;
-      if (unit.includes('hour') || unit.includes('hr')) hours = quantity;
-      else if (unit.includes('day')) hours = quantity * 24;
-      else if (unit.includes('minute') || unit.includes('min')) hours = quantity / 60;
-      
-      timePhrases.push({
-        text: timeMatches[0],
-        urgency: hours <= 4 ? 'urgent' : hours <= 24 ? 'today' : 'normal',
+    // Urgent patterns
+    if (lowerContent.includes('urgent') || lowerContent.includes('critical') ||
+        lowerContent.includes('emergency') || lowerContent.includes('blocking')) {
+      phrases.push({
+        phrase: 'urgent',
+        urgency: 'urgent',
+        hours: 4
+      });
+    }
+
+    // Today patterns
+    if (lowerContent.includes('today') || lowerContent.includes('eod') ||
+        lowerContent.includes('end of day')) {
+      phrases.push({
+        phrase: 'today',
+        urgency: 'today',
+        hours: 8
+      });
+    }
+
+    // Soon patterns
+    if (lowerContent.includes('soon') || lowerContent.includes('quickly') ||
+        lowerContent.includes('promptly')) {
+      phrases.push({
+        phrase: 'soon',
+        urgency: 'soon',
+        hours: 24
+      });
+    }
+
+    // Specific time patterns (basic regex)
+    const timeRegex = /(\d+)\s*(hour|hr|h|day|d|week|w)s?/gi;
+    let match;
+    while ((match = timeRegex.exec(content)) !== null) {
+      const number = parseInt(match[1]);
+      const unit = match[2].toLowerCase()[0]; // First char
+
+      let hours = number;
+      if (unit === 'd') hours = number * 24;
+      if (unit === 'w') hours = number * 24 * 7;
+
+      phrases.push({
+        phrase: match[0],
+        urgency: hours <= 4 ? 'urgent' : hours <= 24 ? 'today' : 'later',
         hours
       });
     }
 
-    return timePhrases;
+    return phrases;
   }
 
   private async calculateExpectedResponseTime(params: {
@@ -112,7 +111,7 @@ export class TemporalIntelligenceEngine {
     timePhrases: TimePhrase[];
     stateId?: string;
   }): Promise<number> {
-    
+
     const baseTimes = {
       internal: 4,    // hours for internal team
       customer: 24,   // hours for customers
@@ -121,7 +120,7 @@ export class TemporalIntelligenceEngine {
     };
 
     let baseTime = baseTimes.unknown;
-    
+
     // Adjust based on sender type
     if (await this.isInternalSender(params.sender)) baseTime = baseTimes.internal;
     else if (await this.isCustomerSender(params.sender)) baseTime = baseTimes.customer;
@@ -134,122 +133,117 @@ export class TemporalIntelligenceEngine {
     // Adjust based on historical response patterns
     if (params.stateId) {
       const historicalPattern = await this.getHistoricalResponsePattern(params.stateId);
-      if (historicalPattern) {
-        baseTime = historicalPattern.averageResponseTime || baseTime;
-      }
+      baseTime = historicalPattern?.averageResponseTime || baseTime;
     }
 
-    // Adjust based on sender's historical patterns
-    const senderPattern = this.senderPatterns.get(params.sender);
-    if (senderPattern) {
-      baseTime = senderPattern.averageResponseTime || baseTime;
-    }
+    // Adjust based on content urgency
+    const contentUrgency = this.analyzeContentUrgency(params.content);
+    if (contentUrgency === 'high') baseTime *= 0.5;
+    else if (contentUrgency === 'low') baseTime *= 2;
 
     return Math.max(1, baseTime); // Minimum 1 hour
   }
 
   private calculateTimeMentionAdjustment(phrases: TimePhrase[]): number {
-    if (phrases.length === 0) return 48; // default 2 days
-    
-    let adjustment = 48;
-    
+    if (phrases.length === 0) return 48; // Default 2 days
+
+    let minHours = 48;
     for (const phrase of phrases) {
-      if (phrase.urgency === 'immediate') adjustment = Math.min(adjustment, 1); // 1 hour
-      else if (phrase.urgency === 'urgent') adjustment = Math.min(adjustment, 4); // 4 hours
-      else if (phrase.urgency === 'today') adjustment = Math.min(adjustment, 8); // 8 hours
-      else if (phrase.urgency === 'soon') adjustment = Math.min(adjustment, 24); // 1 day
+      minHours = Math.min(minHours, phrase.hours);
     }
-    
-    return adjustment;
+
+    return minHours;
   }
 
-  private determineTemporalUrgency(expectedHours: number, timePhrases: TimePhrase[]): 'immediate' | 'hours' | 'days' | 'weeks' {
-    // Check for explicit urgent mentions first
-    const hasImmediate = timePhrases.some(p => p.urgency === 'immediate');
-    const hasUrgent = timePhrases.some(p => p.urgency === 'urgent');
-    
-    if (hasImmediate) return 'immediate';
-    if (hasUrgent || expectedHours <= 4) return 'hours';
-    if (expectedHours <= 72) return 'days';
+  private determineTemporalUrgency(expectedHours: number, phrases: TimePhrase[]): 'immediate' | 'hours' | 'days' | 'weeks' {
+    // Check explicit phrases first
+    for (const phrase of phrases) {
+      if (phrase.urgency === 'immediate') return 'immediate';
+      if (phrase.urgency === 'urgent') return 'hours';
+      if (phrase.urgency === 'today') return 'hours';
+      if (phrase.urgency === 'soon') return 'days';
+    }
+
+    // Fallback to expected hours
+    if (expectedHours <= 2) return 'immediate';
+    if (expectedHours <= 8) return 'hours';
+    if (expectedHours <= 48) return 'days';
     return 'weeks';
   }
 
-  private calculateDeadline(receivedTime: Date, expectedHours: number, urgencyLevel: string): Date {
+  private calculateDeadline(receivedTime: Date, expectedHours: number, urgency: string): Date | undefined {
+    if (urgency === 'weeks') return undefined; // No strict deadline
+
     const deadline = new Date(receivedTime);
     deadline.setHours(deadline.getHours() + expectedHours);
-    
-    // Add buffer based on urgency
-    if (urgencyLevel === 'immediate') {
-      deadline.setHours(deadline.getHours() + 1); // 1 hour buffer
-    } else if (urgencyLevel === 'hours') {
-      deadline.setHours(deadline.getHours() + 2); // 2 hour buffer
-    } else if (urgencyLevel === 'days') {
-      deadline.setHours(deadline.getHours() + 8); // 8 hour buffer
+
+    // Business hours adjustment
+    if (urgency === 'days' || urgency === 'weeks') {
+      // Move to next business day if after hours
+      const hour = deadline.getHours();
+      if (hour >= 18) { // After 6 PM
+        deadline.setDate(deadline.getDate() + 1);
+        deadline.setHours(9, 0, 0, 0); // Next morning 9 AM
+      } else if (hour < 9) { // Before 9 AM
+        deadline.setHours(9, 0, 0, 0); // Same day 9 AM
+      }
     }
-    
+
     return deadline;
   }
 
-  private async getSLAForContext(stateId?: string, sender?: string): Promise<number> {
-    // Mock SLA calculation - would integrate with actual SLA system
-    if (!stateId) return 24; // Default 24 hours
-    
-    // Different SLAs based on context
-    if (stateId.includes('production')) return 4;
-    if (stateId.includes('customer')) return 8;
-    if (stateId.includes('internal')) return 16;
-    
-    return 24;
-  }
-
-  private isTimeSensitiveContent(content: string): boolean {
-    const sensitiveKeywords = [
-      'urgent', 'immediate', 'asap', 'emergency', 'critical',
-      'deadline', 'overdue', 'expiring', 'time sensitive',
-      'immediately', 'right now', 'stat'
-    ];
-    
-    return sensitiveKeywords.some(keyword => 
-      content.toLowerCase().includes(keyword)
-    );
-  }
-
   private async isInternalSender(sender: string): Promise<boolean> {
-    // Mock implementation - would check against internal directory
-    return sender.includes('internal') || sender.includes('@company.com');
+    // Check if sender is from internal domains
+    const internalDomains = ['cloudflare.com', 'alch.run'];
+    return internalDomains.some(domain => sender.toLowerCase().includes(domain));
   }
 
   private async isCustomerSender(sender: string): Promise<boolean> {
-    // Mock implementation - would check against customer database
-    return sender.includes('customer') || sender.includes('@client.com');
+    // Would check against customer database
+    // For now, assume external senders are customers
+    return !await this.isInternalSender(sender) && !await this.isPartnerSender(sender);
   }
 
   private async isPartnerSender(sender: string): Promise<boolean> {
-    // Mock implementation - would check against partner directory
-    return sender.includes('partner') || sender.includes('@partner.com');
+    // Check partner domains
+    const partnerDomains = ['partner.com', 'vendor.net'];
+    return partnerDomains.some(domain => sender.toLowerCase().includes(domain));
   }
 
-  private async getHistoricalResponsePattern(stateId: string): Promise<SenderPattern | null> {
-    // Mock implementation - would query historical data
-    return {
-      averageResponseTime: 6,
-      responseDistribution: { immediate: 0.1, hours: 0.3, days: 0.5, weeks: 0.1 },
-      lastInteraction: new Date()
-    };
+  private async getSLAForContext(stateId?: string, sender?: string): Promise<number> {
+    // Would check SLA database based on context
+    // For now, return default SLAs
+    if (stateId?.includes('incident') || stateId?.includes('critical')) return 2; // 2 hours for incidents
+    if (await this.isInternalSender(sender || '')) return 8; // 8 hours internal
+    return 24; // 24 hours default
   }
 
-  // Method to update sender patterns based on actual responses
-  updateSenderPattern(sender: string, actualResponseTime: number): void {
-    const existing = this.senderPatterns.get(sender) || {
-      averageResponseTime: 8,
-      responseDistribution: { immediate: 0, hours: 0, days: 0, weeks: 0 },
-      lastInteraction: new Date()
-    };
+  private async getHistoricalResponsePattern(stateId: string): Promise<{ averageResponseTime: number } | null> {
+    // Would query historical data
+    // Mock response for now
+    return { averageResponseTime: 12 };
+  }
 
-    // Simple moving average update
-    existing.averageResponseTime = (existing.averageResponseTime + actualResponseTime) / 2;
-    existing.lastInteraction = new Date();
+  private analyzeContentUrgency(content: string): 'high' | 'medium' | 'low' {
+    const lowerContent = content.toLowerCase();
+    const highUrgencyWords = ['critical', 'emergency', 'blocking', 'urgent', 'immediate', 'asap'];
+    const lowUrgencyWords = ['whenever', 'eventually', 'sometime', 'nice to have'];
 
-    this.senderPatterns.set(sender, existing);
+    const highCount = highUrgencyWords.filter(word => lowerContent.includes(word)).length;
+    const lowCount = lowUrgencyWords.filter(word => lowerContent.includes(word)).length;
+
+    if (highCount > 0) return 'high';
+    if (lowCount > 0) return 'low';
+    return 'medium';
+  }
+
+  private isTimeSensitiveContent(content: string): boolean {
+    const timeSensitiveIndicators = [
+      'deadline', 'due date', 'by eod', 'before', 'expires',
+      'time-sensitive', 'urgent', 'critical', 'emergency'
+    ];
+
+    const lowerContent = content.toLowerCase();
+    return timeSensitiveIndicators.some(indicator => lowerContent.includes(indicator));
   }
 }

@@ -1,293 +1,317 @@
-# 🧠 Kinja-Enhanced Email Orchestration System
+# Kinja-Enhanced Email Orchestration System
 
-An intelligent email orchestration system that integrates **Kinja** (Knowledge Intelligence Judgment Assistant) to provide temporal intelligence, correctness scoring, and dynamic priority calibration for email processing.
+**Temporal Intelligence • Correctness Scoring • Dynamic Priority Calibration**
 
-## 🎯 Core Features
+Kinja transforms the basic email routing system into an AI-powered intelligent orchestration platform with temporal awareness, correctness validation, and continuous learning capabilities.
 
-### **Temporal Intelligence**
-- **Time-to-answer prediction** based on content analysis and sender patterns
-- **Deadline calculation** with urgency-based buffers
-- **SLA tracking** with color-coded indicators
-- **Historical response pattern learning**
+## 🚀 Features
 
-### **Correctness Scoring**
-- **Content quality assessment** (0-1 scale)
-- **Risk factor detection** (urgent, emergency, critical keywords)
-- **Confidence scoring** for analysis reliability
-- **Issue identification** (excessive length, unclear requests)
+### 🎯 Temporal Intelligence
+- **Time-sensitive content detection** - Identifies urgent language and deadlines
+- **Response time prediction** - Calculates optimal response windows
+- **Deadline calculation** - Automatically determines due dates
+- **SLA compliance** - Ensures responses meet service level agreements
 
-### **Dynamic Priority Calibration**
-- **Multi-factor priority calculation** (temporal + correctness + historical + sender)
-- **Automatic priority adjustment** with reasoning
-- **Escalation recommendations** based on calibrated priority
-- **Priority learning** from human overrides
+### ✅ Correctness Scoring
+- **Content validation** - Assesses clarity and completeness
+- **Risk factor detection** - Identifies potential issues or misunderstandings
+- **Confidence scoring** - Measures AI certainty in assessments
+- **Actionable feedback** - Provides specific improvement suggestions
 
-### **Action Intelligence**
-- **Recommended action generation** with time estimates
-- **Skill requirement identification**
-- **Dependency tracking** between actions
-- **Effort estimation** (minutes/hours/days)
+### 📊 Dynamic Priority Calibration
+- **Multi-factor analysis** - Combines temporal, correctness, and historical data
+- **Automated adjustment** - Calibrates priorities based on context
+- **Reasoning transparency** - Explains why priorities were changed
+- **Escalation recommendations** - Suggests when to escalate or de-escalate
+
+### 🎨 Enhanced User Experience
+- **Rich Telegram messages** - Includes intelligence indicators and action items
+- **Interactive keyboards** - Quick actions based on content analysis
+- **Priority indicators** - Visual cues for urgency levels
+- **Action recommendations** - Suggested next steps with time estimates
+
+### 🧠 Continuous Learning
+- **Response pattern analysis** - Learns from actual vs predicted times
+- **Priority validation** - Improves calibration based on outcomes
+- **Correctness feedback** - Refines scoring based on human validation
+- **Model improvement** - Self-optimizing algorithms
+
+## 📧 Email Grammar (Enhanced)
+
+```
+[DOMAIN].[SCOPE].[TYPE].[HIERARCHY].[META]@cloudflare.com
+```
+
+**Examples:**
+- `infra.lead.pr.p0.gh@cloudflare.com` → Infrastructure lead PR review, P0 critical
+- `docs.senior.issue.p2.tg@cloudflare.com` → Documentation issue from Telegram, P2 priority
+- `qa.bot.alert.blk.24h@cloudflare.com` → QA pipeline alert, blocker, 24h SLA
+- `exec.lead.deploy.p0.cf@cloudflare.com` → Executive deployment approval
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Email Input   │───▶│  Kinja Analyzer  │───▶│  Temporal Engine│
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Telegram Bot   │◀───│  Kinja Formatter │◀───│ Priority Engine │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Metrics System │◀───│ Learning System  │◀───│  Orchestrator   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+Email Received
+    ↓
+Basic Parsing (Domain.Scope.Type.Hierarchy.Meta)
+    ↓
+Kinja Enhanced Analysis
+├── Temporal Intelligence Engine
+├── Correctness Assessment
+└── Priority Calibration
+    ↓
+Action Recommendation Engine
+    ↓
+Enhanced Telegram Message
+├── Intelligence Indicators
+├── Interactive Keyboard
+└── Action Templates
+    ↓
+Learning System
+├── Response Pattern Analysis
+├── Priority Validation
+└── Model Improvement
 ```
 
-## 📦 Components
+## 🛠️ Quick Start
 
-### **Core Analysis**
-- `KinjaClient` - Interface to Kinja intelligence API
-- `KinjaEnhancedEmailAnalyzer` - Main analysis engine
-- `TemporalIntelligenceEngine` - Time-based analysis
-
-### **Display & Interaction**
-- `KinjaTelegramFormatter` - Message formatting for Telegram
-- Interactive keyboards with priority-based actions
-- Rich message templates with Kinja insights
-
-### **Observability**
-- `KinjaMetricsEmitter` - Comprehensive metrics collection
-- Performance tracking and business impact metrics
-- Real-time dashboard data
-
-### **Learning System**
-- `KinjaLearningSystem` - Continuous model improvement
-- Feedback collection from human interactions
-- Automated model adjustment based on performance
-
-## 🚀 Quick Start
-
-### **Installation**
+### 1. Install Dependencies
 ```bash
-# Install dependencies
-npm install @tgk/email-kinja
-
-# Set environment variables
-export KINJA_API_URL="https://api.kinja.ai"
-export KINJA_API_KEY="your-kinja-api-key"
-export TELEGRAM_BOT_TOKEN="your-telegram-bot-token"
+cd tgk/email
+npm install
 ```
 
-### **Basic Usage**
+### 2. Basic Usage
 ```typescript
-import { 
-  createKinjaOrchestrator, 
-  getDefaultKinjaConfig,
-  exampleKinjaIntegration 
-} from '@tgk/email-kinja';
+import { KinjaEmailOrchestrator } from '@tgk/email-kinja';
 
-// Initialize with default config
-const config = getDefaultKinjaConfig();
-const orchestrator = createKinjaOrchestrator(config, rpcClient, telegramBot);
+const orchestrator = new KinjaEmailOrchestrator();
 
-// Process an email
-const result = await orchestrator.orchestrateEmail(parsed, email, basicAnalysis);
-console.log(`Priority calibrated: ${result.kinjaAnalysis.calibratedPriority}`);
-```
-
-### **Advanced Configuration**
-```typescript
-const customConfig: EmailOrchestrationConfig = {
-  kinjaApiUrl: 'https://your-kinja-instance.com',
-  kinjaApiKey: 'custom-api-key',
-  metricsEndpoint: 'https://your-metrics.com',
-  metricsApiKey: 'metrics-key',
-  telegramBotToken: 'bot-token',
-  enableLearning: true,
-  learningIntervalHours: 12
-};
-
-const orchestrator = new KinjaEmailOrchestrator(customConfig, rpcClient, telegramBot);
-```
-
-## 📊 Metrics & Monitoring
-
-### **Key Performance Indicators**
-- **Priority Calibration Accuracy**: How often Kinja's priority adjustments are correct
-- **Temporal Prediction Performance**: Accuracy of response time predictions
-- **Correctness Scoring Trends**: Improvement in content assessment over time
-- **Learning Velocity**: Rate of model improvement
-
-### **Business Impact Metrics**
-- **Mean Time to Response**: Average response time after Kinja integration
-- **Customer Satisfaction Score**: CSAT changes with intelligent routing
-- **Escalation Reduction**: Decrease in unnecessary escalations
-- **Accuracy Improvement**: Overall system accuracy gains
-
-## 🧠 Learning System
-
-### **Automatic Learning**
-The system continuously learns from:
-- **Response patterns** - Actual vs predicted response times
-- **Priority decisions** - Human overrides and corrections
-- **Correctness feedback** - Human ratings of content analysis
-
-### **Feedback Collection**
-```typescript
-// Record feedback for learning
-await orchestrator.recordFeedback({
-  messageId: 'msg_123',
-  actualResponseTime: 2.5, // hours
-  priorityOverride: 'p1',
-  correctnessRating: 0.8,
-  feedbackText: 'Good analysis, but priority was too low'
+const result = await orchestrator.processEmailWithKinja({
+  to: 'infra.lead.pr.p0.gh@cloudflare.com',
+  from: 'notifications@github.com',
+  subject: 'Critical PR Ready',
+  body: 'This fixes the production outage...',
+  headers: emailHeaders
 });
+
+// Enhanced result includes:
+// - Temporal analysis (time to answer, deadlines)
+// - Correctness scoring (clarity assessment)
+// - Priority calibration (adjusted priority with reasoning)
+// - Action recommendations (next steps with time estimates)
+// - Telegram message (rich formatting)
+// - Interactive keyboard (quick actions)
 ```
 
-## 🎨 Telegram Integration
+### 3. Integration with Existing Systems
+```typescript
+import { createKinjaEmailMiddleware } from '@tgk/email-kinja';
 
-### **Enhanced Message Format**
-```
-🚨 ALCHEMY.EMAIL | support
-Calibrated Priority: p1 (temporal urgency, correctness concerns detected)
-
-📊 Kinja Intelligence:
-• Time to Answer: 2h (Urgent) (Expected: 4h)
-• Correctness Score: ⚠️ Fair (65%)
-• Confidence: 85%
-• Risk Factors: urgent, asap
-
-⏰ Temporal Context:
-• Urgency: hours
-• Deadline: 2024-01-15 3:00 PM
-• Escalation: maintain
-
-🎯 Recommended Actions:
-• Immediate acknowledgment required (5m, 10/10 priority)
-• Verify content accuracy (15m, 8/10 priority)
-• Draft response (20m, 5/10 priority)
+// Add to existing email processing pipeline
+app.use(createKinjaEmailMiddleware());
 ```
 
-### **Interactive Actions**
-- **Priority-based quick actions** (Critical acknowledgment, urgent response)
-- **Correctness verification** for low-confidence analysis
-- **Template replies** calibrated by priority and urgency
-- **Immediate escalation** for high-priority items
+## 📈 Metrics & Analytics
+
+### Kinja-Enhanced Metrics
+- **Priority Calibration Accuracy** - How often AI priority adjustments are correct
+- **Correctness Scoring Performance** - Accuracy of content assessment
+- **Temporal Prediction Accuracy** - Response time prediction quality
+- **Learning Effectiveness** - Model improvement over time
+- **Business Impact** - Customer satisfaction and efficiency gains
+
+### Example Metrics Output
+```json
+{
+  "tgk_kinja_priority_calibration": {
+    "value": 87.5,
+    "labels": {
+      "domain": "infra",
+      "original_priority": "p2",
+      "calibrated_priority": "p0",
+      "reason": "Critical temporal requirements"
+    }
+  },
+  "tgk_kinja_correctness_score": {
+    "value": 0.85,
+    "labels": {
+      "domain": "docs",
+      "risk_factors": "unclear_requirements"
+    }
+  }
+}
+```
+
+## 🎯 Use Cases
+
+### Incident Response
+```
+Email: "Production database is down!"
+Kinja Analysis:
+- Temporal: Immediate (detected "down", "production")
+- Correctness: High (clear problem statement)
+- Priority: Calibrated to P0 (was P2)
+- Actions: Incident response protocol triggered
+```
+
+### Customer Support
+```
+Email: "How do I configure the webhook?"
+Kinja Analysis:
+- Temporal: Standard business hours
+- Correctness: Medium (lacks specific details)
+- Priority: Maintained P2
+- Actions: Request clarification, provide template response
+```
+
+### Feature Requests
+```
+Email: "We need dark mode support"
+Kinja Analysis:
+- Temporal: Extended timeline acceptable
+- Correctness: High (clear requirement)
+- Priority: Calibrated to P1 (valuable enhancement)
+- Actions: Product review, technical assessment
+```
 
 ## 🔧 Configuration
 
-### **Environment Variables**
+### Environment Variables
 ```bash
-# Kinja Configuration
-KINJA_API_URL=https://api.kinja.ai
-KINJA_API_KEY=your-api-key
+# Kinja Service (when available)
+KINJA_API_KEY=your_kinja_api_key
+KINJA_ENDPOINT=https://kinja-api.example.com
 
-# Metrics Configuration
-METRICS_ENDPOINT=https://metrics.company.com
-METRICS_API_KEY=metrics-key
+# Telegram Bot
+TG_BOT_TOKEN=your_bot_token
 
-# Telegram Configuration
-TELEGRAM_BOT_TOKEN=your-bot-token
-
-# Learning Configuration
-KINJA_LEARNING_ENABLED=true
-KINJA_LEARNING_INTERVAL_HOURS=24
+# Metrics & Monitoring
+METRICS_BACKEND=datadog|prometheus|cloudflare
 ```
 
-### **Priority Weights**
+### Priority Thresholds
 ```typescript
-const priorityWeights = {
-  temporal: 0.4,      // Time-based urgency
-  correctness: 0.3,   // Content quality assessment
-  historical: 0.2,    // Past interaction patterns
-  sender: 0.1         // Sender reputation and type
+const priorityThresholds = {
+  p0: { score: 90, factors: ['immediate', 'critical', 'blocking'] },
+  p1: { score: 75, factors: ['urgent', 'high-impact'] },
+  p2: { score: 60, factors: ['important', 'time-sensitive'] },
+  p3: { score: 40, factors: ['standard', 'backlog'] }
 };
 ```
 
-## 📈 Performance
+## 🤖 Learning & Improvement
 
-### **Processing Speed**
-- **Average analysis time**: < 1 second
-- **Telegram formatting**: < 100ms
-- **Total orchestration**: < 2 seconds
+### Automated Learning
+- **Response Time Learning** - Adjusts predictions based on actual outcomes
+- **Priority Validation** - Learns from human feedback on calibrations
+- **Correctness Refinement** - Improves scoring based on validation
 
-### **Accuracy Metrics**
-- **Priority calibration**: 87% accuracy
-- **Temporal prediction**: 78% accuracy
-- **Correctness scoring**: 92% accuracy
-- **Learning improvement**: 15% over baseline
-
-## 🛠️ Development
-
-### **Running Tests**
-```bash
-# Run unit tests
-npm test
-
-# Run integration tests
-npm run test:integration
-
-# Run learning system tests
-npm run test:learning
-```
-
-### **Mock Development**
+### Manual Feedback Integration
 ```typescript
-// Use mock clients for development
-const mockKinja = new KinjaClient('http://localhost:3000', 'mock-key');
-const mockMetrics = new KinjaMetricsEmitter('http://localhost:9090', 'mock-key');
+// Record human feedback for learning
+await orchestrator.recordFeedback(emailId, {
+  priorityCorrect: true,
+  responseTimeAppropriate: false,
+  actionsHelpful: true,
+  correctnessAccurate: false,
+  additionalNotes: "Request was clearer than assessed"
+});
 ```
 
-## 🚀 Production Deployment
+## 📊 Dashboard Integration
 
-### **Requirements**
-- **Node.js 18+** with TypeScript support
-- **Redis** for caching and session management
-- **PostgreSQL** for historical data storage
-- **Prometheus** for metrics collection
-- **Kinja API** access for intelligence services
+### Grafana Panels
+- **Priority Calibration Trends** - Success rate over time
+- **Temporal Prediction Accuracy** - Prediction vs actual response times
+- **Correctness Scoring Distribution** - Content quality metrics
+- **Action Completion Rates** - Effectiveness of recommendations
 
-### **Scaling Considerations**
-- **Horizontal scaling** with multiple orchestrator instances
-- **Caching** for frequently used sender patterns and historical data
-- **Rate limiting** for Kinja API calls
-- **Circuit breakers** for external service dependencies
+### Real-time Monitoring
+- **Active Processing Queue** - Currently being analyzed
+- **Priority Distribution** - Current workload breakdown
+- **SLA Compliance** - On-time response percentages
+- **Learning Velocity** - Model improvement rate
+
+## 🚀 Advanced Features
+
+### Custom Action Templates
+```typescript
+// Define organization-specific action patterns
+const customTemplates = {
+  security_incident: {
+    actions: [/* security response protocol */],
+    requiredSkills: ['security', 'incident-response'],
+    escalationPath: ['security-lead', 'executive']
+  }
+};
+```
+
+### Integration APIs
+```typescript
+// Webhook for external systems
+app.post('/kinja-webhook', async (req, res) => {
+  const analysis = await orchestrator.processEmailWithKinja(req.body);
+  await externalSystem.notify(analysis);
+});
+```
+
+### Batch Processing
+```typescript
+// Process multiple emails with learning
+const batchResults = await orchestrator.processEmailBatch(emails, {
+  enableLearning: true,
+  priorityThreshold: 0.8
+});
+```
 
 ## 📚 API Reference
 
-### **Main Classes**
+### Core Classes
 - `KinjaEmailOrchestrator` - Main orchestration engine
-- `KinjaEnhancedEmailAnalyzer` - Email analysis with Kinja intelligence
-- `TemporalIntelligenceEngine` - Time-based context analysis
-- `KinjaLearningSystem` - Continuous learning and improvement
+- `KinjaEnhancedEmailAnalyzer` - Intelligence analysis
+- `TemporalIntelligenceEngine` - Time-aware processing
+- `KinjaLearningSystem` - Continuous improvement
 
-### **Key Interfaces**
-- `KinjaEnhancedAnalysis` - Complete analysis result
-- `TemporalAnalysis` - Time-based intelligence
-- `CorrectnessAnalysis` - Content quality assessment
-- `EmailOrchestrationConfig` - System configuration
+### Integration Helpers
+- `createKinjaEmailMiddleware()` - Express/connect middleware
+- `createKinjaTelegramIntegration()` - Telegram bot helpers
+- `createKinjaMetricsIntegration()` - Metrics pipeline helpers
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request with detailed description
+### Development Setup
+```bash
+git clone <repo>
+cd tgk/email
+npm install
+npm run build
+npm test
+```
+
+### Testing
+```bash
+# Unit tests
+npm run test:unit
+
+# Integration tests
+npm run test:integration
+
+# Learning system validation
+npm run test:learning
+```
+
+### Adding New Intelligence Features
+1. Extend `KinjaEnhancedAnalysis` interface
+2. Implement in appropriate engine class
+3. Add metrics and learning logic
+4. Update integration helpers
+5. Add comprehensive tests
 
 ## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## 🔗 Related Projects
-
-- **TGK Core** - Main Telegram bot framework
-- **Alchemy Email** - Base email processing system
-- **Kinja API** - Intelligence and learning services
-
 ---
 
-*Transform your email orchestration from reactive routing to proactive, intelligent processing with Kinja integration.*
+**Kinja transforms reactive email processing into proactive, intelligent orchestration that understands context, predicts needs, and continuously improves performance.** 🚀
