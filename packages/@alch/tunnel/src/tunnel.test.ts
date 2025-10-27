@@ -3,19 +3,21 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { Tunnel, isTunnel, type TunnelProps } from "./index.js";
 
-// Mock Alchemy dependencies
+// Mock Alchemy dependencies before importing the tunnel module
 vi.mock("alchemy", () => ({
   default: {
     secret: vi.fn((value: string) => ({ unencrypted: value })),
   },
-  Resource: vi.fn(),
+  Resource: vi.fn(() => vi.fn()), // Return a mock function instead of registering globally
   ResourceKind: "ResourceKind",
   logger: {
     log: vi.fn(),
   },
 }));
+
+// Import after mocking
+import { Tunnel, isTunnel, type TunnelProps } from "./index.js";
 
 describe("Tunnel Resource", () => {
   beforeEach(() => {

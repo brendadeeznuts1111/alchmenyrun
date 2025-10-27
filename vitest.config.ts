@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    isolate: true, // Isolate tests to prevent global state conflicts
     // Timeout for integration tests that deploy infrastructure
     testTimeout: 120000, // 2 minutes
     // Retry failed tests (infrastructure can be flaky)
