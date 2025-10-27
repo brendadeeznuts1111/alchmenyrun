@@ -23,7 +23,7 @@ export default function Users() {
   const loadUsers = async () => {
     try {
       const response = await fetch(`${apiUrl}/api/users`);
-      const data = await response.json();
+      const data = (await response.json()) as { users?: any[] };
       setUsers(data.users || []);
     } catch (error) {
       console.error("Error loading users:", error);
@@ -40,7 +40,7 @@ export default function Users() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
-      const data = await response.json();
+      const data = (await response.json()) as { user: any };
       setUsers([...users, data.user]);
       setNewUserExperience({ email: "", name: "" });
     } catch (error) {

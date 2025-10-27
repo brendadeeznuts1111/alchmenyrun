@@ -78,7 +78,7 @@ async function routeMethod(request, env, authResult) {
       const toolName = params.name;
       const toolArguments = params.arguments || {};
       if (!toolName) {
-        return createErrorResponse(
+        return createErrorMCPResponse(
           id,
           -32602,
           "Invalid params: name is required",
@@ -99,9 +99,9 @@ async function routeMethod(request, env, authResult) {
       };
     }
     // Unknown method
-    return createErrorResponse(id, -32601, `Method not found: ${method}`);
+    return createErrorMCPResponse(id, -32601, `Method not found: ${method}`);
   } catch (error) {
-    return createErrorResponse(
+    return createErrorMCPResponse(
       id,
       -32603,
       `Tool execution error: ${
@@ -111,17 +111,23 @@ async function routeMethod(request, env, authResult) {
   }
 }
 /**
- * Create an error response
+ * Create an error MCPResponse object
  */
-function createErrorResponse(id, code, message, data) {
-  const response = {
+function createErrorMCPResponse(id, code, message, data) {
+  return {
     jsonrpc: "2.0",
     id: id || 0,
     error: {
       code,
       message,
-      ...(data && { data }),
+      ...(data !== undefined ? { data } : {}),
     },
   };
+}
+/**
+ * Create an error response
+ */
+function createErrorResponse(id, code, message, data) {
+  const response = createErrorMCPResponse(id, code, message, data);
   return Response.json(response);
 }

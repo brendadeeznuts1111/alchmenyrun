@@ -16,7 +16,7 @@ import { Database } from "./packages/@alch/blocks/src/database";
 import { Bucket, KV, Queue as StageQueue } from "./packages/@alch/blocks/src/storage";
 import { DurableObject, AlchemyWorkflow } from "./packages/@alch/blocks/src/durable";
 
-// API token for Cloudflare resources (bypasses profile OAuth)
+// Cloudflare API token for other operations (optional when using OAuth profile)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
 
 // ========================================
@@ -51,9 +51,47 @@ await alchemy.run("database", async () => {
     adopt: true, // Adopt existing database if it exists
     apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
   });
+    adopt: true, // Adopt existing database if it exists
+    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+  });
+>>>>>>> origin/main
 
-  // Share with other scopes
-  resources.db = db;
+    // Share with other scopes
+    resources.db = db;
+  } catch (error) {
+    // If D1 creation fails, it's likely due to OAuth profile authentication
+    // Provide helpful error message with API token setup instructions
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (
+      errorMessage.includes("API token") ||
+      errorMessage.includes("authentication")
+    ) {
+      throw new Error(`
+🚨 D1 DATABASE CREATION FAILED
+
+The error occurred because D1 database creation requires API token authentication.
+OAuth profiles from 'wrangler login' don't support D1 operations.
+
+🔧 SOLUTION:
+
+1. Create a Cloudflare API token with D1 permissions:
+   - Visit: https://dash.cloudflare.com/profile/api-tokens
+   - Required permissions: Zone:Zone:Read, Account:Cloudflare D1:Edit, Account:Account Settings:Read
+
+2. Set the environment variable:
+   export CLOUDFLARE_API_TOKEN="your_api_token_here"
+
+3. Or create a .env file:
+   echo "CLOUDFLARE_API_TOKEN=your_api_token_here" >> .env
+
+4. Then retry deployment:
+   bun run deploy --stage $USER
+
+Original error: ${errorMessage}
+      `);
+    }
+    throw error;
+  }
 });
 
 // Storage scope - Organizes file and object storage

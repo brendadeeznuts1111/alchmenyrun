@@ -28,14 +28,14 @@ export interface SecureTunnelConfig {
 
 /**
  * Secure Tunnel Template
- * 
+ *
  * Creates a production tunnel with:
  * - Advanced TLS configuration
  * - Custom timeouts and headers
  * - HTTP/2 support
  * - Optional Cloudflare Access integration
  * - Enhanced security settings
- * 
+ *
  * @example
  * ```typescript
  * const tunnel = await secureTunnel({
@@ -74,7 +74,8 @@ export async function secureTunnel(config: SecureTunnelConfig) {
     app,
     config,
     // Security helper methods
-    getRunCommand: () => `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
+    getRunCommand: () =>
+      `cloudflared tunnel run --token ${tunnel.token.unencrypted}`,
     getSecureUrl: () => `https://${config.hostname}`,
     getSecurityReport: () => ({
       tlsVerification: config.tlsVerification || "full",
@@ -88,19 +89,22 @@ export async function secureTunnel(config: SecureTunnelConfig) {
     }),
     validateSecurity: () => {
       const issues: string[] = [];
-      
+
       if (!config.hostname || !config.hostname.includes(".")) {
         issues.push("Invalid hostname format");
       }
-      
-      if (!config.originService.startsWith("https://") && config.tlsVerification === "full") {
+
+      if (
+        !config.originService.startsWith("https://") &&
+        config.tlsVerification === "full"
+      ) {
         issues.push("TLS verification requires HTTPS origin service");
       }
-      
+
       if (config.connectTimeout && config.connectTimeout > 60) {
         issues.push("Connect timeout should not exceed 60 seconds");
       }
-      
+
       return {
         isValid: issues.length === 0,
         issues,
@@ -113,7 +117,13 @@ export async function secureTunnel(config: SecureTunnelConfig) {
  * Usage example
  */
 export async function example() {
-  const { tunnel, getRunCommand, getSecureUrl, getSecurityReport, validateSecurity } = await secureTunnel({
+  const {
+    tunnel,
+    getRunCommand,
+    getSecureUrl,
+    getSecurityReport,
+    validateSecurity,
+  } = await secureTunnel({
     hostname: "secure.example.com",
     originService: "https://internal.service:8443",
     tlsVerification: "full",
@@ -121,18 +131,25 @@ export async function example() {
     http2Origin: true,
     httpHostHeader: "internal.service",
   });
-  
+
   console.log("🔒 Secure Tunnel Created:");
   console.log(`  Tunnel ID: ${tunnel.tunnelId}`);
   console.log(`  Secure URL: ${getSecureUrl()}`);
   console.log(`  Run Command: ${getRunCommand()}`);
-  console.log("  Security Report:", JSON.stringify(getSecurityReport(), null, 2));
-  
+  console.log(
+    "  Security Report:",
+    JSON.stringify(getSecurityReport(), null, 2),
+  );
+
   const validation = validateSecurity();
-  console.log(`  Security Validation: ${validation.isValid ? "✅ Valid" : "❌ Issues found"}`);
+  console.log(
+    `  Security Validation: ${
+      validation.isValid ? "✅ Valid" : "❌ Issues found"
+    }`,
+  );
   if (!validation.isValid) {
     console.log("  Issues:", validation.issues);
   }
-  
+
   return tunnel;
 }
