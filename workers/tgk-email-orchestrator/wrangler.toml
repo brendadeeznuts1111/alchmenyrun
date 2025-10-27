@@ -21,7 +21,7 @@ TELEGRAM_SUPPORT_CHAT_ID = "@support_team"
 # D1 database for audit logs
 [[d1_databases]]
 binding = "DB"
-database_name = "tgk-email-audit"
+database_name = "tgk_email_metadata"
 database_id = "c4c5dfd2-3d00-4083-b644-5cacb372d007"
 
 # Observability

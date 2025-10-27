@@ -6,6 +6,7 @@
  */
 
 import { GitHubManager } from '../utils/github.js';
+import { ui } from '../utils/ui.js';
 
 // Initialize GitHub manager
 const gh = new GitHubManager();
@@ -78,12 +79,13 @@ interface EmailDraft {
 }
 
 export async function suggestLabels(issueId: string, repo?: string): Promise<{labels: string[], confidence: number, reasoning: string, context: AIContext}> {
-  console.log(`🤖 Analyzing issue #${issueId} for intelligent labeling...`);
+  ui.header(`AI Issue Analysis #${issueId}`, ui.symbols.brain);
 
   try {
     const repoName = repo || 'alchmenyrun';
 
     // Gather comprehensive context
+    ui.loading('Gathering issue context...');
     const context = await gatherIssueContext(issueId, repoName);
     const issue = context.issueHistory?.[0];
 
@@ -92,18 +94,38 @@ export async function suggestLabels(issueId: string, repo?: string): Promise<{la
     }
 
     // Enhanced AI analysis with context
+    ui.loading('Running AI analysis with contextual awareness...');
     const analysis = await analyzeIssueWithContext(issue, context);
 
-    console.log(`🎯 AI Analysis Complete:`);
-    console.log(`   📊 Confidence: ${(analysis.confidence * 100).toFixed(1)}%`);
-    console.log(`   🏷️  Suggested Labels: ${analysis.labels.join(', ')}`);
-    console.log(`   💭 Reasoning: ${analysis.reasoning}`);
-    console.log(`   📚 Context Used: ${Object.keys(context).filter(k => context[k as keyof AIContext]).length} sources`);
+    ui.section('AI Analysis Results', ui.symbols.target);
+    ui.keyValue('Issue Title', issue.title.substring(0, 50) + (issue.title.length > 50 ? '...' : ''), 'cyan', 'white');
+    ui.keyValue('Suggested Labels', analysis.labels.join(', '), 'cyan', 'yellow');
+    ui.keyValue('Confidence', ui.confidence(analysis.confidence), 'cyan', 'green');
+    ui.keyValue('Reasoning', analysis.reasoning, 'cyan', 'white');
+
+    ui.section('Context Analysis', ui.symbols.chart);
+    const contextCount = Object.keys(context).filter(k => context[k as keyof AIContext]).length;
+    ui.keyValue('Context Sources', `${contextCount} sources analyzed`, 'cyan', 'blue');
+
+    if (context.rfcLinks && context.rfcLinks.length > 0) {
+      ui.keyValue('Linked RFCs', context.rfcLinks.join(', '), 'cyan', 'magenta');
+    }
+
+    if (context.similarIssues && context.similarIssues.length > 0) {
+      ui.keyValue('Similar Issues', `${context.similarIssues.length} found`, 'cyan', 'cyan');
+    }
+
+    ui.summaryBox('Analysis Summary', [
+      `Labels: ${analysis.labels.length} suggested`,
+      `Confidence: ${(analysis.confidence * 100).toFixed(1)}%`,
+      `Context: ${contextCount} sources`,
+      `Ready for: ${analysis.confidence > 0.8 ? 'Auto-apply' : 'Review'}`
+    ], ui.symbols.check);
 
     return analysis;
 
   } catch (error) {
-    console.error('❌ Failed to analyze issue:', error.message);
+    ui.error(`Failed to analyze issue: ${error.message}`);
     throw error;
   }
 }
@@ -134,22 +156,40 @@ export async function analyzeThread(threadId: string, messages: string[]): Promi
 }
 
 export async function predictRisk(component: string, change: string): Promise<RiskAssessment> {
-  console.log(`🔮 Predicting risk for ${component} change...`);
+  ui.header(`AI Risk Assessment: ${component}`, ui.symbols.alert);
 
   try {
     // AI-powered risk assessment
+    ui.loading('Analyzing change impact and risk factors...');
     const assessment = await assessChangeRisk(component, change);
 
-    console.log(`⚠️ Risk Assessment:`);
-    console.log(`   📊 Level: ${assessment.level.toUpperCase()}`);
-    console.log(`   🎯 Score: ${(assessment.score * 100).toFixed(1)}%`);
-    console.log(`   🔍 Factors: ${assessment.factors.length}`);
-    console.log(`   💡 Recommendations: ${assessment.recommendations.length}`);
+    ui.section('Risk Assessment Results', ui.symbols.warning);
+    ui.keyValue('Component', component, 'cyan', 'white');
+    ui.keyValue('Change Type', change, 'cyan', 'white');
+    ui.keyValue('Risk Level', ui.priority(assessment.level), 'cyan', 'red');
+    ui.keyValue('Risk Score', `${(assessment.score * 100).toFixed(1)}%`, 'cyan', assessment.score > 0.7 ? 'red' : assessment.score > 0.4 ? 'yellow' : 'green');
+
+    ui.section('Risk Factors', ui.symbols.shield);
+    assessment.factors.forEach((factor, i) => {
+      ui.keyValue(`Factor ${i + 1}`, factor, 'cyan', 'yellow');
+    });
+
+    ui.section('Recommendations', ui.symbols.wrench);
+    assessment.recommendations.forEach((rec, i) => {
+      ui.keyValue(`Rec ${i + 1}`, rec, 'cyan', 'green');
+    });
+
+    ui.summaryBox('Risk Summary', [
+      `Level: ${ui.priority(assessment.level)}`,
+      `Score: ${(assessment.score * 100).toFixed(1)}%`,
+      `Factors: ${assessment.factors.length}`,
+      `Action: ${assessment.score > 0.6 ? 'Review Required' : 'Proceed with Caution'}`
+    ], assessment.score > 0.6 ? ui.symbols.alert : ui.symbols.check);
 
     return assessment;
 
   } catch (error) {
-    console.error('❌ Failed to assess risk:', error.message);
+    ui.error(`Failed to assess risk: ${error.message}`);
     throw error;
   }
 }

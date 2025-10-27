@@ -556,21 +556,31 @@ aiCmd
     }
   });
 
-program
-  .command('ai analyze-thread <thread-id>')
-  .description('AI-powered Telegram thread analysis')
-  .action(async (threadId) => {
+aiCmd
+  .command('predict-risk <component> <change>')
+  .description('AI-powered risk assessment for changes')
+  .action(async (component, change) => {
     try {
-      // Would need to fetch thread messages
-      const messages = ['Mock message 1', 'Mock message 2', 'This is urgent'];
-      const { analyzeThread } = await import(path.resolve(__dirname, '../commands/ai.ts'));
-      const analysis = await analyzeThread(threadId, messages);
-      console.log('\n🧵 **Thread Analysis:**');
-      console.log(`Sentiment: ${analysis.sentiment}`);
-      console.log(`Urgency: ${analysis.urgency}`);
-      console.log(`Summary: ${analysis.summary}`);
-      console.log(`Action Items: ${analysis.action_items.join(', ')}`);
-      console.log(`Key Decisions: ${analysis.key_decisions.join(', ')}`);
+      const { predictRisk } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      await predictRisk(component, change);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+aiCmd
+  .command('suggest-strategy <context>')
+  .description('AI-powered strategy suggestions')
+  .action(async (context) => {
+    try {
+      const { suggestStrategy } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const suggestion = await suggestStrategy(context, []);
+      console.log('\n🎯 **Strategy Suggestion:**');
+      console.log(`Strategy: ${suggestion.strategy}`);
+      console.log(`Confidence: ${(suggestion.confidence * 100).toFixed(1)}%`);
+      console.log(`Reasoning: ${suggestion.reasoning}`);
+      console.log(`Alternatives: ${suggestion.alternatives.join(', ')}`);
     } catch (error) {
       console.error('❌ Error:', error.message);
       process.exit(1);

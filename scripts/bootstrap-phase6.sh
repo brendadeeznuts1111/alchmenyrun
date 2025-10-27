@@ -5,7 +5,7 @@ set -euo pipefail
 #---------------------------------------------------------------------------#
 RFC_ID="ALC-RFC-006"
 WRK_NAME="tgk-email-orchestrator"
-D1_NAME="tgk-email-audit"
+D1_NAME="tgk_email_metadata"
 R2_BUCKET="tgk-email-attachments"
 
 echo "🪄  Phase-6 bootstrap – idempotent"
