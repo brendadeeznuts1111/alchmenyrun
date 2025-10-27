@@ -3,10 +3,20 @@ import { makeRpcCall, getForumTopics } from '../core/rpc.js';
 
 // Council member configurations with banner topics
 const COUNCIL_MEMBERS = {
+  'brendadeeznuts1111': {
+    name: 'Brenda',
+    emoji: '👑',
+    role: 'project-lead',
+    team: 'leadership',
+    bannerTopic: 'council-brenda-updates',
+    personalTopic: 'brenda-activities',
+    color: '#FFD700' // Gold for leadership
+  },
   'alice.smith': {
     name: 'Alice Smith',
     emoji: '🔴',
-    role: 'tech-lead',
+    role: 'infrastructure-lead',
+    team: 'infrastructure',
     bannerTopic: 'council-alice-updates',
     personalTopic: 'alice-smith-activities',
     color: '#FF6B6B'
@@ -14,7 +24,8 @@ const COUNCIL_MEMBERS = {
   'charlie.brown': {
     name: 'Charlie Brown',
     emoji: '🔵',
-    role: 'security-lead',
+    role: 'provider-lead',
+    team: 'resource-providers',
     bannerTopic: 'council-charlie-updates',
     personalTopic: 'charlie-brown-activities',
     color: '#4ECDC4'
@@ -22,7 +33,8 @@ const COUNCIL_MEMBERS = {
   'diana.prince': {
     name: 'Diana Prince',
     emoji: '🟢',
-    role: 'product-lead',
+    role: 'quality-lead',
+    team: 'quality-testing',
     bannerTopic: 'council-diana-updates',
     personalTopic: 'diana-prince-activities',
     color: '#A8E6CF'
@@ -30,70 +42,135 @@ const COUNCIL_MEMBERS = {
   'frank.taylor': {
     name: 'Frank Taylor',
     emoji: '🟣',
-    role: 'support-lead',
+    role: 'documentation-lead',
+    team: 'documentation',
     bannerTopic: 'council-frank-updates',
     personalTopic: 'frank-taylor-activities',
     color: '#DDA0DD'
   }
 } as const;
 
-// Department topic configurations
+// Department topic configurations aligned with CODEOWNERS
 const DEPARTMENT_TOPICS = {
-  'tech': {
-    name: 'Tech Department',
-    emoji: '💙',
-    bannerTopic: 'tech-department-banner',
-    updatesTopic: 'tech-updates',
-    alertsTopic: 'tech-alerts',
-    color: '#00BFFF'
+  'infrastructure': {
+    name: 'Infrastructure Team',
+    emoji: '⚙️',
+    lead: 'alice.smith',
+    bannerTopic: 'infrastructure-department-banner',
+    updatesTopic: 'infrastructure-updates',
+    alertsTopic: 'infrastructure-alerts',
+    color: '#FF6B6B',
+    responsibilities: [
+      'packages/@alch/*',
+      'src/backend/*',
+      'src/frontend/*',
+      '.github/workflows/*',
+      'scripts/*',
+      'package.json',
+      'bunfig.toml',
+      'tsconfig.json'
+    ]
   },
-  'security': {
-    name: 'Security Department',
-    emoji: '🧡',
-    bannerTopic: 'security-department-banner',
-    updatesTopic: 'security-updates',
-    alertsTopic: 'security-alerts',
-    color: '#FF4500'
+  'resource-providers': {
+    name: 'Resource Provider Team',
+    emoji: '🌐',
+    lead: 'charlie.brown',
+    bannerTopic: 'providers-department-banner',
+    updatesTopic: 'providers-updates',
+    alertsTopic: 'providers-alerts',
+    color: '#4ECDC4',
+    responsibilities: [
+      'alchemy/src/cloudflare/*',
+      'alchemy/src/docker/*',
+      'alchemy/src/github/*',
+      'alchemy/src/aws/*',
+      'alchemy/src/gcp/*',
+      'alchemy/src/neon/*',
+      'alchemy/src/vercel/*'
+    ]
   },
-  'product': {
-    name: 'Product Department',
-    emoji: '💚',
-    bannerTopic: 'product-department-banner',
-    updatesTopic: 'product-updates',
-    alertsTopic: 'product-alerts',
-    color: '#32CD32'
+  'documentation': {
+    name: 'Documentation Team',
+    emoji: '📚',
+    lead: 'frank.taylor',
+    bannerTopic: 'documentation-department-banner',
+    updatesTopic: 'documentation-updates',
+    alertsTopic: 'documentation-alerts',
+    color: '#DDA0DD',
+    responsibilities: [
+      'docs/*',
+      'examples/*',
+      'README.md',
+      'CONTRIBUTING.md',
+      'QUICK_START.md',
+      'COMMANDS.md',
+      'ROADMAP.md',
+      'LICENSE'
+    ]
   },
-  'support': {
-    name: 'Support Team',
-    emoji: '💜',
-    bannerTopic: 'support-department-banner',
-    updatesTopic: 'support-updates',
-    alertsTopic: 'support-alerts',
-    color: '#9370DB'
+  'quality-testing': {
+    name: 'Quality & Testing Team',
+    emoji: '🧪',
+    lead: 'diana.prince',
+    bannerTopic: 'quality-department-banner',
+    updatesTopic: 'quality-updates',
+    alertsTopic: 'quality-alerts',
+    color: '#A8E6CF',
+    responsibilities: [
+      'src/__tests__/*',
+      '**/*.test.ts',
+      '**/*.test.js',
+      '**/*.spec.ts',
+      'vitest.config.ts',
+      '.vitest.config.ts',
+      '**/test-setup.*'
+    ]
   }
 } as const;
 
-// System-wide banner topics
+// System-wide banner topics aligned with governance streams
 const SYSTEM_TOPICS = {
   'main': {
     name: 'Main Banner',
     topic: 'main-banner',
-    description: 'Primary system status and announcements'
+    description: 'Primary system status and announcements',
+    stream: 'general',
+    owner: 'brendadeeznuts1111'
   },
   'releases': {
     name: 'Release Banner',
     topic: 'release-banner',
-    description: 'Release planning and deployment status'
+    description: 'Release planning and deployment status',
+    stream: 'releases',
+    owner: 'alice.smith'
   },
   'health': {
     name: 'Health Banner',
     topic: 'health-banner',
-    description: 'System health and monitoring status'
+    description: 'System health and monitoring status',
+    stream: 'sre',
+    owner: 'alice.smith'
   },
   'incidents': {
     name: 'Incident Banner',
     topic: 'incident-banner',
-    description: 'Incident response and resolution status'
+    description: 'Incident response and resolution status',
+    stream: 'security',
+    owner: 'charlie.brown'
+  },
+  'governance': {
+    name: 'Governance Banner',
+    topic: 'governance-banner',
+    description: 'Forum governance and policy updates',
+    stream: 'governance',
+    owner: 'brendadeeznuts1111'
+  },
+  'analytics': {
+    name: 'Analytics Banner',
+    topic: 'analytics-banner',
+    description: 'Data analytics and metrics reporting',
+    stream: 'data',
+    owner: 'diana.prince'
   }
 } as const;
 
@@ -261,7 +338,7 @@ ${member.emoji} **${member.name} - Council Banner** ${priorityEmoji}
 ${config.message}
 
 🔧 **Role**: ${member.role}
-🎯 **Department**: ${member.role.split('-')[0]}
+🏢 **Team**: ${member.team}
 📅 **Updated**: ${timestamp}
 
 ---
@@ -286,7 +363,8 @@ ${dept.emoji} **${dept.name} - Department Banner** ${priorityEmoji}
 📋 **Department Status**
 ${config.message}
 
-🏢 **Type**: Department Operations
+👥 **Team Lead**: ${dept.lead}
+📁 **Responsibilities**: ${dept.responsibilities.length} areas
 📊 **Monitoring**: Active
 📅 **Updated**: ${timestamp}
 
@@ -313,6 +391,8 @@ function formatSystemBanner(
 ${config.message}
 
 📝 **Description**: ${topic.description}
+🏷️ **Stream**: ${topic.stream}
+👤 **Owner**: @${topic.owner}
 📅 **Updated**: ${timestamp}
 
 ---
@@ -388,30 +468,114 @@ export function getDepartment(name: string): typeof DEPARTMENT_TOPICS[keyof type
 }
 
 /**
+ * Get department by file path (based on CODEOWNERS)
+ */
+export function getDepartmentByFilePath(filePath: string): typeof DEPARTMENT_TOPICS[keyof typeof DEPARTMENT_TOPICS] | null {
+  // Normalize the file path
+  const normalizedPath = filePath.replace(/^\.\//, '');
+  
+  // Check each department's responsibilities
+  for (const [deptKey, dept] of Object.entries(DEPARTMENT_TOPICS)) {
+    for (const responsibility of dept.responsibilities) {
+      // Convert glob pattern to regex for matching
+      const pattern = responsibility
+        .replace(/\*\*/g, '.*')
+        .replace(/\*/g, '[^/]*')
+        .replace(/^\//, '^');
+      
+      const regex = new RegExp(pattern);
+      if (regex.test(normalizedPath)) {
+        return dept;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get council members by team
+ */
+export function getCouncilMembersByTeam(team: string): typeof COUNCIL_MEMBERS[keyof typeof COUNCIL_MEMBERS][] {
+  return Object.values(COUNCIL_MEMBERS).filter(member => member.team === team);
+}
+
+/**
+ * Get governance stream for system topic
+ */
+export function getGovernanceStream(systemTopic: keyof typeof SYSTEM_TOPICS): string {
+  return SYSTEM_TOPICS[systemTopic].stream;
+}
+
+/**
+ * Get system topics by stream
+ */
+export function getSystemTopicsByStream(stream: string): typeof SYSTEM_TOPICS[keyof typeof SYSTEM_TOPICS][] {
+  return Object.values(SYSTEM_TOPICS).filter(topic => topic.stream === stream);
+}
+
+/**
+ * Update banner based on file change (CODEOWNERS integration)
+ */
+export async function updateBannerForFileChange(
+  filePath: string,
+  message: string,
+  priority: 'low' | 'medium' | 'high' | 'critical' = 'medium'
+): Promise<void> {
+  const department = getDepartmentByFilePath(filePath);
+  if (!department) {
+    console.log(`📝 No department found for file: ${filePath}`);
+    return;
+  }
+  
+  console.log(`📁 File ${filePath} belongs to ${department.name}`);
+  await updateDepartmentBanner(Object.keys(DEPARTMENT_TOPICS).find(key => DEPARTMENT_TOPICS[key as keyof typeof DEPARTMENT_TOPICS] === department) as keyof typeof DEPARTMENT_TOPICS, {
+    message: `📁 File Update: ${filePath}\n\n${message}`,
+    priority
+  });
+}
+
+/**
  * Get all available banner topics
  */
 export function getAllBannerTopics(): {
-  council: Record<string, { banner: string; personal: string }>;
-  departments: Record<string, { banner: string; updates: string; alerts: string }>;
-  system: Record<string, { topic: string; description: string }>;
+  council: Record<string, { banner: string; personal: string; team: string; role: string }>;
+  departments: Record<string, { banner: string; updates: string; alerts: string; lead: string; responsibilities: string[] }>;
+  system: Record<string, { topic: string; description: string; stream: string; owner: string }>;
 } {
   return {
     council: Object.fromEntries(
       Object.entries(COUNCIL_MEMBERS).map(([key, member]) => [
         key,
-        { banner: member.bannerTopic, personal: member.personalTopic }
+        { 
+          banner: member.bannerTopic, 
+          personal: member.personalTopic,
+          team: member.team,
+          role: member.role
+        }
       ])
     ),
     departments: Object.fromEntries(
       Object.entries(DEPARTMENT_TOPICS).map(([key, dept]) => [
         key,
-        { banner: dept.bannerTopic, updates: dept.updatesTopic, alerts: dept.alertsTopic }
+        { 
+          banner: dept.bannerTopic, 
+          updates: dept.updatesTopic, 
+          alerts: dept.alertsTopic,
+          lead: dept.lead,
+          responsibilities: dept.responsibilities
+        }
       ])
     ),
     system: Object.fromEntries(
       Object.entries(SYSTEM_TOPICS).map(([key, topic]) => [
         key,
-        { topic: topic.topic, description: topic.description }
+        { 
+          topic: topic.topic, 
+          description: topic.description,
+          stream: topic.stream,
+          owner: topic.owner
+        }
       ])
     )
   };

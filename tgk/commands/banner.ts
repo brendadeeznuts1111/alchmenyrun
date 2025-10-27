@@ -9,7 +9,11 @@ import {
   updateAllDepartmentBanners,
   getCouncilMember,
   getDepartment,
-  getAllBannerTopics
+  getAllBannerTopics,
+  updateBannerForFileChange,
+  getDepartmentByFilePath,
+  getGovernanceStream,
+  getSystemTopicsByStream
 } from '../integrations/telegram-banner.js';
 import { formatCouncilMember, formatDepartment } from '../core/macro-colors.js';
 
@@ -24,7 +28,7 @@ program
 program
   .command('council')
   .description('Update council member banner topic')
-  .argument('<member>', 'Council member (alice, charlie, diana, frank)')
+  .argument('<member>', 'Council member (brenda, alice, charlie, diana, frank)')
   .argument('<message>', 'Banner message')
   .option('-p, --priority <priority>', 'Priority level (low, medium, high, critical)', 'medium')
   .action(async (member, message, options) => {
@@ -32,7 +36,7 @@ program
       const memberId = mapCouncilMember(member);
       if (!memberId) {
         console.error(`❌ Council member '${member}' not found`);
-        console.log('Available members: alice, charlie, diana, frank');
+        console.log('Available members: brenda, alice, charlie, diana, frank');
         process.exit(1);
       }
 
@@ -56,7 +60,7 @@ program
 program
   .command('department')
   .description('Update department banner topic')
-  .argument('<dept>', 'Department (tech, security, product, support)')
+  .argument('<dept>', 'Department (infrastructure, resource-providers, documentation, quality-testing)')
   .argument('<message>', 'Banner message')
   .option('-p, --priority <priority>', 'Priority level (low, medium, high, critical)', 'medium')
   .action(async (dept, message, options) => {
@@ -64,7 +68,7 @@ program
       const deptId = mapDepartment(dept);
       if (!deptId) {
         console.error(`❌ Department '${dept}' not found`);
-        console.log('Available departments: tech, security, product, support');
+        console.log('Available departments: infrastructure, resource-providers, documentation, quality-testing');
         process.exit(1);
       }
 
@@ -88,7 +92,7 @@ program
 program
   .command('system')
   .description('Update system-wide banner topic')
-  .argument('<topic>', 'System topic (main, releases, health, incidents)')
+  .argument('<topic>', 'System topic (main, releases, health, incidents, governance, analytics)')
   .argument('<message>', 'Banner message')
   .option('-p, --priority <priority>', 'Priority level (low, medium, high, critical)', 'medium')
   .action(async (topic, message, options) => {
@@ -96,7 +100,7 @@ program
       const topicId = mapSystemTopic(topic);
       if (!topicId) {
         console.error(`❌ System topic '${topic}' not found`);
-        console.log('Available topics: main, releases, health, incidents');
+        console.log('Available topics: main, releases, health, incidents, governance, analytics');
         process.exit(1);
       }
 
@@ -228,17 +232,100 @@ program
     }
   });
 
+// Update banner for file change (CODEOWNERS integration)
+program
+  .command('file-update')
+  .description('Update banner for file change based on CODEOWNERS')
+  .argument('<filePath>', 'File path that was changed')
+  .argument('<message>', 'Update message')
+  .option('-p, --priority <priority>', 'Priority level (low, medium, high, critical)', 'medium')
+  .action(async (filePath, message, options) => {
+    try {
+      console.log(`📁 Processing file update: ${filePath}`);
+      await updateBannerForFileChange(filePath, message, options.priority as any);
+      console.log('✅ File update banner completed successfully');
+      
+    } catch (error) {
+      console.error(`❌ File update banner failed:`, error);
+      process.exit(1);
+    }
+  });
+
+// Show department for file path
+program
+  .command('lookup-file')
+  .description('Lookup which department owns a file path')
+  .argument('<filePath>', 'File path to lookup')
+  .action(async (filePath) => {
+    try {
+      const department = getDepartmentByFilePath(filePath);
+      if (department) {
+        console.log(`📁 File: ${filePath}`);
+        console.log(`🏢 Department: ${department.name}`);
+        console.log(`👥 Team Lead: ${department.lead}`);
+        console.log(`📁 Responsibilities: ${department.responsibilities.length} areas`);
+        console.log(`📋 Sample responsibilities:`);
+        department.responsibilities.slice(0, 3).forEach(resp => {
+          console.log(`   • ${resp}`);
+        });
+      } else {
+        console.log(`📁 File: ${filePath}`);
+        console.log(`❌ No department found for this file path`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ File lookup failed:`, error);
+      process.exit(1);
+    }
+  });
+
+// Show governance stream info
+program
+  .command('stream-info')
+  .description('Show governance stream information')
+  .argument('<stream>', 'Stream name (general, releases, sre, security, governance, data)')
+  .action(async (stream) => {
+    try {
+      const topics = getSystemTopicsByStream(stream);
+      if (topics.length > 0) {
+        console.log(`🏷️ Stream: ${stream}`);
+        console.log(`📊 Topics: ${topics.length}`);
+        topics.forEach(topic => {
+          console.log(`   • ${topic.name} (${topic.topic})`);
+          console.log(`     Owner: @${topic.owner}`);
+          console.log(`     Description: ${topic.description}`);
+        });
+      } else {
+        console.log(`🏷️ Stream: ${stream}`);
+        console.log(`❌ No topics found for this stream`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Stream info failed:`, error);
+      process.exit(1);
+    }
+  });
+
 // Helper functions to map user input to internal IDs
 function mapCouncilMember(input: string): keyof typeof import('../integrations/telegram-banner.js').COUNCIL_MEMBERS | null {
   const mapping: Record<string, keyof typeof import('../integrations/telegram-banner.js').COUNCIL_MEMBERS> = {
+    'brenda': 'brendadeeznuts1111',
+    'lead': 'brendadeeznuts1111',
     'alice': 'alice.smith',
     'smith': 'alice.smith',
+    'infra': 'alice.smith',
+    'infrastructure': 'alice.smith',
     'charlie': 'charlie.brown',
     'brown': 'charlie.brown',
+    'providers': 'charlie.brown',
     'diana': 'diana.prince',
     'prince': 'diana.prince',
+    'quality': 'diana.prince',
+    'testing': 'diana.prince',
     'frank': 'frank.taylor',
-    'taylor': 'frank.taylor'
+    'taylor': 'frank.taylor',
+    'docs': 'frank.taylor',
+    'documentation': 'frank.taylor'
   };
   
   return mapping[input.toLowerCase()] || null;
@@ -246,14 +333,25 @@ function mapCouncilMember(input: string): keyof typeof import('../integrations/t
 
 function mapDepartment(input: string): keyof typeof import('../integrations/telegram-banner.js').DEPARTMENT_TOPICS | null {
   const mapping: Record<string, keyof typeof import('../integrations/telegram-banner.js').DEPARTMENT_TOPICS> = {
-    'tech': 'tech',
-    'technical': 'tech',
-    'security': 'security',
-    'sec': 'security',
-    'product': 'product',
-    'prod': 'product',
-    'support': 'support',
-    'help': 'support'
+    'infrastructure': 'infrastructure',
+    'infra': 'infrastructure',
+    'packages': 'infrastructure',
+    'backend': 'infrastructure',
+    'frontend': 'infrastructure',
+    'resource-providers': 'resource-providers',
+    'providers': 'resource-providers',
+    'cloudflare': 'resource-providers',
+    'docker': 'resource-providers',
+    'aws': 'resource-providers',
+    'gcp': 'resource-providers',
+    'documentation': 'documentation',
+    'docs': 'documentation',
+    'examples': 'documentation',
+    'quality-testing': 'quality-testing',
+    'quality': 'quality-testing',
+    'testing': 'quality-testing',
+    'tests': 'quality-testing',
+    'qa': 'quality-testing'
   };
   
   return mapping[input.toLowerCase()] || null;
@@ -263,12 +361,21 @@ function mapSystemTopic(input: string): keyof typeof import('../integrations/tel
   const mapping: Record<string, keyof typeof import('../integrations/telegram-banner.js').SYSTEM_TOPICS> = {
     'main': 'main',
     'primary': 'main',
+    'general': 'main',
     'releases': 'releases',
     'release': 'releases',
+    'deploy': 'releases',
     'health': 'health',
     'status': 'health',
+    'sre': 'health',
     'incidents': 'incidents',
-    'incident': 'incidents'
+    'incident': 'incidents',
+    'security': 'incidents',
+    'governance': 'governance',
+    'policy': 'governance',
+    'analytics': 'analytics',
+    'data': 'analytics',
+    'metrics': 'analytics'
   };
   
   return mapping[input.toLowerCase()] || null;
