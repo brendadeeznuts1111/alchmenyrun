@@ -1,0 +1,36 @@
+{
+  "name": "tgk",
+  "version": "1.0.0",
+  "description": "AI-powered release planning and orchestration CLI",
+  "main": "dist/cli.js",
+  "bin": {
+    "tgk": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "bun test",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "release",
+    "planning",
+    "orchestration",
+    "ai",
+    "policy",
+    "governance"
+  ],
+  "author": "TGK Team",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
