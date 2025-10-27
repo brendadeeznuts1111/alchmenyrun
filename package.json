@@ -54,7 +54,7 @@
     "version:major": "bun run scripts/version-bump.ts major",
     "orchestrate:announce": "tgk orchestrate release-announcement $(cat .tgk/VERSION)",
     "orchestrate:verify": "tgk orchestrate release-verify $(cat .tgk/VERSION)",
-    "orchestrate:security": "tgk orchestrate release-security-check $(cat .tgk/VERSION)"
+    "orchestrate:security": "tgk orchestrate release-security-check $(cat .tgk/VERSION)",
     "release": "release-it",
     "release:canary": "release-it --preRelease=canary",
     "release:patch": "release-it patch",
