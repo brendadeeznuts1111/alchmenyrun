@@ -6,7 +6,64 @@
 
 ---
 
-## 📋 Overview
+## 📋 Quick Reference
+
+The profile system is the single source of truth for cloud credentials.  
+One directory, `~/.alchemy`, holds **configuration** (non-secret) and  
+**credentials** (short-lived secrets).  
+Everything else—CLI flags, env vars, resource-level overrides—are just convenience aliases that resolve back to these two files.
+
+### File Layout
+```
+~/.alchemy
+├─ config.json               // { profile → auth_method, scopes, … }
+└─ credentials
+   └─ <profile>
+      └─ <provider>.json     // { access_token, expires_at }
+```
+
+### Surface Area
+| Command | Effect |
+|---------|--------|
+| `alchemy configure --profile P` | create / update `config.json` entry |
+| `alchemy login --profile P` | obtain token, write `credentials/P/<provider>.json` |
+| `alchemy logout --profile P` | delete `credentials/P` tree |
+| `alchemy profile validate` | *planned* – exit 0 if config + non-expired creds exist |
+
+### Resolution Order (highest → lowest)
+1. **Resource-level override**<br>`Worker("x", { profile: "prod" })` 
+2. **Global `alchemy.run.ts` override**<br>`await alchemy("app", { profile: "prod" })` 
+3. **CLI flag**<br>`alchemy deploy --profile prod` 
+4. **Env var**<br>`ALCHEMY_PROFILE=prod` 
+5. **Fallback**<br>`default` 
+
+### Stage / Profile Hygiene
+*Stages* isolate resources (logical fence).  
+*Profiles* isolate credentials (security gate).  
+The two dimensions are orthogonal:  
+a PR stage may be **deployed** with the `ci` profile and **read** by the `prod` profile during binding—no collision.
+
+### CI/CD Contract
+- CI must export `ALCHEMY_PROFILE=ci` and inject the matching secret (`CLOUDFLARE_API_TOKEN`) into the job.  
+- The `ci` profile is **read-only** except for `workers:write` and `kv:write`; it cannot touch `prod` D1 or R2.  
+- A one-line pre-step guarantees the profile is present:
+  ```yaml
+      - run: alchemy profile validate   # fails fast if token missing / expired
+  ```
+
+### Local Development
+`alchemy dev` implicitly uses the `default` profile and the `$USER` stage.  
+No configuration is required on first clone.
+
+### Planned Enhancements
+See [Issue #37](https://github.com/brendadeeznuts1111/alchmenyrun/issues/37) for tracking:
+1. Auto-refresh in `deploy` when `expires_at < now()`.
+2. `alchemy profile rotate` – re-key without logout.
+3. Per-provider credential plugins (AWS SSO, GCP ADC).
+
+---
+
+## 📋 Detailed Overview
 
 The Alchemy Profile System is a secure, flexible mechanism for managing cloud provider credentials across multiple stages and projects. By centralizing configuration and secrets in the `~/.alchemy` directory, it eliminates the need for manual environment variable management or separate login files, akin to AWS profiles.
 
