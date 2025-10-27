@@ -75,6 +75,13 @@ bun test
 - [ ] **Self-reviewed**: Reviewed my own code for obvious issues
 - [ ] **Documentation**: Updated docs if behavior changed
 
+### 📧 Phase-6 Email Orchestration
+<!-- For PRs involving email routing system -->
+- [ ] I have run `scripts/bootstrap-phase6.sh` on this branch
+- [ ] Life-cycle dashboard shows **no 🔒 blockers**
+- [ ] `opa bundle` passes `conftest verify .github/rfc006/policies`
+- [ ] Grafana dashboard JSON is up-to-date
+
 ---
 
 ## 📚 Documentation

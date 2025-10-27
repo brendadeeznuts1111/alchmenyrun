@@ -2,8 +2,8 @@
 
 | Stage | Owner | State | Evidence |
 |-------|-------|-------|----------|
-| Bootstrap | Infra | ✅ | `.rfc/ALC-RFC-006/metadata.yml` exists |
-| Basic Routing | Infra | ⏳ | PR #<num> merged, Worker logs `routing_total` > 0 |
+| Bootstrap | Infra | ✅ | D1 database, Worker deployed, secrets set, metadata created |
+| Basic Routing | Infra | ⏳ | Email routing rule needs manual setup in Cloudflare dashboard |
 | AI Analysis | Quality | ⏳ | Dashboard `ai_sentiment_score` visible |
 | Dynamic Chat-ID | Integrations | 🔒 | Blocked: on-call API key |
 | Bidirectional Reply | Integrations | 🔒 | Blocked: SendGrid domain auth |
