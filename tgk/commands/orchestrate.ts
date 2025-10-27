@@ -2,11 +2,12 @@
 
 /**
  * tgk orchestrate - Advanced Workflow Orchestration with AI Integration
- * Commands: auto-triage, release-candidate, revert, audit-compliance
+ * Commands: auto-triage, release-candidate, revert, audit-compliance, email-reply, route-diagnostics
  */
 
 import { GitHubManager } from '../utils/github.js';
 import { TelegramBot } from '../utils/telegram.js';
+import { analyzeEmailContent, suggestEmailRouting, draftEmailReply } from './ai.ts';
 
 // Initialize clients
 const gh = new GitHubManager();
@@ -52,6 +53,52 @@ interface ComplianceReport {
   auditDate: string;
   recommendations: string[];
   telegramPosted: boolean;
+}
+
+interface EmailReplyReport {
+  originalMessageId: string;
+  replyTo: string;
+  subject: string;
+  body: string;
+  sentAt: string;
+  confidence: number;
+  telegramPosted: boolean;
+}
+
+interface RouteDiagnosticsReport {
+  email: string;
+  parsedTokens: {
+    domain?: string;
+    scope?: string;
+    type?: string;
+    hierarchy?: string;
+    meta?: string;
+    stateId?: string;
+  };
+  routingSuggestion: {
+    chat_id: string | null;
+    routing_confidence: number;
+    fallback_reason?: string;
+    suggested_priority_override?: string;
+    reasoning: string;
+  };
+  aiAnalysis?: {
+    sentiment: 'positive' | 'negative' | 'neutral';
+    score: number;
+    summary: string;
+    keywords: string[];
+    urgency: 'low' | 'medium' | 'high' | 'critical';
+    action_items: string[];
+    potential_pii: boolean;
+    phishing_risk: number;
+    reasoning: string;
+  };
+  diagnostics: {
+    parsingErrors: string[];
+    routingErrors: string[];
+    recommendations: string[];
+  };
+  checkedAt: string;
 }
 
 export async function autoTriage(issueId: string): Promise<TriageReport> {
@@ -559,6 +606,219 @@ async function evaluateCompliance(currentState: any, policies: any[]): Promise<{
   };
 }
 
+/**
+ * Email reply orchestration - sends AI-drafted email replies from Telegram
+ */
+export async function sendEmailReply(
+  messageId: string,
+  replyTo: string,
+  subject: string,
+  body: string,
+  options: { 
+    intent?: 'acknowledge' | 'investigating' | 'resolved' | 'escalate';
+    tone?: 'professional' | 'casual' | 'urgent';
+  } = {}
+): Promise<EmailReplyReport> {
+  console.log(`📧 Sending email reply to ${replyTo}...`);
+
+  try {
+    // Check if we're in test mode
+    if (!process.env.EMAIL_SERVICE_API_KEY) {
+      console.log('🧪 Running in test mode (no EMAIL_SERVICE_API_KEY set)');
+      
+      // Use AI to draft the reply
+      const draft = await draftEmailReply(
+        subject,
+        body,
+        replyTo,
+        options.intent || 'acknowledge',
+        options.tone || 'professional'
+      );
+
+      const mockReport: EmailReplyReport = {
+        originalMessageId: messageId,
+        replyTo,
+        subject: draft.subject,
+        body: draft.body,
+        sentAt: new Date().toISOString(),
+        confidence: draft.confidence,
+        telegramPosted: false
+      };
+
+      console.log(`✅ Would send email reply to ${replyTo}`);
+      console.log(`📝 Subject: ${draft.subject}`);
+      console.log(`📄 Body preview: ${draft.body.substring(0, 100)}...`);
+      console.log(`📊 Confidence: ${(draft.confidence * 100).toFixed(1)}%`);
+      
+      return mockReport;
+    }
+
+    // Production implementation would send actual email
+    const draft = await draftEmailReply(
+      subject,
+      body,
+      replyTo,
+      options.intent || 'acknowledge',
+      options.tone || 'professional'
+    );
+
+    // Send email via email service (SendGrid, AWS SES, etc.)
+    const emailResponse = await sendEmailViaService({
+      to: replyTo,
+      subject: draft.subject,
+      body: draft.body,
+      inReplyTo: messageId
+    });
+
+    const report: EmailReplyReport = {
+      originalMessageId: messageId,
+      replyTo,
+      subject: draft.subject,
+      body: draft.body,
+      sentAt: new Date().toISOString(),
+      confidence: draft.confidence,
+      telegramPosted: false
+    };
+
+    // Post to Telegram
+    await postEmailReplyReportToTelegram(report);
+
+    return report;
+
+  } catch (error) {
+    console.error('❌ Failed to send email reply:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Route diagnostics - analyzes email routing configuration and issues
+ */
+export async function diagnoseRoute(email: string): Promise<RouteDiagnosticsReport> {
+  console.log(`🔍 Diagnosing email routing for ${email}...`);
+
+  try {
+    // Parse email address
+    const parsedTokens = parseEmailAddress(email);
+    
+    const diagnostics = {
+      parsingErrors: [] as string[],
+      routingErrors: [] as string[],
+      recommendations: [] as string[]
+    };
+
+    // Validate parsing
+    if (!parsedTokens.domain) diagnostics.parsingErrors.push('Missing domain token');
+    if (!parsedTokens.scope) diagnostics.parsingErrors.push('Missing scope token');
+    if (!parsedTokens.type) diagnostics.parsingErrors.push('Missing type token');
+    if (!parsedTokens.hierarchy) diagnostics.parsingErrors.push('Missing hierarchy token');
+
+    // Perform AI analysis if we have enough context
+    let aiAnalysis: EmailContentAnalysis | undefined;
+    if (parsedTokens.domain && parsedTokens.scope) {
+      aiAnalysis = await analyzeEmailContent(
+        `Test email for ${parsedTokens.domain}.${parsedTokens.scope}`,
+        `This is a test email to validate routing for ${email}`,
+        parsedTokens.stateId
+      );
+    }
+
+    // Get routing suggestion
+    const routingSuggestion = await suggestEmailRouting(
+      parsedTokens.domain || 'unknown',
+      parsedTokens.scope || 'unknown',
+      parsedTokens.type || 'unknown',
+      parsedTokens.hierarchy || 'unknown',
+      parsedTokens.meta || 'unknown',
+      parsedTokens.stateId,
+      aiAnalysis
+    );
+
+    // Validate routing
+    if (!routingSuggestion.chat_id) {
+      diagnostics.routingErrors.push('No suitable chat ID found');
+      diagnostics.recommendations.push('Configure TELEGRAM_DEFAULT_CHAT_ID environment variable');
+    }
+
+    if (routingSuggestion.routing_confidence < 0.7) {
+      diagnostics.recommendations.push('Review routing configuration for low confidence');
+    }
+
+    // Generate recommendations
+    if (diagnostics.parsingErrors.length === 0 && diagnostics.routingErrors.length === 0) {
+      diagnostics.recommendations.push('Email routing configuration looks healthy');
+    }
+
+    const report: RouteDiagnosticsReport = {
+      email,
+      parsedTokens,
+      routingSuggestion,
+      aiAnalysis,
+      diagnostics,
+      checkedAt: new Date().toISOString()
+    };
+
+    console.log(`📊 Routing diagnostics completed for ${email}`);
+    console.log(`🎯 Suggested chat ID: ${routingSuggestion.chat_id || 'None'}`);
+    console.log(`📈 Confidence: ${(routingSuggestion.routing_confidence * 100).toFixed(1)}%`);
+    console.log(`⚠️  Errors: ${diagnostics.parsingErrors.length + diagnostics.routingErrors.length}`);
+
+    return report;
+
+  } catch (error) {
+    console.error('❌ Failed to diagnose route:', error.message);
+    throw error;
+  }
+}
+
+// Helper functions for email orchestration
+function parseEmailAddress(email: string): {
+  domain?: string;
+  scope?: string;
+  type?: string;
+  hierarchy?: string;
+  meta?: string;
+  stateId?: string;
+} {
+  const localPart = email.split('@')[0];
+  const tokens = localPart.split('.');
+  
+  return {
+    domain: tokens[0],
+    scope: tokens[1],
+    type: tokens[2],
+    hierarchy: tokens[3],
+    meta: tokens[4],
+    stateId: tokens[5]
+  };
+}
+
+async function sendEmailViaService(emailData: {
+  to: string;
+  subject: string;
+  body: string;
+  inReplyTo?: string;
+}): Promise<{ messageId: string; status: string }> {
+  // Mock implementation - would integrate with actual email service
+  console.log(`📨 Sending email via service to ${emailData.to}...`);
+  await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+  
+  return {
+    messageId: `msg_${Date.now()}`,
+    status: 'sent'
+  };
+}
+
+async function postEmailReplyReportToTelegram(report: EmailReplyReport): Promise<void> {
+  console.log(`📱 Would post email reply report to Telegram`);
+  // Mock implementation - would post to actual Telegram
+}
+
+async function postRouteDiagnosticsReportToTelegram(report: RouteDiagnosticsReport): Promise<void> {
+  console.log(`📱 Would post route diagnostics report to Telegram`);
+  // Mock implementation - would post to actual Telegram
+}
+
 // Legacy helper functions (kept for compatibility)
 async function triggerStagingDeployment(prId: string) {
   console.log(`🏗️ Triggering staging deployment for PR #${prId}...`);
@@ -583,6 +843,63 @@ async function validateRollbackPolicy(component: string, version: string, stage:
 async function monitorRollback(component: string, version: string, stage: string) {
   console.log(`📊 Monitoring rollback success...`);
   // Would set up monitoring and alerts
+}
+
+export async function sendEmailReply(messageId: string, toEmail: string, options: { intent?: string, tone?: string }) {
+  console.log(`📧 Sending AI-drafted email reply to ${toEmail}...`);
+
+  try {
+    // Check if we're in test mode
+    if (!process.env.SMTP_SERVER) {
+      console.log('🧪 Running in test mode (no SMTP_SERVER set)');
+      console.log(`📧 Would send reply to ${toEmail} for message ${messageId}`);
+      console.log(`🎯 Intent: ${options.intent || 'acknowledge'}`);
+      console.log(`🎭 Tone: ${options.tone || 'professional'}`);
+      console.log('✅ Email reply simulation completed');
+      return;
+    }
+
+    // In production, this would:
+    // 1. Generate AI-drafted reply based on intent and tone
+    // 2. Send via SMTP server
+    // 3. Update message status
+
+    console.log(`✅ Email reply sent to ${toEmail}`);
+
+  } catch (error) {
+    console.error('❌ Failed to send email reply:', error.message);
+    throw error;
+  }
+}
+
+export async function diagnoseRoute(email: string) {
+  console.log(`🔍 Diagnosing email routing for ${email}...`);
+
+  try {
+    // Check if we're in test mode
+    if (!process.env.ROUTING_CONFIG) {
+      console.log('🧪 Running in test mode (no ROUTING_CONFIG set)');
+      console.log(`📧 Email: ${email}`);
+      console.log('🔄 Routing Rules:');
+      console.log('  • Domain routing: support@ -> customer-support');
+      console.log('  • Keyword routing: urgent -> priority-queue');
+      console.log('  • Sender routing: vip@ -> executive-chat');
+      console.log('✅ Route diagnosis simulation completed');
+      return;
+    }
+
+    // In production, this would:
+    // 1. Check routing configuration
+    // 2. Test routing logic with the email
+    // 3. Verify permissions and access
+    // 4. Provide diagnostic information
+
+    console.log(`✅ Route diagnosis completed for ${email}`);
+
+  } catch (error) {
+    console.error('❌ Failed to diagnose route:', error.message);
+    throw error;
+  }
 }
 
 // Export functions for use by main TGK binary

@@ -1,0 +1,47 @@
+name = "tgk-email-orchestrator"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+# Email routing configuration
+[[email_routing_rules]]
+type = "forward"
+name = "tgk-email-orchestrator"
+
+# Environment variables
+[env.production.vars]
+TG_BOT_TOKEN = "your-telegram-bot-token"
+TGK_INTERNAL_API_URL = "https://your-tgk-instance.com"
+TGK_API_TOKEN = "your-tgk-api-token"
+TELEGRAM_DEFAULT_CHAT_ID = "@general"
+TELEGRAM_ONCALL_CHAT_ID = "@oncall_team"
+TELEGRAM_SRE_CHAT_ID = "@sre_team"
+TELEGRAM_SUPPORT_CHAT_ID = "@support_team"
+
+[env.staging.vars]
+TG_BOT_TOKEN = "your-staging-telegram-bot-token"
+TGK_INTERNAL_API_URL = "https://staging-tgk-instance.com"
+TGK_API_TOKEN = "your-staging-tgk-api-token"
+TELEGRAM_DEFAULT_CHAT_ID = "@staging_general"
+TELEGRAM_ONCALL_CHAT_ID = "@staging_oncall"
+TELEGRAM_SRE_CHAT_ID = "@staging_sre"
+TELEGRAM_SUPPORT_CHAT_ID = "@staging_support"
+
+# KV namespace for email caching (optional)
+[[kv_namespaces]]
+binding = "EMAIL_CACHE"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
+# D1 database for audit logs (optional)
+[[d1_databases]]
+binding = "AUDIT_DB"
+database_name = "tgk-email-audit"
+database_id = "your-d1-database-id"
+
+# Observability
+[observability]
+enabled = true
+
+# Limits
+[limits]
+cpu_ms = 50000

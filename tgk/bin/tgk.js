@@ -377,9 +377,46 @@ orchestrateCmd
     }
   });
 
+orchestrateCmd
+  .command('email-reply <message-id> <to-email>')
+  .description('Send AI-drafted email reply from Telegram')
+  .option('--subject <subject>', 'Email subject')
+  .option('--body <body>', 'Email body')
+  .option('--intent <intent>', 'Reply intent (acknowledge, investigating, resolved, escalate)', 'acknowledge')
+  .option('--tone <tone>', 'Email tone (professional, casual, urgent)', 'professional')
+  .action(async (messageId, toEmail, options) => {
+    try {
+      const { sendEmailReply } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await sendEmailReply(messageId, toEmail, options.subject || 'Re: Previous Message', options.body || 'Thank you for your message. We are looking into it.', {
+        intent: options.intent,
+        tone: options.tone
+      });
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+orchestrateCmd
+  .command('route-diagnostics <email>')
+  .description('Diagnose email routing configuration and issues')
+  .action(async (email) => {
+    try {
+      const { diagnoseRoute } = await import(path.resolve(__dirname, '../commands/orchestrate.ts'));
+      await diagnoseRoute(email);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
 // AI commands
-program
-  .command('ai labels <issue-id>')
+const aiCmd = program
+  .command('ai')
+  .description('AI-powered analysis and suggestions');
+
+aiCmd
+  .command('labels <issue-id>')
   .description('AI-powered label suggestion for issues and PRs')
   .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
   .action(async (issueId, options) => {
@@ -397,8 +434,8 @@ program
     }
   });
 
-program
-  .command('ai release-type')
+aiCmd
+  .command('release-type')
   .description('AI-powered release type suggestion based on commit analysis')
   .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
   .action(async (options) => {
@@ -417,8 +454,8 @@ program
     }
   });
 
-program
-  .command('ai impact <changes...>')
+aiCmd
+  .command('impact <changes...>')
   .description('AI-powered impact analysis for changes')
   .option('--repo <repo>', 'Repository name (owner/repo or repo)', 'alchmenyrun')
   .action(async (changes, options) => {
@@ -432,6 +469,108 @@ program
       console.log(`Risk Score: ${impact.risk_score}/100`);
       console.log(`Affected Areas: ${impact.affected_areas.join(', ') || 'None'}`);
       console.log(`Reasoning: ${impact.reasoning}`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+aiCmd
+  .command('analyze-email <subject> <body>')
+  .description('AI-powered email content analysis for intelligent routing')
+  .option('--state-id <stateId>', 'Optional state ID for context')
+  .action(async (subject, body, options) => {
+    try {
+      const { analyzeEmailContent } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const analysis = await analyzeEmailContent(subject, body, options.stateId);
+      console.log('\n🧠 **AI Email Content Analysis:**');
+      console.log(`Sentiment: ${analysis.sentiment} (Score: ${analysis.score.toFixed(2)})`);
+      console.log(`Urgency: ${analysis.urgency}`);
+      console.log(`Summary: ${analysis.summary}`);
+      console.log(`Keywords: ${analysis.keywords.join(', ') || 'None'}`);
+      console.log(`Action Items: ${analysis.action_items.length} found`);
+      console.log(`PII Risk: ${analysis.potential_pii ? '⚠️  Detected' : '✅ None'}`);
+      console.log(`Phishing Risk: ${(analysis.phishing_risk * 100).toFixed(1)}%`);
+      console.log(`Reasoning: ${analysis.reasoning}`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+aiCmd
+  .command('suggest-routing <domain> <scope> <type> <hierarchy> <meta>')
+  .description('AI-powered email routing suggestion')
+  .option('--state-id <stateId>', 'Optional state ID for context')
+  .option('--email-from <emailFrom>', 'Original sender email')
+  .action(async (domain, scope, type, hierarchy, meta, options) => {
+    try {
+      const { suggestEmailRouting, analyzeEmailContent } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      
+      // Perform basic content analysis for routing context
+      const aiAnalysis = await analyzeEmailContent(
+        `Test email for ${domain}.${scope}.${type}`,
+        `This is a test email to validate routing for ${domain}.${scope}.${type}.${hierarchy}.${meta}`,
+        options.stateId
+      );
+      
+      const routing = await suggestEmailRouting(
+        domain, scope, type, hierarchy, meta, options.stateId, aiAnalysis, options.emailFrom
+      );
+      
+      console.log('\n🎯 **AI Email Routing Suggestion:**');
+      console.log(`Chat ID: ${routing.chat_id || '❌ No route found'}`);
+      console.log(`Confidence: ${(routing.routing_confidence * 100).toFixed(1)}%`);
+      if (routing.suggested_priority_override) {
+        console.log(`Priority Override: ${routing.suggested_priority_override}`);
+      }
+      if (routing.fallback_reason) {
+        console.log(`Fallback Reason: ${routing.fallback_reason}`);
+      }
+      console.log(`Reasoning: ${routing.reasoning}`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+aiCmd
+  .command('draft-email <subject> <body> <from-email>')
+  .description('AI-powered email reply drafting')
+  .option('--intent <intent>', 'Reply intent (acknowledge, investigating, resolved, escalate)', 'acknowledge')
+  .option('--tone <tone>', 'Email tone (professional, casual, urgent)', 'professional')
+  .action(async (subject, body, fromEmail, options) => {
+    try {
+      const { draftEmailReply } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const draft = await draftEmailReply(subject, body, fromEmail, options.intent, options.tone);
+      console.log('\n✍️ **AI Email Draft:**');
+      console.log(`Subject: ${draft.subject}`);
+      console.log(`Confidence: ${(draft.confidence * 100).toFixed(1)}%`);
+      console.log('\nBody:');
+      console.log('---');
+      console.log(draft.body);
+      console.log('---');
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('ai analyze-thread <thread-id>')
+  .description('AI-powered Telegram thread analysis')
+  .action(async (threadId) => {
+    try {
+      // Would need to fetch thread messages
+      const messages = ['Mock message 1', 'Mock message 2', 'This is urgent'];
+      const { analyzeThread } = await import(path.resolve(__dirname, '../commands/ai.ts'));
+      const analysis = await analyzeThread(threadId, messages);
+      console.log('\n🧵 **Thread Analysis:**');
+      console.log(`Sentiment: ${analysis.sentiment}`);
+      console.log(`Urgency: ${analysis.urgency}`);
+      console.log(`Summary: ${analysis.summary}`);
+      console.log(`Action Items: ${analysis.action_items.join(', ')}`);
+      console.log(`Key Decisions: ${analysis.key_decisions.join(', ')}`);
     } catch (error) {
       console.error('❌ Error:', error.message);
       process.exit(1);
