@@ -274,5 +274,23 @@ Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
   });
 }
 
+// ========================================
+// MICRO-RFC-005: DO-Backed GitHub Webhooks
+// ========================================
+const ghAgentDO = await DurableObject("GithubAgent", { class: GithubAgent });
+
+await Worker("github-webhook", {
+  entrypoint: "./workers/github-webhook/index.ts",
+  bindings: {
+    GITHUB_DO: ghAgentDO,
+    TG_TOKEN: $env("TG_TOKEN"),
+    COUNCIL_ID: $env("TELEGRAM_COUNCIL_ID"),
+    TOPIC_MOBILE: $env("TELEGRAM_TOPIC_MOBILE"),
+    TOPIC_FORUM: $env("TELEGRAM_TOPIC_FORUM"),
+  },
+  profile: "ci",
+  stage: $env("STAGE"),
+});
+
 // Finalize the app (triggers deletion of orphaned resources)
 await app.finalize();
