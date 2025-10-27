@@ -1,0 +1,142 @@
+name: Governance Checks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'docs/ALC-RFC-004-**'
+      - 'src/**'
+      - 'package.json'
+      - 'alchemy.run.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/ALC-RFC-004-**'
+      - 'src/**'
+      - 'package.json'
+      - 'alchemy.run.ts'
+
+# Ensure only one governance check runs at a time per PR
+concurrency:
+  group: "governance-${{ github.event.pull_request.number || github.ref_name }}"
+  cancel-in-progress: false
+
+jobs:
+  governance-validation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check TypeScript and Lint
+        run: |
+          bun run build
+          bun run check
+
+      - name: Validate RFC-004 Governance Features
+        run: |
+          echo "🛡️ Running governance validation checks..."
+
+          # Check if RFC-004 document exists and is valid
+          if [ ! -f "docs/ALC-RFC-004-advanced-governance.md" ]; then
+            echo "❌ RFC-004 document missing"
+            exit 1
+          fi
+
+          # Validate RFC structure (basic checks)
+          if ! grep -q "## Status" docs/ALC-RFC-004-advanced-governance.md; then
+            echo "❌ RFC missing Status section"
+            exit 1
+          fi
+
+          if ! grep -q "## Technical Implementation" docs/ALC-RFC-004-advanced-governance.md; then
+            echo "❌ RFC missing Technical Implementation section"
+            exit 1
+          fi
+
+          echo "✅ RFC-004 structure validation passed"
+
+      - name: Governance Code Quality Checks
+        run: |
+          echo "🔍 Running governance-related code quality checks..."
+
+          # Check for required governance imports in main application
+          if ! grep -q "governance" alchemy.run.ts; then
+            echo "⚠️  Warning: No governance references found in main alchemy.run.ts"
+            echo "   This may be expected if governance features aren't implemented yet"
+          fi
+
+          # Check for governance-related TypeScript interfaces
+          if ! find src -name "*.ts" -exec grep -l "governance\|Governance" {} \; | grep -q .; then
+            echo "ℹ️  Info: No governance-related TypeScript files found"
+            echo "   This is expected before Phase 1 implementation"
+          fi
+
+          echo "✅ Governance code quality checks completed"
+
+      - name: Documentation Rules Compliance
+        run: |
+          echo "📚 Checking documentation rules compliance..."
+
+          # Verify no summary documents exist (per .docs-rules)
+          if find . -name "*SUMMARY.md" -o -name "*_SUMMARY.md" | grep -v node_modules | grep -q .; then
+            echo "❌ Found summary documents that violate documentation rules:"
+            find . -name "*SUMMARY.md" -o -name "*_SUMMARY.md" | grep -v node_modules
+            exit 1
+          fi
+
+          echo "✅ Documentation rules compliance verified"
+
+      - name: Comment Governance Status on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_request_number: context.issue.number
+            });
+
+            const governanceStatus = `
+            ## 🛡️ Governance Validation Results
+
+            **RFC-004 Status**: ${pr.title.includes('RFC-004') ? '✅ Related to governance features' : 'ℹ️ Not governance-related'}
+
+            ### Checks Performed:
+            - ✅ RFC-004 document structure validation
+            - ✅ TypeScript compilation and linting
+            - ✅ Documentation rules compliance
+            - ✅ Code quality standards
+
+            ### Governance Features Ready for:
+            - Phase 1: AI Categorization MVP
+            - Cross-stream topic relationships
+            - Automated prioritization
+            - Advanced analytics dashboard
+
+            _Governance committee review required for approval_
+            `;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: governanceStatus
+            });

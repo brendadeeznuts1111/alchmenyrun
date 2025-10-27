@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Governance Setup Action
+# Prepares environment for governance-related operations
+
+set -euo pipefail
+
+echo "🛡️ Setting up governance environment..."
+
+# Validate required environment variables
+if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+  echo "❌ CLOUDFLARE_API_TOKEN not set"
+  exit 1
+fi
+
+if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+  echo "❌ CLOUDFLARE_ACCOUNT_ID not set"
+  exit 1
+fi
+
+# Set up governance-specific environment variables
+export GOVERNANCE_ENABLED=${GOVERNANCE_ENABLED:-true}
+export AI_SERVICE_AVAILABLE=${AI_SERVICE_KEY:+true}
+
+echo "✅ Governance environment configured"
+echo "   - Governance Enabled: $GOVERNANCE_ENABLED"
+echo "   - AI Service Available: ${AI_SERVICE_AVAILABLE:-false}"
+
+# Export for subsequent steps
+echo "GOVERNANCE_ENABLED=$GOVERNANCE_ENABLED" >> $GITHUB_ENV
+echo "AI_SERVICE_AVAILABLE=${AI_SERVICE_AVAILABLE:-false}" >> $GITHUB_ENV
