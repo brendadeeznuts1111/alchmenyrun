@@ -8,6 +8,60 @@
 
 ## 📋 Quick Reference
 
+Scopes are Alchemy's filesystem-like containers for resources.  
+They give you three guarantees:
+
+1. **Naming isolation** – every resource id is prefixed by its scope path.  
+2. **State isolation** – each scope owns one state file.  
+3. **Cleanup isolation** – you can destroy a scope without touching its siblings.
+
+### Hierarchy (Five Levels)
+
+| Level | Created by | State dir example | Lifetime |
+|-------|------------|-------------------|----------|
+| **Application** | `await alchemy("my-app")` | `.alchemy/my-app/` | until `app.finalize()` |
+| **Stage** | `{ stage: "prod" }` | `.alchemy/my-app/prod/` | until `alchemy destroy --stage prod` |
+| **Nested** | `await alchemy.run("backend", …)` | `.alchemy/my-app/prod/backend/` | auto at block exit |
+| **Resource** | implicit inside custom `Resource` | `.alchemy/my-app/prod/backend/my-resource/` | auto when parent finalized |
+| **Test** | `alchemy.test(import.meta, …)` | *ephemeral* | auto on test end |
+
+### Cleanup Strategies
+
+- **Sequential** (default) – one resource at a time.  
+- **Parallel** – `destroyStrategy: "parallel"` for CI speed.
+
+### Typical Flows
+
+```typescript
+// local sandbox
+await alchemy("my-app");          // uses $USER stage, default profile
+
+// CI build
+await alchemy("my-app", {
+  stage: `pr-${PR}`,
+  destroyStrategy: "parallel",
+  profile: "ci"
+});
+
+// prod deploy
+await alchemy("my-app", {
+  stage: "prod",
+  profile: "prod"
+});
+```
+
+### Remaining Work
+
+See [Issue #38](https://github.com/brendadeeznuts1111/alchmenyrun/issues/38) for tracking:
+
+1. **State-file locking** – prevent concurrent CI jobs on same stage.  
+2. **Granular finalize** – `scope.finalizeNested()` to clean one nested block.  
+3. **Retry on 429** – inside `app.finalize()` for Cloudflare rate limits.
+
+---
+
+## 📋 Detailed Overview
+
 The Alchemy Scope System is the core mechanism for organizing, isolating, and managing resources, analogous to directories in a filesystem. Scopes ensure environment isolation, enforce resource lifecycle management, and enable reliable cleanup—critical for both local development and CI/CD pipelines.
 
 ### Scope Hierarchy
