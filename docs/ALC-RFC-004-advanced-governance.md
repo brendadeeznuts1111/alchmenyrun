@@ -5,10 +5,21 @@
 - **Title:** Advanced Forum Governance Features
 - **Author:** Governance Committee
 - **Date:** 2025-10-27
-- **Status:** Draft
+- **Status:** Draft - Technical feasibility assessment completed
+- **Labels:** `enhancement`, `governance`, `rfc`, `phase-1-ready`, `ai-ml`, `security-reviewed`
+- **Meta Tracking:**
+  - **PR:** [#40](https://github.com/brendadeeznuts1111/alchmenyrun/pull/40)
+  - **Issue:** [#41](https://github.com/brendadeeznuts1111/alchmenyrun/issues/41)
+  - **Priority:** High
+  - **Team:** @alchemist_council
+  - **Timeline:** Phase 1 (Weeks 1-2) - AI Categorization MVP
+  - **Technical Review:** ✅ Completed (see ALC-RFC-004-technical-feasibility.md)
+  - **Security Review:** ✅ Completed (Data Privacy & Security section added)
+  - **CodeRabbit Review:** ✅ Addressed (Phase 4 added, privacy controls implemented)
 - **Related Documents**
   - **Technical Feasibility Assessment:** `docs/ALC-RFC-004-technical-feasibility.md`
   - **Previous RFCs:** ALC-RFC-001, ALC-RFC-002, ALC-RFC-003
+  - **Contributing Guidelines:** [CONTRIBUTING.md](https://github.com/brendadeeznuts1111/alchmenyrun/blob/main/CONTRIBUTING.md)
 
 ## Summary
 
@@ -397,3 +408,35 @@ The external AI categorization service must comply with:
 4. Full rollout planning
 
 **Approval Required:** Governance committee majority vote
+
+---
+
+## Comments & Discussion
+
+### Technical Implementation Notes
+- **AI Service Selection:** Evaluate OpenAI API vs Hugging Face for categorization service
+- **Database Extensions:** Need to add topic metadata, relationships, and metrics tables
+- **CLI Integration:** Extend existing `tgk` script with governance subcommands
+- **Testing Strategy:** Implement comprehensive integration tests for all new features
+
+### Security Considerations
+- **Data Privacy:** All PII handling reviewed and controls documented
+- **External API:** DPA/BAA requirements identified and compliance path outlined
+- **Audit Trail:** Full logging and monitoring strategy defined
+
+### Deployment Strategy
+- **Phase 1 Priority:** Focus on AI categorization MVP for immediate value
+- **Incremental Rollout:** Pilot on Data stream before organization-wide deployment
+- **Rollback Plan:** Ability to disable new features without system disruption
+
+### Open Questions
+- Should we implement relationship visualization in Phase 1 or defer to Phase 2?
+- What confidence threshold should trigger human override for AI categorization?
+- How to handle stakeholder privacy preferences for analytics?
+
+**For comments and discussion, please use:**
+- **PR Comments:** [#40](https://github.com/brendadeeznuts1111/alchmenyrun/pull/40)
+- **Tracking Issue:** [#41](https://github.com/brendadeeznuts1111/alchmenyrun/issues/41)
+- **Team Discussion:** @alchemist_council
+
+---
