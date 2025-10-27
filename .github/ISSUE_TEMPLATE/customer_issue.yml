@@ -1,0 +1,26 @@
+name: "Customer Issue"
+description: "Report from a customer group or topic"
+title: "[<group>] <topic>: <title>"
+labels: ["type/bug", "status/triage", "topic/forum-topic"]
+body:
+  - type: dropdown
+    id: group
+    attributes:
+      label: "Customer group"
+      options:
+        - group-alpha
+        - group-beta
+        - enterprise
+        - internal
+  - type: dropdown
+    id: impact
+    attributes:
+      label: "Impact level"
+      options:
+        - critical
+        - high
+        - low
+  - type: textarea
+    attributes:
+      label: "Thread / topic URL"
+      placeholder: "https://t.me/c/12345/99"
