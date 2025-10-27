@@ -6,22 +6,15 @@
 
 ---
 
-## 📋 Overview
+## 📋 Quick Reference
 
-This primer explains the core Alchemy workflow and how it enables **isolated environments by default** with **automated lifecycle management**. Understanding this workflow is essential for effective development and deployment.
+Alchemy workflow = isolated stages + automated lifecycle + zero contention.
 
----
+### Core Guarantees
 
-## 🎯 Core Principles
-
-### 1. **Stage Isolation**
-Every deployment context gets its own isolated stage with dedicated cloud resources.
-
-### 2. **Automated Lifecycle**
-Resources are created, updated, and destroyed automatically via `alchemy` commands.
-
-### 3. **Zero Resource Contention**
-No shared databases, no interference between environments, no "works on my machine" issues.
+1. **Stage isolation** – every deployment gets dedicated cloud resources.
+2. **Automated lifecycle** – create, update, destroy via `alchemy` commands.
+3. **Zero contention** – no shared databases, no environment interference.
 
 ---
 

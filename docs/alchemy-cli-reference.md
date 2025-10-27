@@ -6,9 +6,10 @@
 
 ---
 
-## 📋 Overview
+## 📋 Quick Reference
 
-The Alchemy Command Line Interface (CLI) is the primary tool for managing your Infrastructure-as-Code (IaC) defined in TypeScript. It provides a complete lifecycle management system for cloud resources across different stages and environments.
+The Alchemy CLI manages Infrastructure-as-Code defined in TypeScript.  
+Four core commands handle the complete resource lifecycle.
 
 ---
 
