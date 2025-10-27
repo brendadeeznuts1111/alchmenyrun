@@ -626,10 +626,18 @@ When adding new tests:
 
 ## Resources
 
-- [Bun Test Documentation](https://bun.sh/docs/cli/test)
-- [Bun Test API Reference](https://bun.sh/docs/test/api)
-- [Chain Qualifiers Guide](https://bun.sh/docs/test/chain-qualifiers)
-- [Type Testing with expectTypeOf](https://github.com/mmkal/expect-type)
+### Official Bun Documentation
+- **[Bun Official Docs Validation](./BUN_OFFICIAL_DOCS.md)** - Our test suite validated against official Bun docs
+- [Bun Test Documentation](https://bun.sh/docs/test) - Main test runner docs
+- [Bun Test Writing](https://bun.sh/docs/test/writing) - Writing tests guide
+- [Bun Test Configuration](https://bun.sh/docs/test/configuration) - Configuration options
+- [Bun Mocking](https://bun.sh/docs/test/mocks) - Mock functions and spies
+- [Bun CLI Reference](https://bun.sh/docs/cli/test) - Command-line options
+
+### Additional Resources
+- [Bun v1.2.20 Release](https://bun.sh/blog/bun-v1.2.20) - Advanced matchers release
+- [Type Testing with expectTypeOf](https://github.com/mmkal/expect-type) - Type testing library
+- [Jest Compatibility](https://jestjs.io/docs/expect) - Jest API reference
 
 ## License
 
