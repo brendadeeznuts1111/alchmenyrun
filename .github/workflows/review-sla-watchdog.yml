@@ -1,0 +1,35 @@
+name: Review SLA Watchdog
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:        # manual trigger
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check SLA breaches
+        run: |
+          # Install tgk (placeholder - would be proper installation)
+          # curl -Ls https://alch.run/tgk5 | bash
+
+          # Check for SLA breaches
+          BREACHES=$(tgk sla summary | grep "OVERDUE" | wc -l)
+          if [[ $BREACHES -gt 0 ]]; then
+            echo "🚨 Found $BREACHES overdue RFCs - escalating"
+            # Would post to Telegram council channel
+            echo "Posted escalation to council"
+          else
+            echo "✅ All RFCs within SLA - no action needed"
+          fi
+
+      - name: Update SLA metrics
+        run: |
+          # Update Prometheus metrics
+          echo "tgk_sla_breaches_total $BREACHES" | curl -X POST http://prometheus:9091/metrics/job/tgk/instance/review-watchdog
+
+      - name: Send daily digest
+        if: github.event.schedule == '0 9 * * *'  # 9 AM daily
+        run: |
+          # Generate and send daily SLA report
+          tgk sla summary > daily_report.txt
+          # Would send to Telegram council

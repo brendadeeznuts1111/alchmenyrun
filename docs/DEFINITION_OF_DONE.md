@@ -1272,3 +1272,125 @@ and watch the entire RFC factory appear inside 90 seconds.
 6. **Roll-Forward / Roll-Back**
    - Forward: merge `tgk@v4.1` (best-practice naming).
    - Backward: `pipx install tgk@v4.0` (previous emoji naming) ≤ 5 min.
+
+---
+
+### 19.4 Reviewer Intelligence & SLA Orchestration (tgk Phase-5)
+
+#### 1. Goal
+- `/rfc submit` → bot **picks the minimal, correct reviewer set** (CODEOWNERS + load-balancing + vacation calendar).
+- **SLA timer** starts automatically (per stream type).
+- **Nudges** escalate every 24 h until `/lgtm` or `/delegate`.
+- **Auto-counts** `/lgtm` reactions vs policy; merges when threshold met.
+- Metrics: **review-latency p50/p95**, **review-load distribution**, **escalation rate**.
+
+#### 2. One-Line Install (extends §19.3)
+```bash
+curl -Ls https://alch.run/tgk5 | bash
+# or
+pipx install --upgrade git+https://github.com/alchemist/tgk@v5.0.0
+tgk --version   # 5.0.0+
+```
+
+#### 3. New Command Tree
+```
+tgk review                  # reviewer ops
+  ├─ assign --id <rfc#>    # AI picks reviewers
+  ├─ nudge  --id <rfc#>    # manual ping
+  ├─ delegate <old> <new>  # move review
+  └─ stats  --user @alice  # personal load
+
+tgk sla                     # SLA orchestration
+  ├─ start --id <rfc#>     # starts timer
+  ├─ extend --id <rfc#> --hours 24 --reason
+  └─ summary               # open SLAs board
+
+tgk merge                   # policy-gated merge
+  ├─ ready --id <rfc#>     # true if enough LGTM
+  └─ auto --id <rfc#>      # performs GH merge
+```
+
+#### 4. Minimal Review-Bootstrap Script
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# CI triggered after PR opened
+
+RFC_NUM=$(gh pr view --json number -q .number)
+STREAM=$(gh pr view --json headRepository -q .headRepository.name | sed 's/^rfc-//')
+
+# 1. AI assigns reviewers
+REVIEWERS=$(tgk review assign --id $RFC_NUM -o json | jq -r '.[].handle')
+for r in $REVIEWERS; do
+  gh pr edit $RFC_NUM --add-reviewer ${r#@}
+done
+
+# 2. SLA starts
+tgk sla start --id $RFC_NUM --stream $STREAM
+
+# 3. Schedule nudge cron (24 h)
+echo "0 */24 * * * tgk review nudge --id $RFC_NUM" | crontab -
+
+# 4. Post reviewer card in topic
+tgk card post -c $STREAM_TOPIC_ID \
+  -t "🕵️ Review requested" \
+  -d "RFC #$RFC_NUM\nReviewers: $REVIEWERS\nSLA: $(tgk sla remaining --id $RFC_NUM) h" \
+  --button "✅ /lgtm" "/lgtm rfc $RFC_NUM" \
+  --button "➕ /delegate" "/delegate rfc $RFC_NUM"
+```
+Saved as `.github/workflows/review-orchestrate.yml`.
+
+#### 5. Security & Compliance
+- Reviewers must be **CODEOWNERS *and* stream policy allow-list**.
+- **Vacation API** (Google Calendar) respected — bot skips OOO users.
+- **SLA extensions** logged with reason → Loki → audit.
+- **Auto-merge** blocked outside business hours (OPA rule).
+
+#### 6. Observability & AI
+New metrics:
+```
+tgk_review_assignment_total{stream,type}
+tgk_review_latency_hours{stream,reviewer}
+tgk_sla_breaches_total{stream}
+tgk_lgtm_count_total{stream,rfc}
+```
+
+AI features:
+- **Load-balancing**: picks reviewers with **lowest open RFC count**.
+- **Expertise model**: embeddings of last 100 merged RFCs vs diff → top 3 experts.
+- **Escalation predictor**: warns 12 h before SLA breach.
+
+#### 7. CI Template (GitHub Actions)
+```yaml
+name: Reviewer SLA Watchdog
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 h
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check SLA breaches
+        run: |
+          BREACHES=$(tgk sla breach-list -o json | jq length)
+          if [[ $BREACHES -gt 0 ]]; then
+            tgk card post -c $COUNCIL_ID \
+              -t "🚨 SLA Breach" \
+              -d "$BREACHES RFCs overdue – escalate or extend." \
+              --button "View Board" "/sla board"
+          fi
+```
+
+#### 8. Enhanced Done Criteria
+- [ ] `tgk@v5` installed
+- [ ] `/rfc submit` auto-assigns ≤ 30 s, **no manual picker**.
+- [ ] **≤ 5 % SLA breaches** over 14-day window.
+- [ ] **p95 review latency** visible on Grafana "Review KPI" dashboard.
+- [ ] **Auto-merge** works for `sec|sre|data|product` streams (spot-check 10 RFCs).
+- [ ] Vacation/OOO respected (test calendar block).
+
+#### 9. Roll-Forward / Roll-Back
+- Forward: merge `tgk@v5`, set `TGK_REVIEW_ENABLE=1`.
+- Backward: `pipx install tgk@v4` (no reviewer engine) ≤ 5 min.
+
+Once §19.4 lands, the council only needs to **read the daily digest**; the bot **finds reviewers, enforces SLA, counts LGTM, and merges**.
