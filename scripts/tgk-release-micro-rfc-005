@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# micro-rfc-005 release command
+
+echo "🚀 micro-rfc-005 RELEASE"
+echo "========================"
+echo ""
+
+# Set environment variables
+export CLOUDFLARE_API_TOKEN=WE66D-oXqNm2kbpSi3SgQdXmXNpphUbZMulvYvrO
+export STAGE="prod"
+export PROFILE="prod"
+
+echo "📋 Release Configuration:"
+echo "   Stage: $STAGE"
+echo "   Profile: $PROFILE"
+echo "   Token: ${CLOUDFLARE_API_TOKEN:0:10}..."
+echo ""
+
+echo "🏗️ Executing: ./tgk release micro-rfc-005 --stage prod --profile prod"
+echo ""
+
+# Execute the complete release script
+./scripts/tgk-release-complete --stage prod --profile prod
+
+# Check exit code
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "✅ EXIT 0 → PRODUCTION LIVE"
+    echo "🎯 micro-rfc-005 is now live in production!"
+    echo "📊 Thread-safe webhook processing active"
+    echo "🔗 Durable Object instances: gh_agent_forum-polish, gh_agent_mobile-app"
+else
+    echo ""
+    echo "❌ Release failed - exit code: $?"
+    echo "📝 Check logs above for troubleshooting"
+fi

@@ -2,6 +2,10 @@ name = "github-webhook"
 main = "index.ts"
 compatibility_date = "2025-10-27"
 
+[[migrations]]
+tag = "v1"
+new_classes = [ "GithubAgent" ]
+
 [env.prod]
 name = "github-webhook-prod"
 

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Create a clean stage for micro-rfc-005 deployment
+
+set -euo pipefail
+
+echo "🚀 CREATING CLEAN STAGE FOR micro-rfc-005"
+echo "========================================"
+echo ""
+
+# Set environment variables
+export CLOUDFLARE_API_TOKEN=WE66D-oXqNm2kbpSi3SgQdXmXNpphUbZMulvYvrO
+export STAGE="micro-rfc-005-clean"
+
+echo "📋 Configuration:"
+echo "   Stage: $STAGE"
+echo "   Token: ${CLOUDFLARE_API_TOKEN:0:10}..."
+echo ""
+
+echo "🏗️ Creating clean stage: $STAGE"
+
+# Try to create a clean stage by removing existing state
+if [ -d ".alchemy/cloudflare-demo/$STAGE" ]; then
+    echo "🗑️ Removing existing stage state..."
+    rm -rf ".alchemy/cloudflare-demo/$STAGE"
+fi
+
+echo "✅ Clean stage ready: $STAGE"
+echo ""
+
+echo "🎯 Stage creation complete!"
+echo "   - No encrypted baggage"
+echo "   - Fresh deployment target"
+echo "   - Ready for worker-only deployment"
