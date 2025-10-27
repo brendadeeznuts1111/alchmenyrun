@@ -3,7 +3,7 @@
 | Stage | Owner | State | Evidence |
 |-------|-------|-------|----------|
 | Bootstrap | Infra | ✅ | D1 database, Worker deployed, secrets set, metadata created |
-| Basic Routing | Infra | ⏳ | Email routing rule needs manual setup in Cloudflare dashboard |
+| Basic Routing | Infra | ⏳ | Ready for email routing rule in Cloudflare dashboard |
 | AI Analysis | Quality | ⏳ | Dashboard `ai_sentiment_score` visible |
 | Dynamic Chat-ID | Integrations | 🔒 | Blocked: on-call API key |
 | Bidirectional Reply | Integrations | 🔒 | Blocked: SendGrid domain auth |
