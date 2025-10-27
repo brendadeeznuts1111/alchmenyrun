@@ -445,6 +445,58 @@ BUN_TEST_UPDATE_SNAPSHOTS=false bun test
 BUN_TEST_TIMEOUT=30000 bun test
 ```
 
+## Concurrent Integration Tests
+
+### Real tgk Command Execution
+
+The `tgk-concurrent-integration.test.ts` file demonstrates concurrent testing with **actual tgk CLI commands**:
+
+```typescript
+// Concurrent RFC creation with real commands
+test.concurrent.each([
+  { rfcCount: 3, forumPrefix: "rfc-light" },
+  { rfcCount: 5, forumPrefix: "rfc-medium" },
+  { rfcCount: 10, forumPrefix: "rfc-heavy" },
+])("create $rfcCount RFCs concurrently", async ({ rfcCount, forumPrefix }) => {
+  const forumName = generateForumName(forumPrefix);
+
+  // Create forum
+  executeTgkCommand(`tgk group-create "${forumName}" --forum`);
+
+  // Create RFCs concurrently
+  const results = await Promise.all(
+    Array.from({ length: rfcCount }, (_, i) =>
+      executeTgkCommand(`tgk pin-card "${forumName}" "RFC-${i}" "Test RFC"`)
+    )
+  );
+
+  // Verify performance and success rate
+  expect(results.filter(r => r.success).length).toBeGreaterThan(0);
+});
+```
+
+### Test Categories
+
+1. **Concurrent RFC Creation**: Multiple forums and cards created in parallel
+2. **Approval Workflows**: Parallel approval processing from multiple reviewers
+3. **Notification System**: Burst notification handling and rate limiting
+4. **Worker Deployment**: Concurrent worker deployment and status checks
+5. **Performance Benchmarks**: Throughput and latency measurements
+6. **Race Condition Detection**: Validates DO thread-safety under concurrent load
+
+### Running Integration Tests
+
+```bash
+# Run concurrent integration tests
+bun test src/tests/advanced/tgk-concurrent-integration.test.ts
+
+# Run with high concurrency
+bun test src/tests/advanced/tgk-concurrent-integration.test.ts --max-concurrency=20
+
+# Run specific concurrent scenarios
+bun test --test-name-pattern "concurrent approval"
+```
+
 ## Examples
 
 ### Example 1: RFC Type Testing

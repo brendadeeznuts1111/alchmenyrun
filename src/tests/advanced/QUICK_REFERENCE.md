@@ -188,11 +188,54 @@ expect(rfcData).toMatchInlineSnapshot(`
 `);
 ```
 
+## 🔗 Concurrent Integration Tests
+
+### Real tgk Command Execution
+```typescript
+// Execute actual CLI commands concurrently
+test.concurrent.each([
+  { rfcCount: 5, forumPrefix: "test" }
+])("create $rfcCount RFCs", async ({ rfcCount, forumPrefix }) => {
+  const forum = generateForumName(forumPrefix);
+
+  // Create forum
+  executeTgkCommand(`tgk group-create "${forum}" --forum`);
+
+  // Create RFCs concurrently
+  const results = await Promise.all(
+    Array.from({ length: rfcCount }, (_, i) =>
+      executeTgkCommand(`tgk pin-card "${forum}" "RFC-${i}" "Test"`)
+    )
+  );
+
+  expect(results.filter(r => r.success).length).toBeGreaterThan(0);
+});
+```
+
+### Available CLI Commands
+```bash
+# Forum creation
+tgk group-create "forum-name" --forum
+
+# Card pinning
+tgk pin-card "forum-name" "Title" "Description"
+
+# Worker deployment
+tgk worker deploy "worker-name" --stream="stream-name"
+
+# Cleanup
+tgk unpin-all "forum-name"
+tgk card-delete "forum-name" 123
+```
+
 ## 🚀 Quick Commands
 
 ```bash
 # Run all tests
 bun test
+
+# Run concurrent integration tests
+bun test src/tests/advanced/tgk-concurrent-integration.test.ts
 
 # Run with coverage
 bun test --coverage
