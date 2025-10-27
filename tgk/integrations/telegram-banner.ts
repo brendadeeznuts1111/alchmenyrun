@@ -331,9 +331,9 @@ async function sendBannerUpdate(
     // First, try to edit the existing forum topic
     await makeRpcCall('channels.editForumTopic', {
       channel: process.env.TELEGRAM_COUNCIL_ID,
-      topicId: topic,
+      topicId: parseInt(topic), // Convert topic string to number
       title: message.split('\n')[0].substring(0, 32), // Use first line as title, max 32 chars
-      iconEmojiId: '📋'
+      iconColor: 0x6FB9F0 // Blue color for banners
     });
     
     // Then send a message to the topic with the full content
@@ -423,7 +423,7 @@ export function getAllBannerTopics(): {
 export async function listAllTopics(): Promise<any[]> {
   try {
     const topics = await getForumTopics();
-    return topics;
+    return topics || [];
   } catch (error) {
     console.error('❌ Failed to list topics:', error);
     throw error;
