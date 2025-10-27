@@ -52,10 +52,8 @@ jobs:
           
       - name: Update metrics
         run: |
-          # Update Prometheus metrics for forum polish
-          echo "tgk_forum_polish_applied_total{reason=\"${{ github.event.inputs.reason || 'quarterly' }}\"} 1" | \
-            curl -X POST http://prometheus:9091/metrics/job/tgk/instance/forum-polish \
-            -d @-
+          # Collect and push metrics using tgk-metrics script
+          ./scripts/tgk-metrics.sh collect-and-push /tmp/forum-audit.json
             
       - name: Commit audit ledger
         run: |
