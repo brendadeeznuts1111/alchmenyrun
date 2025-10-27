@@ -20,7 +20,7 @@ export function createReleaseCommands(): Command {
         // Generate release plan
         const plan = await generateReleasePlan({
           type: options.type as 'patch' | 'minor' | 'major',
-          components: options.components.split(',').map(c => c.trim()),
+          components: options.components.split(',').map((c: string) => c.trim()),
           urgency: options.urgency as 'low' | 'normal' | 'high' | 'critical'
         });
         
@@ -66,7 +66,7 @@ export function createReleaseCommands(): Command {
         console.log('   Use /lgtm to approve, /hold to request changes');
         
       } catch (error) {
-        console.error(`❌ Release planning failed: ${error.message}`);
+        console.error(`❌ Release planning failed: ${(error as Error).message}`);
         process.exit(1);
       }
     });
@@ -91,7 +91,7 @@ export function createReleaseCommands(): Command {
         }
         
       } catch (error) {
-        console.error(`❌ Approval error: ${error.message}`);
+        console.error(`❌ Approval error: ${(error as Error).message}`);
         process.exit(1);
       }
     });
@@ -126,7 +126,7 @@ export function createReleaseCommands(): Command {
         console.log('─'.repeat(50));
         
       } catch (error) {
-        console.error(`❌ Status check failed: ${error.message}`);
+        console.error(`❌ Status check failed: ${(error as Error).message}`);
         process.exit(1);
       }
     });
@@ -206,7 +206,7 @@ export function getEstimatedDuration(type: string, urgency: string): string {
     critical: 0.5
   };
   
-  return baseDuration[type] || '2h';
+  return baseDuration[type as keyof typeof baseDuration] || '2h';
 }
 
 export function assessRisk(config: ReleaseConfig): 'low' | 'medium' | 'high' {
@@ -369,7 +369,7 @@ export async function approveRelease(releaseId: string, role: string): Promise<A
     
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 

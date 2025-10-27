@@ -47,20 +47,21 @@ function formatReleaseApprovalMessage(plan: ReleasePlan): string {
 }
 
 export async function handleReleaseCallback(callbackData: string): Promise<void> {
-  const [action, releaseId, role] = callbackData.split(':');
+  const parts = callbackData.split(':');
+  const [action, releaseId, role] = parts;
   
   switch (action) {
     case 'release_approve':
-      await handleApproval(releaseId, role);
+      await handleApproval(releaseId || '', role || '');
       break;
     case 'release_hold':
-      await handleHold(releaseId);
+      await handleHold(releaseId || '');
       break;
     case 'release_reject':
-      await handleReject(releaseId);
+      await handleReject(releaseId || '');
       break;
     case 'release_details':
-      await handleDetails(releaseId);
+      await handleDetails(releaseId || '');
       break;
     default:
       console.warn(`Unknown callback action: ${action}`);
@@ -102,7 +103,7 @@ async function handleApproval(releaseId: string, role: string): Promise<void> {
   } catch (error) {
     await makeRpcCall('telegram.sendMessage', {
       chatId: process.env.TELEGRAM_COUNCIL_ID,
-      text: `❌ *Approval Failed*\n\n*Release ID:* ${releaseId}\n*Error:* ${error.message}`,
+      text: `❌ *Approval Failed*\n\n*Release ID:* ${releaseId}\n*Error:* ${(error as Error).message}`,
       parseMode: 'Markdown'
     });
   }

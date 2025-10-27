@@ -55,7 +55,7 @@ export async function evaluatePolicy(
     major: { 'tech-lead': 2, 'security': 1, 'product': 1 }
   };
 
-  const required = requirements[release.type] || {};
+  const required = requirements[release.type as keyof typeof requirements] || {};
   const approvalCounts = approvals.reduce((acc, approval) => {
     acc[approval.role] = (acc[approval.role] || 0) + 1;
     return acc;
@@ -78,7 +78,7 @@ export async function evaluatePolicy(
 
   for (const [role, requiredCount] of Object.entries(required)) {
     const currentCount = approvalCounts[role] || 0;
-    if (currentCount < requiredCount) {
+    if (currentCount < (requiredCount as number)) {
       allowed = false;
       reason = `Insufficient approvals for ${role}: ${currentCount}/${requiredCount}`;
       break;
@@ -99,7 +99,7 @@ export async function evaluatePolicy(
   return {
     allowed,
     reason,
-    requiredApprovals,
+    requiredApprovals: requiredApprovals as Array<{ role: string; count: number }>,
     currentApprovals
   };
 }

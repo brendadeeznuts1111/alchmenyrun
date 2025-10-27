@@ -22,11 +22,15 @@ export async function makeRpcCall<T = any>(
 
   if (optionsOrParams && typeof optionsOrParams === 'string') {
     // makeRpcCall('service', 'method', params) pattern
-    [service, method] = serviceOrMethod.split('.');
+    const parts = serviceOrMethod.split('.');
+    service = parts[0] || '';
+    method = parts[1] || '';
     params = optionsOrParams as any;
   } else {
     // makeRpcCall('service.method', params) pattern
-    [service, method] = serviceOrMethod.split('.');
+    const parts = serviceOrMethod.split('.');
+    service = parts[0] || '';
+    method = parts[1] || '';
     params = (optionsOrParams as Record<string, any>) || {};
   }
 
