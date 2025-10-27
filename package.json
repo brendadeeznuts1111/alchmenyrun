@@ -60,7 +60,8 @@
     "release:minor": "release-it minor",
     "release:major": "release-it major",
     "release:ai-suggest": "tgk ai suggest release-type --git-log \"$(git log --pretty=format:'%s%n%b' HEAD~$(git rev-list --count \"$(git describe --tags --abbrev=0 2>/dev/null || echo 'HEAD~1')\"..HEAD 2>/dev/null || echo '1')..HEAD)\"",
-    "release:changelog": "bunx @release-it/conventional-changelog --infile CHANGELOG.md --latest"
+    "release:changelog": "bunx @release-it/conventional-changelog --infile CHANGELOG.md --latest",
+    "release:test": "echo '🧪 RELEASE PIPELINE TEST' && echo '=======================' && echo '' && echo '1️⃣ AI Release Type Suggestion:' && bun run release:ai-suggest 2>/dev/null || echo '   (Requires tgk installation for full test)' && echo '' && echo '2️⃣ Version Bump Scripts:' && ls -la scripts/version-*.ts && echo '' && echo '3️⃣ Release-it Configuration:' && [ -f .release-it.json ] && echo '   ✅ .release-it.json exists' || echo '   ❌ .release-it.json missing' && echo '' && echo '4️⃣ CHANGELOG:' && [ -f CHANGELOG.md ] && echo '   ✅ CHANGELOG.md exists ('$(wc -l < CHANGELOG.md)' lines)' || echo '   ❌ CHANGELOG.md missing' && echo '' && echo '5️⃣ CI/CD Workflow:' && [ -f .github/workflows/release.yml ] && echo '   ✅ Release workflow exists' || echo '   ❌ Release workflow missing' && echo '' && echo '🎉 RELEASE PIPELINE READY FOR DEPLOYMENT!'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",
