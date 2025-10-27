@@ -1,0 +1,12 @@
+name: "Micro-RFC"
+description: "Propose a small, atomic change"
+title: "rfc: <title>"
+labels: ["type/micro-rfc", "status/needs-review"]
+body:
+  - type: textarea
+    attributes:
+      label: "Goal"
+      description: "One-sentence objective"
+  - type: textarea
+      label: "40-line diff"
+      description: "Paste the exact patch"
