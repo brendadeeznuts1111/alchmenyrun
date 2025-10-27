@@ -861,10 +861,19 @@ cmd_orchestrate() {
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             
+            # Enhanced: Parse changelog from RSS feed if not provided
+            if [ -z "$changelog" ]; then
+                echo "📡 Fetching release notes from GitHub RSS feed..."
+                changelog=$(curl -s "https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom" | grep -A 5 "<title>$version</title>" | grep -o '<content[^>]*>.*</content>' | sed 's/<[^>]*>//g' | head -3)
+                if [ -z "$changelog" ]; then
+                    changelog="Automated release $version - see changelog for details."
+                fi
+            fi
+            
             # Post to general channel
             echo "📢 Posting to @alchemist_general..."
             echo "   Title: 🚀 tgk $version Released!"
-            echo "   Changelog: $(echo "$changelog" | wc -l) lines"
+            echo "   Changelog: $(echo "$changelog" | wc -c) chars"
             echo "   Deep-link: https://github.com/brendadeeznuts1111/alchmenyrun/releases/tag/v$version"
             
             # Post to releases channel
@@ -884,9 +893,160 @@ cmd_orchestrate() {
             echo ""
             echo "✅ Release orchestration complete"
             ;;
+        "release-verify")
+            local expected_version="$2"
+            local timeout="${3:-300}"  # 5 minutes default
+            
+            echo "🔍 RELEASE VERIFICATION: $expected_version"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            
+            echo "⏱️  Monitoring GitHub releases for $timeout seconds..."
+            echo "   Expected tag: v$expected_version"
+            echo "   Expected release: https://github.com/brendadeeznuts1111/alchmenyrun/releases/tag/v$expected_version"
+            
+            local start_time=$(date +%s)
+            local end_time=$((start_time + timeout))
+            local found_tag=false
+            local found_release=false
+            
+            while [ $(date +%s) -lt $end_time ]; do
+                # Check GitHub API for tag
+                if ! $found_tag; then
+                    local tag_check=$(curl -s -H "Authorization: token ${{ github.token }}" \
+                        "https://api.github.com/repos/brendadeeznuts1111/alchmenyrun/git/refs/tags/v$expected_version" 2>/dev/null)
+                    if echo "$tag_check" | jq -e '.ref' >/dev/null 2>&1; then
+                        echo "✅ Git tag v$expected_version found"
+                        found_tag=true
+                    fi
+                fi
+                
+                # Check GitHub API for release
+                if ! $found_release; then
+                    local release_check=$(curl -s -H "Authorization: token ${{ github.token }}" \
+                        "https://api.github.com/repos/brendadeeznuts1111/alchmenyrun/releases/tags/v$expected_version" 2>/dev/null)
+                    if echo "$release_check" | jq -e '.id' >/dev/null 2>&1; then
+                        echo "✅ GitHub release v$expected_version found"
+                        local author=$(echo "$release_check" | jq -r '.author.login')
+                        local published=$(echo "$release_check" | jq -r '.published_at')
+                        echo "   Author: $author"
+                        echo "   Published: $published"
+                        found_release=true
+                    fi
+                fi
+                
+                # Check RSS feed
+                local rss_check=$(curl -s "https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom" | grep -c "<title>$expected_version</title>" || echo "0")
+                if [ "$rss_check" -gt 0 ]; then
+                    echo "✅ RSS feed updated with v$expected_version"
+                fi
+                
+                if $found_tag && $found_release; then
+                    echo ""
+                    echo "🎉 RELEASE VERIFICATION COMPLETE"
+                    echo "   All checks passed!"
+                    return 0
+                fi
+                
+                sleep 10
+            done
+            
+            echo ""
+            echo "❌ RELEASE VERIFICATION TIMEOUT"
+            if ! $found_tag; then
+                echo "   ❌ Git tag v$expected_version not found"
+            fi
+            if ! $found_release; then
+                echo "   ❌ GitHub release v$expected_version not found"
+            fi
+            echo "   📞 Manual verification required"
+            return 1
+            ;;
+        "release-security-check")
+            local version="$2"
+            
+            echo "🔐 RELEASE SECURITY CHECK: $version"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            
+            # Fetch release information from GitHub API
+            local release_info=$(curl -s -H "Authorization: token ${{ github.token }}" \
+                "https://api.github.com/repos/brendadeeznuts1111/alchmenyrun/releases/tags/v$version" 2>/dev/null)
+            
+            if ! echo "$release_info" | jq -e '.id' >/dev/null 2>&1; then
+                echo "❌ Release v$version not found"
+                return 1
+            fi
+            
+            # Security checks
+            local author=$(echo "$release_info" | jq -r '.author.login')
+            local published=$(echo "$release_info" | jq -r '.published_at')
+            local draft=$(echo "$release_info" | jq -r '.draft')
+            local prerelease=$(echo "$release_info" | jq -r '.prerelease')
+            
+            echo "📋 Release Details:"
+            echo "   Author: $author"
+            echo "   Published: $published"
+            echo "   Draft: $draft"
+            echo "   Prerelease: $prerelease"
+            echo ""
+            
+            # Security validations
+            local issues=0
+            
+            # Check if author is authorized
+            if [[ "$author" != "github-actions[bot]" && "$author" != "brendadeeznuts1111" ]]; then
+                echo "⚠️  WARNING: Unexpected release author: $author"
+                ((issues++))
+            else
+                echo "✅ Author verification passed"
+            fi
+            
+            # Check publication timing (should be recent)
+            local pub_timestamp=$(date -d "$published" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$published" +%s 2>/dev/null)
+            local now_timestamp=$(date +%s)
+            local age_hours=$(( (now_timestamp - pub_timestamp) / 3600 ))
+            
+            if [ $age_hours -gt 24 ]; then
+                echo "⚠️  WARNING: Release is $age_hours hours old"
+                ((issues++))
+            else
+                echo "✅ Publication timing acceptable"
+            fi
+            
+            # Check for required assets
+            local asset_count=$(echo "$release_info" | jq '.assets | length')
+            if [ "$asset_count" -eq 0 ] && [[ "$version" != *"canary"* ]]; then
+                echo "⚠️  WARNING: No release assets found"
+                ((issues++))
+            else
+                echo "✅ Release assets present"
+            fi
+            
+            # Check RSS feed consistency
+            local rss_count=$(curl -s "https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom" | grep -c "<title>$version</title>" || echo "0")
+            if [ "$rss_count" -eq 0 ]; then
+                echo "⚠️  WARNING: Release not found in RSS feed"
+                ((issues++))
+            else
+                echo "✅ RSS feed consistency verified"
+            fi
+            
+            echo ""
+            if [ $issues -eq 0 ]; then
+                echo "🎉 SECURITY CHECK PASSED"
+                echo "   No security issues detected"
+                return 0
+            else
+                echo "⚠️  SECURITY CHECK ISSUES FOUND"
+                echo "   $issues potential security concerns identified"
+                echo "   Manual review recommended"
+                return $issues
+            fi
+            ;;
         *)
             echo "❌ Unknown orchestration action: $action" >&2
-            echo "💡 Available: release-announcement" >&2
+            echo "💡 Available: release-announcement, release-verify, release-security-check" >&2
             exit 1
             ;;
     esac

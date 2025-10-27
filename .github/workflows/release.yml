@@ -186,15 +186,30 @@ jobs:
             bun run "release:$RELEASE_TYPE"
           fi
 
+      - name: Release Verification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          echo "🔍 Verifying release v$NEW_VERSION..."
+          bun run orchestrate:verify "$NEW_VERSION" 60  # 1 minute timeout
+
+      - name: Release Security Check
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          echo "🔐 Performing security check for v$NEW_VERSION..."
+          bun run orchestrate:security "$NEW_VERSION"
+
       - name: Release Orchestration
         if: success()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
-          CHANGELOG=$(tail -20 CHANGELOG.md | head -15)
-
-          tgk orchestrate release-announcement "$NEW_VERSION" "$CHANGELOG"
+          echo "🎯 Orchestrating release announcement for v$NEW_VERSION..."
+          bun run orchestrate:announce
 
   canary-release:
     if: contains(github.event.inputs.bump_type || '', 'canary')
