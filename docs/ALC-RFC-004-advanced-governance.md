@@ -255,11 +255,17 @@ tgk forum governance analytics --period quarterly
 - [ ] Implement automated prioritization
 - [ ] Build comprehensive analytics dashboard
 
-### Phase 3: Optimization (Week 5-6)
+### Phase 3: Integration (Week 5-6)
 - [ ] Performance optimization
 - [ ] Advanced ML features
 - [ ] Integration with existing workflows
 - [ ] User training and documentation
+
+### Phase 4: Deployment (Week 7-8)
+- [ ] Production readiness review
+- [ ] Staged rollout to user groups
+- [ ] Production monitoring and alerting
+- [ ] Post-deployment user support
 
 ## Success Metrics
 
@@ -311,6 +317,70 @@ tgk forum governance analytics --period quarterly
 2. **Add Governance Guardrails** - Include manual override mechanisms and human-in-the-loop approvals for critical decisions
 3. **Consider Incremental Adoption** - Pilot on one stream first (as mentioned) rather than organization-wide rollout
 4. **Define Success Criteria More Specifically** - Replace qualitative metrics like "improved forum organization" with objective, measurable KPIs
+
+## Data Privacy & Security
+
+### Data Classification
+Topic metadata contains the following data classifications:
+
+**Personally Identifiable Information (PII):**
+- Stakeholder usernames (e.g., "@alice", "@bob", "@charlie")
+- Email addresses (if included in stakeholder lists)
+- User identification data linked to forum participants
+
+**Non-sensitive Data:**
+- Topic titles and descriptions
+- Stream assignments and categories
+- Priority scores and engagement metrics
+- RFC references and deadline dates
+- Relationship mappings and dependency data
+
+### External AI Service Agreements
+The external AI categorization service must comply with:
+- **Data Processing Agreement (DPA):** Required for all data transfers
+- **Business Associate Agreement (BAA):** If handling health-related forum topics
+- **Service Level Agreement (SLA):** 99.9% uptime, <24hr data deletion upon request
+- **Security Assessment:** Annual SOC 2 Type II or equivalent certification
+
+### PII Handling Controls
+**Data Anonymization Requirements:**
+- Stakeholder usernames must be hashed or tokenized before external transmission
+- Email addresses must be masked (e.g., "alice@domain.com" → "a***e@d***n.com")
+- Direct identifiers removed from topic metadata sent to AI service
+
+**Transmission Security:**
+- All data encrypted in transit (TLS 1.3+)
+- API authentication via OAuth 2.0 or API keys with rotation
+- Rate limiting and request validation implemented
+
+### Retention and Deletion Policies
+**External Service Data Retention:**
+- Maximum retention: 30 days for processing logs
+- Immediate deletion upon categorization completion
+- No long-term storage of topic content or PII
+- Automated deletion processes with audit trails
+
+**Local Data Retention:**
+- Topic metadata retained per existing governance policies
+- PII handling follows platform data retention standards
+- Audit logs maintained for 2 years minimum
+
+### Audit and Logging Approach
+**Local Audit Controls:**
+- All AI service interactions logged with request/response metadata
+- PII transmission events flagged and monitored
+- Access controls: governance team only, with audit logging
+- Quarterly review of external service data handling
+
+**External Service Auditing:**
+- Annual third-party security assessments
+- Data processing activity reports provided quarterly
+- Incident response procedures documented and tested
+
+**Compliance References:**
+- [Platform Data Privacy Policy](/docs/privacy-policy.md)
+- [GDPR Compliance Guidelines](/docs/gdpr-compliance.md)
+- [Data Processing Agreement Template](/docs/dpa-template.md)
 
 ---
 
