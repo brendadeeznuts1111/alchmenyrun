@@ -1,0 +1,48 @@
+{
+  "name": "kinja-email-orchestrator",
+  "description": "Kinja-enhanced Phase-6 e-mail orchestration (remote Worker)",
+  "command": "npx",
+  "args": [
+    "wrangler",
+    "dev",
+    "--remote",
+    "--config=.github/rfc006/phase-6-deployment.yml",
+    "--",
+    "--port",
+    "0"
+  ],
+  "env": {
+    "WRANGLER_SEND_METRICS": "false",
+    "CLOUDFLARE_ACCOUNT_ID": "7a470541a704caaf91e71efccc78fd36",
+    "CLOUDFLARE_API_TOKEN": "mAOAD303u2Y3hm3wmYyxnWWz8_Y0kl_-2mJzd5So"
+  },
+  "rules": [
+    {
+      "name": "kinja:analyze",
+      "description": "Send subject+body to Kinja and return priority, confidence, ETA",
+      "prompt": "kinja:analyze\n$SUBJECT\n$BODY",
+      "handler": "http-post",
+      "url": "https://tgk-email-orchestrator.utahj4754.workers.dev/kinja/analyze",
+      "headers": { "Content-Type": "application/json" },
+      "body": {
+        "subject": "{{SUBJECT}}",
+        "body": "{{BODY}}"
+      }
+    },
+    {
+      "name": "kinja:test",
+      "description": "Run a quick smoke test against the remote Worker",
+      "prompt": "kinja:test",
+      "handler": "http-get",
+      "url": "https://tgk-email-orchestrator.utahj4754.workers.dev/kinja/health"
+    },
+    {
+      "name": "kinja:metrics",
+      "description": "Pull live Prometheus metrics from the Worker",
+      "prompt": "kinja:metrics [$METRIC]",
+      "handler": "http-get",
+      "url": "https://tgk-email-orchestrator.utahj4754.workers.dev/metrics",
+      "params": { "name": "{{METRIC}}" }
+    }
+  ]
+}
