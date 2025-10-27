@@ -239,6 +239,11 @@ See the [examples](./examples/) directory for complete usage examples:
 4. Run tests: `bun run test`
 5. Submit a pull request
 
+## Profiles & Multi-Account
+
+Use per-resource or global profiles exactly as described in the
+[Alchemy Profiles Guide](https://github.com/brendadeeznuts1111/alchmenyrun/blob/main/docs/PROFILES_GUIDE.md).
+
 ## License
 
 MIT

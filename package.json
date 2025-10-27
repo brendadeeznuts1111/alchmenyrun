@@ -6,13 +6,14 @@
   "scripts": {
     "alchemy:dev": "bun --watch ./alchemy.run.ts --dev",
     "dev": "bun run build:css && bun run alchemy:dev",
+    "dev:clean": "pkill -f workerd || true && bun run dev",
     "deploy": "bun run build:css && bun ./alchemy.run.ts",
     "deploy:prod": "bun run build:css && bun ./alchemy.run.ts --stage prod",
     "deploy:read": "PHASE=read bun ./alchemy.run.ts",
     "scope:test": "PHASE=read bun ./alchemy.run.ts",
     "destroy": "PHASE=destroy bun ./alchemy.run.ts",
     "destroy:prod": "PHASE=destroy bun ./alchemy.run.ts --stage prod",
-    "build": "bun run build:css",
+    "build": "bun run build:css && cd apps/demo-app && bun run build",
     "build:css": "tailwindcss -i ./src/frontend/index.css -o ./src/frontend/index.css --minify",
     "check": "bun tsc -b && bun run format:check",
     "format": "oxfmt '.' '!./node_modules/' '!./dist/'",
@@ -35,7 +36,13 @@
     "kit:release": "npm version prerelease && git push --tags",
     "app:new": "./scripts/create-app.sh",
     "feed:open": "open https://github.com/brendadeeznuts1111/alchmenyrun/releases.atom",
-    "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts"
+    "build:frontend": "PHASE=read bun ./scripts/build-frontend.ts",
+    "monitor:collisions": "./scripts/monitor-collisions.sh",
+    "notify:telegram": "./scripts/notify-telegram.sh",
+    "telegram:rollback": "./scripts/telegram-rollback.sh",
+    "telegram:replace-card": "./scripts/replace-card.sh",
+    "telegram:unpin": "./scripts/unpin.sh",
+    "telegram:cli": "./scripts/tgk"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.2",

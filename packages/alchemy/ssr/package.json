@@ -1,0 +1,45 @@
+{
+  "name": "@alchemy/ssr",
+  "version": "0.1.0",
+  "description": "Server-side rendering helpers and streaming utilities for Alchemy",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "alchemy",
+    "ssr",
+    "streaming",
+    "server-side-rendering",
+    "react"
+  ],
+  "author": "Alchemy Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brendadeeznuts1111/alchmenyrun.git",
+    "directory": "packages/alchemy/ssr"
+  },
+  "bugs": {
+    "url": "https://github.com/brendadeeznuts1111/alchmenyrun/issues"
+  },
+  "homepage": "https://github.com/brendadeeznuts1111/alchmenyrun#readme"
+}

@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🚀 Alchemy Community Discord
+    url: https://discord.gg/jwKw8dBJdN
+    about: Ask questions and discuss with the community
+  - name: 📚 Alchemy Documentation
+    url: https://alchemy.run/getting-started
+    about: Browse official documentation and guides
+  - name: 🐛 Bug Reports
+    url: https://github.com/brendadeeznuts1111/alchmenyrun/issues/new?assignees=brendadeeznuts1111&labels=bug&template=bug_report.md
+    about: Report a bug or issue
+  - name: ✨ Feature Requests
+    url: https://github.com/brendadeeznuts1111/alchmenyrun/issues/new?assignees=brendadeeznuts1111&labels=enhancement&template=feature_request.md
+    about: Suggest a new feature or enhancement

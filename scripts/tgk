@@ -1,0 +1,271 @@
+#!/usr/bin/env bash
+# tgk - Telegram Infrastructure-as-Code CLI Toolkit
+# Usage: tgk <command> [options]
+#
+# A comprehensive CLI for managing Telegram entities programmatically
+# using the Bot HTTP API (no MTProto required)
+#
+# Requires: TELEGRAM_BOT_TOKEN environment variable
+
+set -euo pipefail
+
+# Configuration
+API_BASE="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+
+# Helper functions
+require_token() {
+    if [ -z "${TELEGRAM_BOT_TOKEN:-}" ]; then
+        echo "Error: TELEGRAM_BOT_TOKEN environment variable not set"
+        echo "Set it with: export TELEGRAM_BOT_TOKEN='your_bot_token_here'"
+        exit 1
+    fi
+}
+
+make_request() {
+    local method="$1"
+    local endpoint="$2"
+    shift 2
+
+    local url="${API_BASE}/${endpoint}"
+
+    # Build curl arguments
+    local curl_args=(-s -X POST "$url")
+    for arg in "$@"; do
+        curl_args+=(-d "$arg")
+    done
+
+    # Make request and check for errors
+    local response
+    response=$(curl "${curl_args[@]}")
+
+    # Check if request was successful
+    if ! echo "$response" | jq -e '.ok // false' >/dev/null 2>&1; then
+        echo "Error: $(echo "$response" | jq -r '.description // "Unknown error"')" >&2
+        echo "$response" >&2
+        return 1
+    fi
+
+    echo "$response"
+}
+
+# Commands
+cmd_chat_list() {
+    require_token
+    make_request "GET" "getUpdates" | jq '.result[]?.message?.chat // .result[]?.channel_post?.chat // empty' | jq -s 'unique_by(.id) | sort_by(.title // .username // .first_name)'
+}
+
+cmd_group_create() {
+    local title="$1"
+    local forum="${2:-false}"
+
+    require_token
+
+    # Create group
+    local create_response
+    create_response=$(make_request "POST" "createGroupChat" "title=$title")
+
+    local chat_id
+    chat_id=$(echo "$create_response" | jq -r '.result.id')
+
+    echo "Created group '$title' with ID: $chat_id"
+
+    # Convert to supergroup if requested
+    if [ "$forum" = "true" ]; then
+        echo "Converting to supergroup..."
+        make_request "POST" "setChatPermissions" "chat_id=$chat_id" "permissions={\"can_send_messages\":true,\"can_send_media_messages\":true,\"can_send_polls\":true,\"can_send_other_messages\":true,\"can_add_web_page_previews\":true,\"can_change_info\":true,\"can_invite_users\":true,\"can_pin_messages\":true,\"can_manage_topics\":true}"
+        echo "Converted to supergroup"
+    fi
+
+    # Return chat info
+    echo "$create_response" | jq '.result'
+}
+
+cmd_channel_create() {
+    local title="$1"
+    local username="${2:-}"
+
+    require_token
+
+    if [ -n "$username" ]; then
+        make_request "POST" "createChannelChat" "title=$title" "username=$username"
+    else
+        make_request "POST" "createChannelChat" "title=$title"
+    fi
+}
+
+cmd_member_add() {
+    local chat_id="$1"
+    local username="$2"
+
+    require_token
+    make_request "POST" "addChatMember" "chat_id=$chat_id" "user_id=@$username"
+}
+
+cmd_role_set() {
+    local chat_id="$1"
+    local user_id="$2"
+    local pin="${3:-false}"
+    local manage_topics="${4:-false}"
+
+    require_token
+
+    # Set administrator rights
+    local rights="{\"can_post_messages\":true"
+    if [ "$pin" = "true" ]; then
+        rights="$rights,\"can_pin_messages\":true"
+    fi
+    if [ "$manage_topics" = "true" ]; then
+        rights="$rights,\"can_manage_topics\":true"
+    fi
+    rights="$rights}"
+
+    make_request "POST" "promoteChatMember" "chat_id=$chat_id" "user_id=$user_id" "rights=$rights"
+}
+
+cmd_pin_card() {
+    local chat_id="$1"
+    local title="$2"
+    local description="$3"
+
+    require_token
+
+    # Send message
+    local message_response
+    message_response=$(make_request "POST" "sendMessage" "chat_id=$chat_id" "text=**$title**\n\n$description" "parse_mode=Markdown" "disable_web_page_preview=true")
+
+    local message_id
+    message_id=$(echo "$message_response" | jq -r '.result.message_id')
+
+    # Pin message
+    make_request "POST" "pinChatMessage" "chat_id=$chat_id" "message_id=$message_id"
+
+    echo "Pinned card with message ID: $message_id"
+    echo "$message_response" | jq '.result'
+}
+
+cmd_card_replace() {
+    local chat_id="$1"
+    local message_id="$2"
+    local title="$3"
+    local description="$4"
+
+    require_token
+
+    local text="**$title**\n\n$description"
+    make_request "POST" "editMessageText" "chat_id=$chat_id" "message_id=$message_id" "text=$text" "parse_mode=Markdown"
+}
+
+cmd_card_delete() {
+    local chat_id="$1"
+    local message_id="$2"
+
+    require_token
+    make_request "POST" "deleteMessage" "chat_id=$chat_id" "message_id=$message_id"
+}
+
+cmd_unpin_all() {
+    local chat_id="$1"
+
+    require_token
+    make_request "POST" "unpinAllChatMessages" "chat_id=$chat_id"
+}
+
+cmd_permission_set() {
+    local chat_id="$1"
+    local permission="$2"
+    local value="$3"
+
+    require_token
+
+    local permissions="{}"
+    case "$permission" in
+        "send_messages")
+            permissions="{\"can_send_messages\":$value}"
+            ;;
+        *)
+            echo "Unknown permission: $permission"
+            exit 1
+            ;;
+    esac
+
+    make_request "POST" "setChatPermissions" "chat_id=$chat_id" "permissions=$permissions"
+}
+
+# Main command dispatcher
+main() {
+    local command="${1:-}"
+
+    case "$command" in
+        "chat-list")
+            cmd_chat_list
+            ;;
+        "group-create")
+            shift
+            local forum="false"
+            if [ "${1:-}" = "--forum" ]; then
+                forum="true"
+                shift
+            fi
+            cmd_group_create "$@"
+            ;;
+        "channel-create")
+            shift
+            cmd_channel_create "$@"
+            ;;
+        "member-add")
+            shift
+            cmd_member_add "$@"
+            ;;
+        "role-set")
+            shift
+            cmd_role_set "$@"
+            ;;
+        "pin-card")
+            shift
+            cmd_pin_card "$@"
+            ;;
+        "card-replace")
+            shift
+            cmd_card_replace "$@"
+            ;;
+        "card-delete")
+            shift
+            cmd_card_delete "$@"
+            ;;
+        "unpin-all")
+            shift
+            cmd_unpin_all "$@"
+            ;;
+        "permission-set")
+            shift
+            cmd_permission_set "$@"
+            ;;
+        *)
+            cat << 'EOF'
+tgk - Telegram Infrastructure-as-Code CLI Toolkit
+
+Usage: tgk <command> [options]
+
+Commands:
+    chat-list                    Discover chat IDs
+    group-create <title> [--forum]  Create group/supergroup
+    channel-create <title> [username]  Create channel
+    member-add <chat_id> <username>    Add member to chat
+    role-set <chat_id> <user_id> [options]  Set user role/permissions
+    pin-card <chat_id> <title> <desc>  Send and pin rich card
+    card-replace <chat_id> <msg_id> <title> <desc>  Edit pinned card
+    card-delete <chat_id> <msg_id>    Delete message
+    unpin-all <chat_id>               Unpin all messages
+    permission-set <chat_id> <perm> <value>  Set chat permissions
+
+Environment: TELEGRAM_BOT_TOKEN must be set
+Examples: tgk chat-list
+          tgk group-create "My Group" --forum
+          tgk pin-card -1001234567890 "Status" "All good"
+EOF
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

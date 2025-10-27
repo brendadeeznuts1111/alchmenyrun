@@ -1,0 +1,116 @@
+name: Collision Monitoring
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+  workflow_run:
+    workflows: ["Deploy Application", "Alchemy"]
+    types:
+      - completed
+
+jobs:
+  monitor-collisions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Run collision monitoring
+        id: monitor
+        run: |
+          echo "🔍 Running collision monitoring..."
+          output=$(bun run monitor:collisions)
+          echo "$output"
+          
+          # Extract metrics for GitHub status
+          collision_count=$(echo "$output" | grep "Collisions detected:" | awk '{print $3}')
+          success_rate=$(echo "$output" | grep "Success Rate:" | awk '{print $3}' | sed 's/%//')
+          
+          echo "collision_count=$collision_count" >> $GITHUB_OUTPUT
+          echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
+          
+          # Set exit code based on results
+          if [ "$collision_count" -gt 0 ]; then
+            echo "❌ Collisions detected - needs attention"
+            exit 1
+          else
+            echo "✅ Zero collisions - system healthy"
+          fi
+      
+      - name: Create issue if collisions detected
+        if: steps.monitor.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const collision_count = '${{ steps.monitor.outputs.collision_count }}';
+            const success_rate = '${{ steps.monitor.outputs.success_rate }}';
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Collision Alert: ${collision_count} naming conflicts detected`,
+              body: `
+              ## 🚨 Naming Collision Alert
+              
+              **Monitoring detected ${collision_count} naming conflicts** in recent deployments.
+              
+              ### 📊 Metrics:
+              - **Collisions**: ${collision_count}
+              - **Success Rate**: ${success_rate}%
+              - **Detected**: ${new Date().toISOString()}
+              
+              ### 🔧 Recommended Actions:
+              1. Review failed deployment logs
+              2. Ensure stage-unique pattern adoption
+              3. Update any remaining manual resource naming
+              4. Run \`bun run monitor:collisions\` for detailed analysis
+              
+              ### 📋 Investigation Commands:
+              \`\`\`bash
+              # Check recent failures
+              gh run list --limit 20 --json conclusion,databaseId | jq '.[] | select(.conclusion == "failure")'
+              
+              # Detailed collision analysis
+              bun run monitor:collisions
+              \`\`\`
+              
+              ---
+              🤖 *This issue was automatically created by the collision monitoring system*
+              `,
+              labels: ['bug', 'infrastructure', 'collision-alert']
+            });
+      
+      - name: Update metrics dashboard
+        run: |
+          echo "📈 Updating metrics dashboard..."
+          
+          # Create/update metrics file
+          cat > metrics/collision-metrics.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "collision_count": "${{ steps.monitor.outputs.collision_count }}",
+            "success_rate": "${{ steps.monitor.outputs.success_rate }}",
+            "status": "${{ steps.monitor.outcome == 'success' && 'healthy' || 'alert' }}"
+          }
+          EOF
+          
+          # Commit metrics update
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add metrics/collision-metrics.json
+          git diff --staged --quiet || git commit -m "📊 Update collision metrics [$(date -u +%Y-%m-%d)]"
+          git push
