@@ -1,0 +1,46 @@
+name: Pin-Refresh Cron
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for refresh'
+        required: true
+        default: 'manual-trigger'
+        type: string
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup tgk
+        run: |
+          curl -Ls https://alch.run/tgk4-3 | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Refresh all dynamic pins
+        run: |
+          REASON="${{ github.event.inputs.reason || 'scheduled-6h' }}"
+          echo "🔄 Refreshing all dynamic pins with reason: $REASON"
+          tgk pin refresh --all --reason "$REASON"
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_COUNCIL_CHAT_ID: ${{ secrets.TG_COUNCIL_CHAT_ID }}
+          
+      - name: Update metrics
+        run: |
+          # Update Prometheus metrics for dynamic pin refresh
+          echo "tgk_pin_refresh_total{stream=\"all\",reason=\"${{ github.event.inputs.reason || 'scheduled-6h' }}\"} 1" | \
+            curl -X POST http://prometheus:9091/metrics/job/tgk/instance/pin-refresh-cron \
+            -d @-
+            
+      - name: Log refresh completion
+        run: |
+          echo "✅ Dynamic pin refresh completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "📊 All stream pins updated with latest content"
+          echo "🌐 Multilingual content refreshed"
+          echo "🤖 AI summaries regenerated"

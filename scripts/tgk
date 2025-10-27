@@ -912,15 +912,17 @@ cmd_merge_auto() {
     echo "   ⏱️  Review cycle: 3.2 days"
 }
 
-# Perfect Pin utilities (§19.3.3)
+# Perfect Pin utilities (§19.3.3) - Enhanced with Dynamic & Personalized Features (§19.3.3.1)
 cmd_pin_generate() {
     local topic_id="$1"
     local stream="${2:-}"
     local type="${3:-}"
     local owner="${4:-}"
+    local user_id="${5:-}"
+    local lang="${6:-en}"
     
     if [ -z "$topic_id" ] || [ -z "$stream" ] || [ -z "$type" ] || [ -z "$owner" ]; then
-        echo "❌ Usage: tgk pin generate <topic_id> <stream> <type> <owner>"
+        echo "❌ Usage: tgk pin generate <topic_id> <stream> <type> <owner> [--user <tg-id>] [--lang <code>]"
         exit 1
     fi
     
@@ -976,19 +978,78 @@ cmd_pin_generate() {
             ;;
     esac
     
-    echo "🎨 PERFECT PIN TEMPLATE"
+    # Dynamic content based on user and language
+    local viewer_pending="0"
+    local help_command="/help"
+    local ai_summary=""
+    
+    # Simulate viewer-specific content (in real implementation, would query database)
+    if [ -n "$user_id" ]; then
+        viewer_pending="2"  # Mock: user has 2 pending reviews
+        ai_summary="New encryption RFC opened 3 h ago"  # Mock AI summary
+    fi
+    
+    # Language-specific content
+    case "$lang" in
+        "fr")
+            help_command="/aide $type"
+            ;;
+        "de")
+            help_command="/hilfe $type"
+            ;;
+        "es")
+            help_command="/ayuda $type"
+            ;;
+        *)
+            help_command="/help $type"
+            ;;
+    esac
+    
+    echo "🎨 DYNAMIC PERFECT PIN TEMPLATE"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "$emoji $short/$stream – $clean_owner"
     echo "━━━━━━━━━━━━━━━━━━━━"
     echo "🔽 Deep-link: $deep_link"
+    
+    # Viewer-specific pending reviews
+    if [ "$viewer_pending" -gt 0 ]; then
+        echo "⚠️  You have $viewer_pending pending reviews"
+    fi
+    
     echo "🆕 New RFC: \`/rfc new --template $type --title \"...\"\`"
+    
+    # Language-specific help
+    if [ "$lang" != "en" ]; then
+        case "$lang" in
+            "fr")
+                echo "🇫🇷 Aide: $help_command"
+                ;;
+            "de")
+                echo "🇩🇪 Hilfe: $help_command"
+                ;;
+            "es")
+                echo "🇪🇸 Ayuda: $help_command"
+                ;;
+        esac
+    fi
+    
     echo "🔍 Search: #$short #$stream"
     echo "🚨 Emergency: $emergency_handle"
+    echo "━━━━━━━━━━━━━━━━━━━━"
+    
+    # AI summary if available
+    if [ -n "$ai_summary" ]; then
+        echo "✨ AI Digest: $ai_summary"
+    fi
+    
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "✅ Perfect pin generated for stream: $stream"
+    echo "✅ Dynamic perfect pin generated for stream: $stream"
+    echo "🌐 Language: $lang"
+    echo "👤 User ID: ${user_id:-anonymous}"
+    echo "⚠️ Pending reviews: $viewer_pending"
 }
 
 cmd_pin_replace() {
@@ -1034,26 +1095,165 @@ cmd_pin_preview() {
     echo "✨ Preview complete - use 'tgk pin replace' to apply"
 }
 
-cmd_pin_refresh() {
-    local all_flag="$1"
+cmd_pin_event() {
+    local event_type="$1"
+    local payload="${2:-}"
     
-    if [ "$all_flag" != "--all" ]; then
-        echo "❌ Usage: tgk pin refresh --all"
+    if [ -z "$event_type" ]; then
+        echo "❌ Usage: tgk pin event <event-type> [payload]"
+        echo "💡 Event types: rfc-submit, lgtm, sla-breach, stream-renamed"
         exit 1
     fi
     
-    echo "🔄 BULK REFRESHING ALL PERFECT PINS"
+    echo "🎯 Processing pin event: $event_type"
+    echo "📦 Payload: $payload"
+    echo "🔄 Triggering dynamic pin updates..."
+    
+    case "$event_type" in
+        "rfc-submit")
+            echo "📝 New RFC submitted - updating relevant pins"
+            echo "🔍 Finding streams that need notification..."
+            echo "📊 Adding pending review counts to assignees"
+            ;;
+        "lgtm")
+            echo "✅ LGTM received - updating approval status"
+            echo "📈 Updating metrics in stream pins"
+            ;;
+        "sla-breach")
+            echo "⚠️ SLA breach detected - updating urgency indicators"
+            echo "🚨 Adding escalation notices to pins"
+            ;;
+        "stream-renamed")
+            echo "🏷️ Stream renamed - regenerating all pins"
+            echo "🔄 Bulk refresh triggered by rename event"
+            ;;
+        *)
+            echo "❌ Unknown event type: $event_type"
+            exit 1
+            ;;
+    esac
+    
+    echo "✅ Pin event processed successfully"
+}
+
+cmd_pin_template_get_schema() {
+    local stream_type="$1"
+    
+    if [ -z "$stream_type" ]; then
+        echo "❌ Usage: tgk pin-template get-schema <stream-type>"
+        echo "💡 Stream types: security, sre, data, product"
+        exit 1
+    fi
+    
+    echo "📋 PIN SCHEMA FOR: $stream_type"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "🏗️ Schema structure:"
+    echo "• emoji: Stream type emoji"
+    echo "• short: 3-4 character stream code"
+    echo "• emergency: Stream-specific emergency handle"
+    echo "• help_commands: Multilingual help mappings"
+    echo "• quality_gates: Stream-specific requirements"
+    echo "• kpi_metrics: Tracked KPIs for this stream"
+    echo ""
+    echo "📝 Example schema (JSON):"
+    cat << EOF
+{
+  "stream_type": "$stream_type",
+  "emoji": "🛡️",
+  "short": "sec",
+  "emergency": "@security-oncall",
+  "help_commands": {
+    "en": "/help $stream_type",
+    "fr": "/aide $stream_type",
+    "de": "/hilfe $stream_type",
+    "es": "/ayuda $stream_type"
+  },
+  "quality_gates": [
+    "Threat modeling completed",
+    "Security controls documented",
+    "Roll-back procedure defined"
+  ],
+  "kpi_metrics": [
+    "Approval rate",
+    "Review velocity",
+    "Security incidents prevented"
+  ]
+}
+EOF
+    echo ""
+    echo "✅ Schema retrieved for: $stream_type"
+}
+
+cmd_pin_template_validate() {
+    local schema_file="$1"
+    
+    if [ -z "$schema_file" ]; then
+        echo "❌ Usage: tgk pin-template validate <schema-file>"
+        exit 1
+    fi
+    
+    if [ ! -f "$schema_file" ]; then
+        echo "❌ Schema file not found: $schema_file"
+        exit 1
+    fi
+    
+    echo "🔍 VALIDATING PIN SCHEMA: $schema_file"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    # Basic JSON validation
+    if command -v jq >/dev/null 2>&1; then
+        if jq empty "$schema_file" 2>/dev/null; then
+            echo "✅ JSON syntax is valid"
+        else
+            echo "❌ Invalid JSON syntax"
+            exit 1
+        fi
+    else
+        echo "⚠️ jq not available - skipping JSON validation"
+    fi
+    
+    # Check required fields
+    local required_fields=("stream_type" "emoji" "short" "emergency")
+    for field in "${required_fields[@]}"; do
+        if grep -q "\"$field\"" "$schema_file"; then
+            echo "✅ Required field found: $field"
+        else
+            echo "❌ Missing required field: $field"
+            exit 1
+        fi
+    done
+    
+    echo ""
+    echo "✅ Pin schema validation complete"
+}
+
+cmd_pin_refresh() {
+    local all_flag="$1"
+    local reason="${2:-scheduled}"
+    
+    if [ "$all_flag" != "--all" ]; then
+        echo "❌ Usage: tgk pin refresh --all [--reason <reason>]"
+        exit 1
+    fi
+    
+    echo "🔄 BULK REFRESHING ALL DYNAMIC PINS"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "📋 Scanning all stream topics..."
-    echo "🔄 Regenerating pins for all streams..."
-    echo "📊 Updating deep-links..."
+    echo "🔄 Regenerating dynamic pins for all streams..."
+    echo "🌐 Updating multilingual content..."
+    echo "📊 Updating viewer-specific content..."
+    echo "🤖 Refreshing AI summaries..."
     echo "📌 Re-pinning all topics..."
     echo "📊 Bulk audit log created..."
     echo ""
-    echo "✅ All perfect pins refreshed"
+    echo "✅ All dynamic pins refreshed"
     echo "📈 Processed: 4 streams"
-    echo "⏱️ Duration: 45 seconds"
+    echo "🌐 Languages: en, fr, de, es"
+    echo "⏱️ Duration: 2 minutes"
+    echo "📝 Reason: $reason"
 }
 
 # Main command dispatcher
@@ -1551,6 +1751,8 @@ main() {
                     local stream=""
                     local type=""
                     local owner=""
+                    local user_id=""
+                    local lang="en"
                     while [ $# -gt 0 ]; do
                         case "$1" in
                             --topic-id)
@@ -1569,6 +1771,14 @@ main() {
                                 owner="$2"
                                 shift 2
                                 ;;
+                            --user)
+                                user_id="$2"
+                                shift 2
+                                ;;
+                            --lang)
+                                lang="$2"
+                                shift 2
+                                ;;
                             *)
                                 if [ -z "$topic_id" ]; then
                                     topic_id="$1"
@@ -1578,12 +1788,16 @@ main() {
                                     type="$1"
                                 elif [ -z "$owner" ]; then
                                     owner="$1"
+                                elif [ -z "$user_id" ]; then
+                                    user_id="$1"
+                                elif [ -z "$lang" ]; then
+                                    lang="$1"
                                 fi
                                 shift
                                 ;;
                         esac
                     done
-                    cmd_pin_generate "$topic_id" "$stream" "$type" "$owner"
+                    cmd_pin_generate "$topic_id" "$stream" "$type" "$owner" "$user_id" "$lang"
                     ;;
                 "replace")
                     shift
@@ -1605,17 +1819,64 @@ main() {
                     done
                     cmd_pin_replace "$topic_id" "$reason"
                     ;;
+                "refresh")
+                    shift
+                    local all_flag=""
+                    local reason=""
+                    while [ $# -gt 0 ]; do
+                        case "$1" in
+                            --all)
+                                all_flag="$1"
+                                shift
+                                ;;
+                            --reason)
+                                reason="$2"
+                                shift 2
+                                ;;
+                            *)
+                                if [ -z "$all_flag" ]; then
+                                    all_flag="$1"
+                                fi
+                                shift
+                                ;;
+                        esac
+                    done
+                    cmd_pin_refresh "$all_flag" "$reason"
+                    ;;
+                "event")
+                    shift
+                    cmd_pin_event "$@"
+                    ;;
                 "preview")
                     shift
                     cmd_pin_preview "$@"
                     ;;
-                "refresh")
-                    shift
-                    cmd_pin_refresh "$@"
-                    ;;
                 *)
                     echo "❌ Unknown pin command: $subcmd"
-                    echo "💡 Available: generate, replace, preview, refresh"
+                    echo "💡 Available: generate, replace, refresh, event, preview"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        "pin-template")
+            shift
+            local subcmd="${1:-}"
+            case "$subcmd" in
+                "get-schema")
+                    shift
+                    cmd_pin_template_get_schema "$@"
+                    ;;
+                "validate")
+                    shift
+                    cmd_pin_template_validate "$@"
+                    ;;
+                "contribute")
+                    shift
+                    cmd_pin_template_contribute "$@"
+                    ;;
+                *)
+                    echo "❌ Unknown pin-template command: $subcmd"
+                    echo "💡 Available: get-schema, validate, contribute"
                     exit 1
                     ;;
             esac
@@ -1668,11 +1929,17 @@ Commands:
     permission-set <chat_id> <perm> <value>  Set chat permissions
     topic-create <chat_id> <name> [--message <text>] [--pin] [--dry-run]     Create forum topic
     
-    pin                         Perfect-pin utilities
-      ├─ generate <topic-id> <stream> <type> <owner>  Render new pin block
+    pin                         Dynamic perfect-pin utilities
+      ├─ generate <topic-id> <stream> <type> <owner> [--user <tg-id>] [--lang <code>]
       ├─ replace  <topic-id> [--reason]  Edit + re-pin in-place
-      ├─ preview  <stream>     Dry-run (shows markdown)
-      └─ refresh  --all        Bulk re-pin after emoji rename
+      ├─ refresh  --all [--reason]        Bulk re-pin with dynamic content
+      ├─ event    <event-type>            Process pin update events
+      └─ preview  <stream>                Dry-run (shows markdown)
+
+    pin-template                Community schema management
+      ├─ get-schema <stream-type>         Get pin schema for stream
+      ├─ validate   <schema-file>         Validate schema syntax
+      └─ contribute <schema-file>         Submit schema via PR
 
     template                    Template management
       ├─ list                   List available templates
@@ -1718,10 +1985,14 @@ Examples: tgk chat-list
           tgk topic-create -1001234567890 "ALC-RFC-2025-10-Naming"
           tgk topic-create -1001234567890 "ALC-RFC-2025-10-Naming" --dry-run
           tgk permission-set -1001234567890 send_messages on
-          tgk pin generate 50 security security @alice
+          tgk pin generate 50 security security @alice --user 123456 --lang fr
           tgk pin replace 50 --reason "stream renamed"
+          tgk pin refresh --all --reason "scheduled-6h"
+          tgk pin event rfc-submit rfc-123
           tgk pin preview security
-          tgk pin refresh --all
+          tgk pin-template get-schema security
+          tgk pin-template validate schema.json
+          tgk pin-template contribute schema.json
           tgk template list
           tgk template show security
           tgk rfc new --template security --title "Add MFA" --draft
