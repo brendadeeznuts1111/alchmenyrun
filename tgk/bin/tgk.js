@@ -320,8 +320,12 @@ program
   });
 
 // Orchestrate commands
-program
-  .command('orchestrate auto-triage <issue-id>')
+const orchestrateCmd = program
+  .command('orchestrate')
+  .description('Orchestration commands for automated workflows');
+
+orchestrateCmd
+  .command('auto-triage <issue-id>')
   .description('Proactively triggers tgk issue triage on new issues, posts initial report to relevant Telegram stream')
   .action(async (issueId) => {
     try {
@@ -333,8 +337,8 @@ program
     }
   });
 
-program
-  .command('orchestrate release-candidate <pr-id>')
+orchestrateCmd
+  .command('release-candidate <pr-id>')
   .description('Triggers full release candidate pipeline (staging deploy, E2E tests, auto-promotion if green)')
   .action(async (prId) => {
     try {
@@ -346,8 +350,8 @@ program
     }
   });
 
-program
-  .command('orchestrate revert <component> <version>')
+orchestrateCmd
+  .command('revert <component> <version>')
   .description('Policy-gated rollback of component (Worker, DB, config) to previous version')
   .option('--stage <stage>', 'Target stage (production, staging)', 'production')
   .action(async (component, version, options) => {
@@ -360,8 +364,8 @@ program
     }
   });
 
-program
-  .command('orchestrate audit-compliance <scope>')
+orchestrateCmd
+  .command('audit-compliance <scope>')
   .description('Initiates a compliance audit, cross-referencing OPA policies vs. current state')
   .action(async (scope) => {
     try {
