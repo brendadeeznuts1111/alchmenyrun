@@ -23,7 +23,7 @@ describe("WorkerLoader", () => {
   describe("WorkerLoader Binding Type", () => {
     test("should create WorkerLoader binding with correct type", () => {
       const workerLoader = WorkerLoader();
-      
+
       expect(workerLoader).toBeDefined();
       expect(workerLoader.type).toEqual("worker_loader");
       expect(typeof workerLoader).toBe("object");
@@ -32,7 +32,7 @@ describe("WorkerLoader", () => {
     test("should create consistent WorkerLoader instances", () => {
       const workerLoader1 = WorkerLoader();
       const workerLoader2 = WorkerLoader();
-      
+
       expect(workerLoader1).toEqual(workerLoader2);
       expect(workerLoader1.type).toBe("worker_loader");
       expect(workerLoader2.type).toBe("worker_loader");
@@ -42,7 +42,7 @@ describe("WorkerLoader", () => {
   describe("WorkerLoader Integration", () => {
     test("should create worker configuration with WorkerLoader binding", () => {
       const workerName = "test-worker-loader";
-      
+
       // This tests the configuration structure without actual deployment
       const workerConfig = {
         name: workerName,
@@ -107,10 +107,14 @@ describe("WorkerLoader", () => {
       expect(workerConfig.bindings?.LOADER).toBeDefined();
       expect(workerConfig.bindings?.SECONDARY_LOADER).toBeDefined();
       expect(workerConfig.bindings?.TERTIARY_LOADER).toBeDefined();
-      
+
       expect(workerConfig.bindings?.LOADER.type).toEqual("worker_loader");
-      expect(workerConfig.bindings?.SECONDARY_LOADER.type).toEqual("worker_loader");
-      expect(workerConfig.bindings?.TERTIARY_LOADER.type).toEqual("worker_loader");
+      expect(workerConfig.bindings?.SECONDARY_LOADER.type).toEqual(
+        "worker_loader",
+      );
+      expect(workerConfig.bindings?.TERTIARY_LOADER.type).toEqual(
+        "worker_loader",
+      );
     });
   });
 
@@ -266,12 +270,12 @@ describe("WorkerLoader", () => {
 
     test("should validate WorkerLoader binding structure", () => {
       const workerLoader = WorkerLoader();
-      
+
       // Validate the structure matches expected interface
       expect(workerLoader).toHaveProperty("type");
       expect(typeof workerLoader.type).toBe("string");
       expect(workerLoader.type).toBe("worker_loader");
-      
+
       // Ensure no unexpected properties
       const keys = Object.keys(workerLoader);
       expect(keys).toHaveLength(1);

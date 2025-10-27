@@ -14,9 +14,9 @@ export function createStreamingResponse(
   options: {
     contentType?: string;
     headers?: Record<string, string>;
-  } = {}
+  } = {},
 ): Response {
-  const { contentType = 'text/html', headers = {} } = options;
+  const { contentType = "text/html", headers = {} } = options;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -32,7 +32,7 @@ export function createStreamingResponse(
 
   return new Response(stream, {
     headers: {
-      'Content-Type': contentType,
+      "Content-Type": contentType,
       ...headers,
     },
   });
@@ -49,12 +49,12 @@ export function createStreamingResponse(
 export async function renderAlchemyComponent(
   Component: any,
   props: any = {},
-  alchemyContext: any = {}
+  alchemyContext: any = {},
 ): Promise<string> {
   // This would integrate with React's server-side rendering
   // For now, return a placeholder implementation
   return `
-    <div data-alchemy-component="${Component.name || 'Unknown'}">
+    <div data-alchemy-component="${Component.name || "Unknown"}">
       <!-- Server-rendered content would go here -->
       <script>
         window.__ALCHEMY_CONTEXT__ = ${JSON.stringify(alchemyContext)};
@@ -72,11 +72,11 @@ export async function renderAlchemyComponent(
  */
 export function hydrateAlchemyComponent(
   container: Element,
-  Component: any
+  Component: any,
 ): void {
   // This would integrate with React's hydration
   // For now, just log the action
-  console.log(`Hydrating Alchemy component: ${Component.name || 'Unknown'}`);
+  console.log(`Hydrating Alchemy component: ${Component.name || "Unknown"}`);
 
   // In a real implementation, this would:
   // 1. Read server-rendered props from window.__ALCHEMY_PROPS__
@@ -90,9 +90,9 @@ export function hydrateAlchemyComponent(
  * @param fallback - Fallback content while streaming
  * @returns Suspense wrapper configuration
  */
-export function createSuspenseBoundary(fallback: string = 'Loading...') {
+export function createSuspenseBoundary(fallback: string = "Loading...") {
   return {
     fallback,
-    boundary: '<!-- Suspense boundary for streaming -->',
+    boundary: "<!-- Suspense boundary for streaming -->",
   };
 }

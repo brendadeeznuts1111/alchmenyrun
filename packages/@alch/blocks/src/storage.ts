@@ -1,6 +1,6 @@
 /**
  * Storage building blocks with automatic stage suffixing
- * 
+ *
  * These wrappers automatically append the stage name to storage resources
  * to prevent name collisions between preview, prod, and PR environments.
  */
@@ -9,7 +9,7 @@ import { R2Bucket, KVNamespace } from "alchemy/cloudflare";
 
 /**
  * Create an R2 bucket with automatic stage suffixing
- * 
+ *
  * @example
  * ```ts
  * const bucket = await Bucket("user-files");
@@ -18,7 +18,7 @@ import { R2Bucket, KVNamespace } from "alchemy/cloudflare";
  */
 export function Bucket(name: string, opts: any = {}) {
   const stage = process.env.STAGE || "dev";
-  
+
   return R2Bucket(name, {
     ...opts,
     // Auto-append stage to guarantee uniqueness per environment
@@ -28,7 +28,7 @@ export function Bucket(name: string, opts: any = {}) {
 
 /**
  * Create a KV namespace with automatic stage suffixing
- * 
+ *
  * @example
  * ```ts
  * const kv = await KV("cache");
@@ -37,7 +37,7 @@ export function Bucket(name: string, opts: any = {}) {
  */
 export function KV(name: string, opts: any = {}) {
   const stage = process.env.STAGE || "dev";
-  
+
   return KVNamespace(name, {
     ...opts,
     // Auto-append stage to guarantee uniqueness per environment
@@ -47,7 +47,7 @@ export function KV(name: string, opts: any = {}) {
 
 /**
  * Create a Queue with automatic stage suffixing
- * 
+ *
  * @example
  * ```ts
  * const queue = await Queue("email-jobs");
@@ -56,7 +56,7 @@ export function KV(name: string, opts: any = {}) {
  */
 export function Queue(name: string, opts: any = {}) {
   const stage = process.env.STAGE || "dev";
-  
+
   return Queue(name, {
     ...opts,
     // Auto-append stage to guarantee uniqueness per environment

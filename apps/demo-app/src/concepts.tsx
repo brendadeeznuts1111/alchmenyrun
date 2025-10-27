@@ -1,33 +1,36 @@
-import React from 'react';
+import React from "react";
 
 interface Feature {
   name: string;
-  status: 'shipped' | 'beta' | 'planned';
+  status: "shipped" | "beta" | "planned";
   phase: number;
 }
 
 const features: Feature[] = [
-  { name: 'Cloudflare Workers', status: 'shipped', phase: 1 },
-  { name: 'D1 Databases', status: 'shipped', phase: 1 },
-  { name: 'KV Namespaces', status: 'shipped', phase: 1 },
-  { name: 'R2 Buckets', status: 'shipped', phase: 1 },
-  { name: 'Durable Objects', status: 'shipped', phase: 1 },
-  { name: 'Queues', status: 'shipped', phase: 1 },
-  { name: 'JobQueue (Advanced)', status: 'shipped', phase: 1 },
-  { name: 'Profile-based auth & multi-account', status: 'shipped', phase: 1 },
-  { name: 'WorkerLoader (Dynamic)', status: 'shipped', phase: 1 },
-  { name: 'React Hooks Integration', status: 'beta', phase: 2 },
-  { name: 'SSR Support', status: 'beta', phase: 2 },
-  { name: 'Multi-tenant Architecture', status: 'planned', phase: 3 },
-  { name: 'Advanced Caching', status: 'planned', phase: 3 },
-  { name: 'Workflow Orchestration', status: 'planned', phase: 3 },
+  { name: "Cloudflare Workers", status: "shipped", phase: 1 },
+  { name: "D1 Databases", status: "shipped", phase: 1 },
+  { name: "KV Namespaces", status: "shipped", phase: 1 },
+  { name: "R2 Buckets", status: "shipped", phase: 1 },
+  { name: "Durable Objects", status: "shipped", phase: 1 },
+  { name: "Queues", status: "shipped", phase: 1 },
+  { name: "JobQueue (Advanced)", status: "shipped", phase: 1 },
+  { name: "Profile-based auth & multi-account", status: "shipped", phase: 1 },
+  { name: "WorkerLoader (Dynamic)", status: "shipped", phase: 1 },
+  { name: "React Hooks Integration", status: "beta", phase: 2 },
+  { name: "SSR Support", status: "beta", phase: 2 },
+  { name: "Multi-tenant Architecture", status: "planned", phase: 3 },
+  { name: "Advanced Caching", status: "planned", phase: 3 },
+  { name: "Workflow Orchestration", status: "planned", phase: 3 },
 ];
 
-const getStatusColor = (status: Feature['status']) => {
+const getStatusColor = (status: Feature["status"]) => {
   switch (status) {
-    case 'shipped': return 'bg-green-100 text-green-800';
-    case 'beta': return 'bg-yellow-100 text-yellow-800';
-    case 'planned': return 'bg-gray-100 text-gray-800';
+    case "shipped":
+      return "bg-green-100 text-green-800";
+    case "beta":
+      return "bg-yellow-100 text-yellow-800";
+    case "planned":
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -51,14 +54,21 @@ export function ConceptsPage() {
             </h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {features.filter(f => f.phase === 1).map((feature, index) => (
-              <div key={index} className="px-6 py-4 flex items-center justify-between">
-                <span className="text-gray-900">{feature.name}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}>
-                  {feature.status}
-                </span>
-              </div>
-            ))}
+            {features
+              .filter((f) => f.phase === 1)
+              .map((feature, index) => (
+                <div
+                  key={index}
+                  className="px-6 py-4 flex items-center justify-between"
+                >
+                  <span className="text-gray-900">{feature.name}</span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}
+                  >
+                    {feature.status}
+                  </span>
+                </div>
+              ))}
           </div>
 
           <div className="px-6 py-4 bg-blue-50 border-b">
@@ -67,14 +77,21 @@ export function ConceptsPage() {
             </h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {features.filter(f => f.phase === 2).map((feature, index) => (
-              <div key={index} className="px-6 py-4 flex items-center justify-between">
-                <span className="text-gray-900">{feature.name}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}>
-                  {feature.status}
-                </span>
-              </div>
-            ))}
+            {features
+              .filter((f) => f.phase === 2)
+              .map((feature, index) => (
+                <div
+                  key={index}
+                  className="px-6 py-4 flex items-center justify-between"
+                >
+                  <span className="text-gray-900">{feature.name}</span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}
+                  >
+                    {feature.status}
+                  </span>
+                </div>
+              ))}
           </div>
 
           <div className="px-6 py-4 bg-purple-50">
@@ -83,14 +100,21 @@ export function ConceptsPage() {
             </h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {features.filter(f => f.phase === 3).map((feature, index) => (
-              <div key={index} className="px-6 py-4 flex items-center justify-between">
-                <span className="text-gray-900">{feature.name}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}>
-                  {feature.status}
-                </span>
-              </div>
-            ))}
+            {features
+              .filter((f) => f.phase === 3)
+              .map((feature, index) => (
+                <div
+                  key={index}
+                  className="px-6 py-4 flex items-center justify-between"
+                >
+                  <span className="text-gray-900">{feature.name}</span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}
+                  >
+                    {feature.status}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
 

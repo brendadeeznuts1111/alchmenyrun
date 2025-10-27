@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Hook for managing Alchemy Tunnel resources
@@ -13,7 +13,7 @@ export function useTunnel(
     name?: string;
     ingress?: any[];
     delete?: boolean;
-  }
+  },
 ) {
   const [tunnel, setTunnel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -40,16 +40,18 @@ export function useTunnel(
             const connection = {
               id: `${tunnelId}-${Date.now()}`,
               target,
-              status: 'connected',
+              status: "connected",
               timestamp: Date.now(),
             };
-            setConnections(prev => [...prev, connection]);
+            setConnections((prev) => [...prev, connection]);
             setConnected(true);
             return connection;
           },
           disconnect: async (connectionId: string) => {
             console.log(`Tunnel ${tunnelId} disconnecting: ${connectionId}`);
-            setConnections(prev => prev.filter(conn => conn.id !== connectionId));
+            setConnections((prev) =>
+              prev.filter((conn) => conn.id !== connectionId),
+            );
             if (connections.length <= 1) {
               setConnected(false);
             }
@@ -127,8 +129,12 @@ export function useTunnelHealth(tunnelHook: ReturnType<typeof useTunnel>) {
 
     const updateHealth = () => {
       const connections = tunnelHook.connections;
-      const activeConnections = connections.filter(conn => conn.status === 'connected').length;
-      const failedConnections = connections.filter(conn => conn.status === 'failed').length;
+      const activeConnections = connections.filter(
+        (conn) => conn.status === "connected",
+      ).length;
+      const failedConnections = connections.filter(
+        (conn) => conn.status === "failed",
+      ).length;
 
       setHealth({
         totalConnections: connections.length,

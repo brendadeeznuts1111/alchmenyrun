@@ -1,4 +1,4 @@
-import { Resource, secret, Secret, Context } from 'alchemy';
+import { Resource, secret, Secret, Context } from "alchemy";
 import { Queue, Worker } from "alchemy/cloudflare";
 
 /* -------------- PUBLIC TYPES -------------- */
@@ -12,7 +12,7 @@ export interface JobQueueProps {
 }
 
 /* -------------- OUTPUT TYPE -------------- */
-export type JobQueue = Omit<JobQueueProps, 'delete'> & {
+export type JobQueue = Omit<JobQueueProps, "delete"> & {
   id: string;
   name: string;
   queue: Awaited<ReturnType<typeof Queue>>;
@@ -20,16 +20,19 @@ export type JobQueue = Omit<JobQueueProps, 'delete'> & {
   producer: Awaited<ReturnType<typeof Worker>>;
   deadLetterQueue?: Awaited<ReturnType<typeof Queue>>;
   createdAt: number;
-  type: 'job-queue';
+  type: "job-queue";
 };
 
 /* -------------- TYPE GUARD -------------- */
 export function isJobQueue(res: any): res is JobQueue {
-  return res?.type === 'job-queue';
+  return res?.type === "job-queue";
 }
 
 /* -------------- RESOURCE FACTORY -------------- */
-export function JobQueue(id: string, props: JobQueueProps = {}): Promise<JobQueue> {
+export function JobQueue(
+  id: string,
+  props: JobQueueProps = {},
+): Promise<JobQueue> {
   // Normalize: allow string or Resource for every queue field (future-proof)
   return _JobQueue(id, {
     ...props,
@@ -39,8 +42,12 @@ export function JobQueue(id: string, props: JobQueueProps = {}): Promise<JobQueu
 
 /* -------------- INTERNAL IMPLEMENTATION -------------- */
 const _JobQueue = Resource(
-  'alch::job-queue',
-  async function (this: Context<JobQueue>, id: string, props: JobQueueProps): Promise<JobQueue> {
+  "alch::job-queue",
+  async function (
+    this: Context<JobQueue>,
+    id: string,
+    props: JobQueueProps,
+  ): Promise<JobQueue> {
     const {
       batchSize = 10,
       maxRetries = 3,
@@ -50,16 +57,15 @@ const _JobQueue = Resource(
     } = props;
 
     /* ---------- IMMUTABLE NAME HANDLING ---------- */
-    const name = props.name
-      ?? this.output?.name
-      ?? this.scope.createPhysicalName(id);
+    const name =
+      props.name ?? this.output?.name ?? this.scope.createPhysicalName(id);
 
-    if (this.phase === 'update' && this.output.name !== name) {
+    if (this.phase === "update" && this.output.name !== name) {
       return this.replace(); // queue name is immutable
     }
 
     /* ---------- CONDITIONAL DELETE ---------- */
-    if (this.phase === 'delete') {
+    if (this.phase === "delete") {
       if (shouldDelete === false && this.output?.id) {
         // user opted out: skip cloud call, just destroy state
         return this.destroy();
@@ -81,14 +87,14 @@ const _JobQueue = Resource(
     /* ---------- PROCESSOR WORKER ---------- */
     const processor = await Worker(`${name}-processor`, {
       name: `${name}-processor`,
-      entrypoint: './src/queue-handler.ts',
-      bindings: { 
+      entrypoint: "./src/queue-handler.ts",
+      bindings: {
         QUEUE: queue,
         ...(dlq && { DLQ: dlq }),
       },
       env: {
         QUEUE: queue.id,
-        DLQ: dlq?.id ?? '',
+        DLQ: dlq?.id ?? "",
         MAX_CONCURRENCY: maxConcurrency.toString(),
       },
     });
@@ -96,8 +102,8 @@ const _JobQueue = Resource(
     /* ---------- PRODUCER WORKER ---------- */
     const producer = await Worker(`${name}-producer`, {
       name: `${name}-producer`,
-      entrypoint: './src/queue-producer.ts',
-      bindings: { 
+      entrypoint: "./src/queue-producer.ts",
+      bindings: {
         QUEUE: queue,
       },
       env: { QUEUE: queue.id },
@@ -111,9 +117,9 @@ const _JobQueue = Resource(
       producer,
       deadLetterQueue: dlq,
       createdAt: Date.now(),
-      type: 'job-queue',
+      type: "job-queue",
     };
-  }
+  },
 );
 
 /* -------------- INTERNAL API TYPES -------------- */

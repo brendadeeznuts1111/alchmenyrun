@@ -6,7 +6,9 @@ export default {
     return env.GITHUB_DO.get(id).fetch(req.clone(), {
       headers: {
         "X-Telegram-Bot-Token": env.TG_TOKEN,
-        "X-Telegram-Topic": stream === "mobile-app" ? env.TOPIC_MOBILE : env.TOPIC_FORUM,
+        "X-Telegram-Topic":
+          stream === "mobile-app" ? env.TOPIC_MOBILE : env.TOPIC_FORUM,
+        "X-Telegram-Council-Id": env.COUNCIL_ID,
       },
     });
   },

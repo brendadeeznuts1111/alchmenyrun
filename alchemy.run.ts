@@ -13,8 +13,16 @@ import {
 import { GitHubComment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { Database } from "./packages/@alch/blocks/src/database";
-import { Bucket, KV, Queue as StageQueue } from "./packages/@alch/blocks/src/storage";
-import { DurableObject, AlchemyWorkflow } from "./packages/@alch/blocks/src/durable";
+import {
+  Bucket,
+  KV,
+  Queue as StageQueue,
+} from "./packages/@alch/blocks/src/storage";
+import {
+  DurableObject,
+  AlchemyWorkflow,
+} from "./packages/@alch/blocks/src/durable";
+import { GithubAgent } from "./src/do/github-agent";
 
 // Cloudflare API token for other operations (optional when using OAuth profile)
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -46,15 +54,12 @@ const resources = {} as any;
 
 // Database scope - Organizes all data storage resources
 await alchemy.run("database", async () => {
-  // D1 Database for user and file storage
-  const db = await Database("alchemy-demo-db", {
-    adopt: true, // Adopt existing database if it exists
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-  });
-    adopt: true, // Adopt existing database if it exists
-    apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
-  });
->>>>>>> origin/main
+  try {
+    // D1 Database for user and file storage
+    const db = await Database("alchemy-demo-db", {
+      adopt: true, // Adopt existing database if it exists
+      apiToken: cfToken ? alchemy.secret(cfToken) : undefined,
+    });
 
     // Share with other scopes
     resources.db = db;
@@ -160,12 +165,6 @@ export const website = await Worker("website", {
     // Secret binding
     API_KEY: alchemy.secret(process.env.API_KEY || "demo-key"),
   },
-  // Static assets for frontend serving
-  assets: {
-    path: "./apps/demo-app/dist", // Demo app build output directory
-    run_worker_first: true, // Try worker first, fallback to assets
-    not_found_handling: "single-page-application", // SPA routing support
-  },
   // Production-ready Worker features
   crons: [
     "0 2 * * *", // Daily cleanup at 2 AM UTC
@@ -192,14 +191,16 @@ export const website = await Worker("website", {
   //   process.env.CUSTOM_DOMAIN || "your-app.com"
   // ],
   // Routes for production deployment (only when zone ID is configured)
-  ...(process.env.CLOUDFLARE_ZONE_ID ? {
-    routes: [
-      // API routes
-      { pattern: "/api/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
-      // Catch-all for SPA routing
-      { pattern: "/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
-    ],
-  } : {}),
+  ...(process.env.CLOUDFLARE_ZONE_ID
+    ? {
+        routes: [
+          // API routes
+          { pattern: "/api/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+          // Catch-all for SPA routing
+          { pattern: "/*", zoneId: process.env.CLOUDFLARE_ZONE_ID },
+        ],
+      }
+    : {}),
 });
 
 // ========================================
@@ -248,8 +249,6 @@ const workflowNamespace = await AlchemyWorkflow("onboarding", {
 
 console.log({
   url: website.url,
-  apiUrl: website.apiUrl,
-  // mcpUrl: mcpWorker.url,
 });
 
 // -------------  PREVIEW COMMENT  -------------
@@ -264,8 +263,7 @@ if (process.env.PULL_REQUEST) {
 
 Your changes have been deployed to a preview environment:
 
-**🌐 Website:** ${website.url}  
-**📡 API:** ${website.apiUrl}
+**🌐 Website:** ${website.url}
 
 Built from commit \`${process.env.GITHUB_SHA?.slice(0, 7)}\`
 
@@ -283,13 +281,12 @@ await Worker("github-webhook", {
   entrypoint: "./workers/github-webhook/index.ts",
   bindings: {
     GITHUB_DO: ghAgentDO,
-    TG_TOKEN: $env("TG_TOKEN"),
-    COUNCIL_ID: $env("TELEGRAM_COUNCIL_ID"),
-    TOPIC_MOBILE: $env("TELEGRAM_TOPIC_MOBILE"),
-    TOPIC_FORUM: $env("TELEGRAM_TOPIC_FORUM"),
+    TG_TOKEN: alchemy.secret(process.env.TG_TOKEN || ""),
+    COUNCIL_ID: process.env.TELEGRAM_COUNCIL_ID || "",
+    TOPIC_MOBILE: process.env.TELEGRAM_TOPIC_MOBILE || "",
+    TOPIC_FORUM: process.env.TELEGRAM_TOPIC_FORUM || "",
   },
   profile: "ci",
-  stage: $env("STAGE"),
 });
 
 // Finalize the app (triggers deletion of orphaned resources)

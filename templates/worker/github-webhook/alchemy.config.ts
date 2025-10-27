@@ -13,9 +13,9 @@ export default {
         COUNCIL_ID: process.env.COUNCIL_ID,
         STREAM_TOPIC_ID: process.env.STREAM_TOPIC_ID,
         STREAM_EMOJI: process.env.STREAM_EMOJI,
-        STREAM_SHORT: process.env.STREAM_SHORT
-      }
-    }
+        STREAM_SHORT: process.env.STREAM_SHORT,
+      },
+    },
   },
 
   // Environment-specific configuration

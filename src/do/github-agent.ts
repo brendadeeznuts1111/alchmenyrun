@@ -8,18 +8,38 @@ export class GithubAgent {
     const oldId = (await this.ctx.storage.get<number>("pinnedMsgId")) || 0;
     const tgToken = req.headers.get("X-Telegram-Bot-Token") as string;
     const topic = req.headers.get("X-Telegram-Topic") as string;
+    const councilId = req.headers.get("X-Telegram-Council-Id") as string;
 
     // 1. unpin old
-    if (oldId) await tg("unpinChatMessage", { message_id: oldId }, tgToken, topic);
+    if (oldId)
+      await tg(
+        "unpinChatMessage",
+        { message_id: oldId },
+        tgToken,
+        topic,
+        councilId,
+      );
 
     // 2. send new card
-    const send = await tg("sendMessage", {
-      text: fmtCard(body),
-      parse_mode: "MarkdownV2",
-    }, tgToken, topic);
+    const send = await tg(
+      "sendMessage",
+      {
+        text: fmtCard(body),
+        parse_mode: "MarkdownV2",
+      },
+      tgToken,
+      topic,
+      councilId,
+    );
 
     // 3. pin new
-    await tg("pinChatMessage", { message_id: send.result.message_id }, tgToken, topic);
+    await tg(
+      "pinChatMessage",
+      { message_id: send.result.message_id },
+      tgToken,
+      topic,
+      councilId,
+    );
 
     // 4. save state
     await this.ctx.storage.put("pinnedMsgId", send.result.message_id);
@@ -28,11 +48,21 @@ export class GithubAgent {
 }
 
 // helpers
-async function tg(method: string, p: any, token: string, topic: string) {
+async function tg(
+  method: string,
+  p: any,
+  token: string,
+  topic: string,
+  councilId: string,
+) {
   return fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...p, chat_id: env.COUNCIL_ID, message_thread_id: topic }),
-  }).then(r => r.json<any>());
+    body: JSON.stringify({
+      ...p,
+      chat_id: councilId,
+      message_thread_id: topic,
+    }),
+  }).then((r) => r.json<any>());
 }
 const fmtCard = (b: any) => `*${b.action}* \\#${b.number} – ${b.repo}`;

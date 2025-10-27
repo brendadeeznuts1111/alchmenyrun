@@ -42,14 +42,14 @@ describe("JobQueue", () => {
   });
 });
 
-describe('JobQueue type guard', () => {
-  test('recognises a JobQueue output', () => {
-    const fake = { type: 'job-queue', id: 'q-123', name: 'emails' };
+describe("JobQueue type guard", () => {
+  test("recognises a JobQueue output", () => {
+    const fake = { type: "job-queue", id: "q-123", name: "emails" };
     expect(isJobQueue(fake)).toBe(true);
   });
 
-  test('rejects non-JobQueue', () => {
-    expect(isJobQueue({ type: 'cloudflare::worker' })).toBe(false);
+  test("rejects non-JobQueue", () => {
+    expect(isJobQueue({ type: "cloudflare::worker" })).toBe(false);
     expect(isJobQueue(null)).toBe(false);
   });
 });
