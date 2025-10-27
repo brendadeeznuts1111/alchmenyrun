@@ -1,0 +1,60 @@
+# CODEOWNERS for Alchmenyrun Project
+# This file defines who owns what in the repository
+
+# Global owners - can approve anything
+* @brendadeeznuts1111
+
+# Council members - can approve governance changes
+.github/ @alice.smith @charlie.brown @diana.prince @frank.taylor
+CODEOWNERS @alice.smith @charlie.brown @diana.prince @frank.taylor
+
+# Micro-RFC-006 AI Orchestration System
+# Health Infrastructure (Micro-PR 1)
+workers/tgk-orchestrator/ @alice.smith @brendadeeznuts1111
+workers/tgk-orchestrator/index.ts @alice.smith @brendadeeznuts1111
+workers/tgk-orchestrator/wrangler.toml @alice.smith @brendadeeznuts1111
+
+# Grammar Parser (Micro-PR 2)
+tgk/core/grammar-parser.ts @alice.smith @brendadeeznuts1111
+tgk/commands/grammar.ts @alice.smith @brendadeeznuts1111
+tgk/commands/github-client.ts @alice.smith @brendadeeznuts1111
+
+# Issue Triage (Micro-PR 3)
+tgk/commands/issue-triage.ts @alice.smith @brendadeeznuts1111
+tgk/commands/github-client.ts @alice.smith @brendadeeznuts1111
+
+# Release Planning (Micro-PR 4)
+tgk/commands/release-plan.ts @alice.smith @brendadeeznuts1111
+tgk/core/policy.ts @diana.prince @alice.smith
+tgk/core/rpc.ts @alice.smith @brendadeeznuts1111
+tgk/integrations/telegram-release.ts @diana.prince @alice.smith
+infra/telegram/policies/ @diana.prince @alice.smith
+
+# Documentation
+docs/ @alice.smith @brendadeeznuts1111
+*.md @alice.smith @brendadeeznuts1111
+
+# Configuration
+tgk/ @alice.smith @brendadeeznuts1111
+tgk/package.json @alice.smith @brendadeeznuts1111
+tgk/tsconfig.json @alice.smith @brendadeeznuts1111
+
+# Testing
+**/__tests__/ @alice.smith @brendadeeznuts1111
+**/*.test.* @alice.smith @brendadeeznuts1111
+
+# Scripts
+scripts/ @alice.smith @brendadeeznuts1111
+
+# Infrastructure
+infra/ @diana.prince @alice.smith
+infra/telegram/ @diana.prince @alice.smith
+
+# Workers
+workers/ @alice.smith @brendadeeznuts1111
+
+# Utilities
+utils/ @alice.smith @brendadeeznuts1111
+
+# Metrics and monitoring
+metrics/ @alice.smith @brendadeeznuts1111
