@@ -850,7 +850,13 @@ cmd_policy_check() {
 }
 
 cmd_orchestrate() {
-    local action="$1"
+    local action="${1:-}"
+    
+    if [ -z "$action" ]; then
+        echo "❌ Usage: tgk orchestrate <action> [options]" >&2
+        echo "💡 Available actions: release-announcement, release-verify, release-security-check" >&2
+        exit 1
+    fi
     
     case "$action" in
         "release-announcement")
