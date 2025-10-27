@@ -1,0 +1,47 @@
+name: Perfect-Pin Keeper
+on:
+  repository_dispatch:
+    types: [stream-renamed, owner-changed]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'refresh-all'
+        type: choice
+        options:
+        - refresh-all
+        - single-topic
+
+jobs:
+  repin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup tgk
+        run: |
+          curl -Ls https://alch.run/tgk4-2 | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Regenerate & replace pin
+        run: |
+          if [ "${{ github.event.action }}" = "refresh-all" ] || [ "${{ github.event.inputs.action }}" = "refresh-all" ]; then
+            echo "🔄 Bulk refreshing all perfect pins..."
+            tgk pin refresh --all
+          else
+            echo "🔄 Replacing pin for specific topic..."
+            tgk pin replace ${{ github.event.client_payload.topic_id }} \
+                            --reason "${{ github.event.action }}"
+          fi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_COUNCIL_CHAT_ID: ${{ secrets.TG_COUNCIL_CHAT_ID }}
+          
+      - name: Update metrics
+        run: |
+          # Update Prometheus metrics for pin operations
+          echo "tgk_pin_replace_total{stream=\"all\",reason=\"${{ github.event.action }}\"} 1" | \
+            curl -X POST http://prometheus:9091/metrics/job/tgk/instance/perfect-pin-keeper \
+            -d @-
