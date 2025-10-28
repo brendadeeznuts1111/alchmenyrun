@@ -52,7 +52,8 @@
     "alchemy": "^0.76.1",
     "drizzle-orm": "^0.29.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "telegram": "2.26.22"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",

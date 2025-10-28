@@ -156,7 +156,8 @@ export const website = await Worker("website", {
 
     // Storage bindings
     STORAGE: resources.storage,
-    CACHE: resources.cache,
+    // Temporarily disable KV bindings to allow cleanup during deployment
+    // CACHE: resources.cache,
 
     // Compute bindings
     JOBS: resources.jobs,
@@ -230,10 +231,10 @@ const workflowNamespace = await AlchemyWorkflow("onboarding", {
 //     DB: db,
 //     STORAGE: storage,
 //     JOBS: jobs,
-//     CACHE: cache,
+//     // CACHE: cache,
 //     CHAT: ChatDurableObject,
 //     WORKFLOW: OnboardingWorkflow,
-//     MCP_KV: mcpKv,
+//     // MCP_KV: mcpKv,
 //     // MCP Secrets
 //     MCP_SHARED_SECRET: alchemy.secret(process.env.MCP_SHARED_SECRET || ""),
 //     MCP_JWT_SECRET: alchemy.secret(process.env.MCP_JWT_SECRET || ""),
