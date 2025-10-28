@@ -3,6 +3,12 @@ import { JinjaEngine } from './jinja-engine';
 import { WorkflowErrorHandlerImpl, WorkflowError } from './workflow-error-handler';
 import { ConditionalEngine } from './conditional-engine';
 import { WorkflowAnalytics } from './workflow-analytics';
+import { PredictiveApprovalEngine } from './predictive-approval';
+import { SmartEscalationEngine } from './smart-escalation';
+import { ComplianceAuditTrail } from './compliance-audit';
+import { WorkflowTaskHandler } from './workflow-task-handler';
+import { EscalationEngine } from './escalation-engine';
+import { TelegramBotKeyboards } from './telegram-bot-keyboards';
 import { ColorFormatter } from '../utils/ansi-colors';
 import { WorkflowStep, WorkflowInstance, WorkflowApproval } from '../types/workflow';
 
@@ -12,6 +18,11 @@ export class WorkflowManager {
   private errorHandler: WorkflowErrorHandlerImpl;
   private conditionalEngine: ConditionalEngine;
   private analytics: WorkflowAnalytics;
+  private predictiveEngine: PredictiveApprovalEngine;
+  private escalationEngine: SmartEscalationEngine;
+  private escalationDecisionEngine: EscalationEngine;
+  private auditTrail: ComplianceAuditTrail;
+  private taskHandler: WorkflowTaskHandler;
   private workflows: Map<string, WorkflowStep[]> = new Map();
   private instances: Map<string, WorkflowInstance> = new Map();
   private timeouts: Map<string, NodeJS.Timeout> = new Map();
@@ -22,6 +33,11 @@ export class WorkflowManager {
     this.errorHandler = new WorkflowErrorHandlerImpl(this.jinjaEngine, telegramManager, this);
     this.conditionalEngine = new ConditionalEngine();
     this.analytics = new WorkflowAnalytics();
+    this.predictiveEngine = new PredictiveApprovalEngine(this);
+    this.escalationEngine = new SmartEscalationEngine(this, telegramManager);
+    this.escalationDecisionEngine = new EscalationEngine();
+    this.auditTrail = new ComplianceAuditTrail(this);
+    this.taskHandler = new WorkflowTaskHandler(telegramManager, this.jinjaEngine, true);
     this.registerDefaultTemplates();
   }
 
@@ -420,9 +436,9 @@ export class WorkflowManager {
     for (const assignee of step.assignees) {
       await this.telegramManager.sendMessage(
         instance.topicId!,
-        `👤 ${assignee}\n${message}`,
+        message,
         undefined,
-        this.generateApprovalKeyboard(instance.id)
+        TelegramBotKeyboards.generateApprovalKeyboard(instance.id)
       );
 
       // Also send direct message if user is available
@@ -451,6 +467,16 @@ export class WorkflowManager {
     // Decision steps automatically evaluate conditions and route accordingly
     // This is handled by the conditional logic in advanceToStep
     await this.completeStep(instance.id, step.id, 'system', 'Decision evaluated');
+  }
+
+  private async handleTaskStep(instance: WorkflowInstance, step: WorkflowStep): Promise<void> {
+    // Get progress information
+    const workflowSteps = this.workflows.get(instance.workflowId) || [];
+    const completedSteps = this.getCompletedStepCount(instance);
+    const totalSteps = workflowSteps.length;
+    
+    // Delegate to the task handler
+    await this.taskHandler.handleTaskStep(instance, step, completedSteps, totalSteps);
   }
 
   private async completeWorkflow(instanceId: string, completedBy: string, reason?: string): Promise<void> {
@@ -572,32 +598,6 @@ export class WorkflowManager {
     }
   }
 
-  private generateApprovalKeyboard(instanceId: string): any {
-    return {
-      inline_keyboard: [
-        [
-          { text: '✅ Approve', callback_data: `approve_${instanceId}` },
-          { text: '❌ Reject', callback_data: `reject_${instanceId}` }
-        ],
-        [
-          { text: '⏸️ Defer', callback_data: `defer_${instanceId}` },
-          { text: '📋 Info', callback_data: `info_${instanceId}` }
-        ]
-      ]
-    };
-  }
-
-  private generateTaskKeyboard(instanceId: string): any {
-    return {
-      inline_keyboard: [
-        [
-          { text: '✅ Mark Complete', callback_data: `complete_${instanceId}` },
-          { text: '🆘 Need Help', callback_data: `help_${instanceId}` }
-        ]
-      ]
-    };
-  }
-
   private generateWorkflowSummary(instance: WorkflowInstance): string {
     const workflowSteps = this.workflows.get(instance.workflowId) || [];
     const currentStep = workflowSteps.find(s => s.id === instance.currentStep);
@@ -609,7 +609,7 @@ export class WorkflowManager {
       `📋 Workflow: ${instance.workflowId}`,
       `👤 Created by: ${instance.createdBy}`,
       `📅 Started: ${instance.createdAt.toLocaleString()}`,
-      `🔄 Status: ${instance.status.toUpperCase()} ${this.getStatusEmoji(instance.status)}`,
+      `🔄 Status: ${(instance.status || 'unknown').toUpperCase()} ${this.getStatusEmoji(instance.status || 'unknown')}`,
       `📊 Progress: ${completedSteps}/${workflowSteps.length} steps`,
       `📍 Current Step: ${currentStep?.name || 'Unknown'}`,
       `⏱️ Last Updated: ${instance.updatedAt.toLocaleString()}`,
@@ -671,7 +671,7 @@ export class WorkflowManager {
         console.log(ColorFormatter.colorize(`⏰ Step timeout: ${instanceId} - ${stepId}`, 'yellow'));
 
         // Check if this workflow should be escalated
-        const shouldEscalate = this.shouldEscalateWorkflow(instance, timeoutMinutes);
+        const shouldEscalate = this.escalationDecisionEngine.shouldEscalateWorkflow(instance, timeoutMinutes);
 
         if (shouldEscalate) {
           await this.escalationEngine.escalateWorkflow(instanceId, 1);
@@ -708,6 +708,7 @@ export class WorkflowManager {
       case 'completed': return '✅';
       case 'rejected': return '❌';
       case 'cancelled': return '🚫';
+      case 'unknown': return '❓';
       default: return '⚪';
     }
   }
@@ -728,42 +729,6 @@ export class WorkflowManager {
     return this.workflows.get(workflowId);
   }
 
-  // Determine if a workflow should be escalated based on its characteristics
-  private shouldEscalateWorkflow(instance: WorkflowInstance, timeoutMinutes: number): boolean {
-    // Escalate if:
-    // 1. Priority is critical or emergency
-    if (instance.data.priority === 'critical' || instance.data.priority === 'emergency') {
-      return true;
-    }
-
-    // 2. High financial impact
-    if (instance.data.financial_impact && instance.data.financial_impact > 10000) {
-      return true;
-    }
-
-    // 3. Security-related changes
-    if (instance.data.contains_security_changes) {
-      return true;
-    }
-
-    // 4. Large number of affected users
-    if (instance.data.affected_users && instance.data.affected_users > 100) {
-      return true;
-    }
-
-    // 5. Regulatory compliance requirements
-    if (instance.data.regulatory_compliance) {
-      return true;
-    }
-
-    // 6. System downtime or incident response
-    if (instance.data.incident_type || instance.data.system_down) {
-      return true;
-    }
-
-    return false;
-  }
-
   // Public method to trigger escalation (for external triggers)
   async triggerEscalation(instanceId: string, reason?: string): Promise<void> {
     console.log(ColorFormatter.colorize(
@@ -772,6 +737,27 @@ export class WorkflowManager {
     ));
 
     await this.escalationEngine.escalateWorkflow(instanceId, 1);
+  }
+
+  // Public method to get escalation factors for a workflow
+  getEscalationFactors(instanceId: string): string[] {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return [];
+    
+    return this.escalationDecisionEngine.getEscalationFactors(instance);
+  }
+
+  // Public method to get escalation risk score
+  getEscalationRiskScore(instanceId: string): number {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return 0;
+    
+    return this.escalationDecisionEngine.getEscalationRiskScore(instance);
+  }
+
+  // Public method to update escalation criteria
+  updateEscalationCriteria(criteria: any): void {
+    this.escalationDecisionEngine.updateCriteria(criteria);
   }
 
   // Get escalation history for a workflow
